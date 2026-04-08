@@ -1,0 +1,51 @@
+# Root-level Git ignore rules for all packages in this monorepo
+
+# dependencies
+node_modules/
+
+# environment files
+.env
+.env*.local
+
+# Prisma generated client
+backend/generated/prisma/
+
+# Expo / React Native
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# Debug logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# TypeScript
+*.tsbuildinfo
+
+# Expo starter reset output
+app-example/
+
+# Generated native folders
+ios/
+android/
+
+# Prueba para el workshop
+copilot-instructions.md
