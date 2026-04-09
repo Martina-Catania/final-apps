@@ -4,7 +4,7 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
@@ -12,18 +12,121 @@ datasource db {
   provider = "sqlite"
 }
 
-model User { 
-  id    Int     @id @default(autoincrement()) 
-  email String  @unique
-  name  String?
-  posts Post[]
-} 
+enum ProjectType {
+  SUMMARY
+  QUIZ
+  DECK
+}
 
-model Post { 
-  id        Int     @id @default(autoincrement()) 
+
+model User {
+  id             Int       @id @default(autoincrement())
+  email          String    @unique
+  username       String    @unique
+  hashedPassword String
+  name           String    @default("")
+  timetable      String?
+  projects       Project[]
+  followers      Follow[]  @relation("following")
+  following      Follow[]  @relation("follower")
+}
+
+model Project {
+  id        Int         @id @default(autoincrement())
+  type      ProjectType
   title     String
-  content   String?
-  published Boolean @default(false) 
-  author    User    @relation(fields: [authorId], references: [id]) 
-  authorId  Int
-} 
+  userId    Int
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  views     Int         @default(0)
+  summary   Summary?
+  quiz      Quiz?
+  deck      Deck?
+  tags      ProjectTag[]
+
+  @@index([userId])
+  @@index([type, createdAt])
+}
+
+model Follow {
+  followerId  Int
+  followingId Int
+  follower    User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
+  @@index([followingId])
+}
+
+model Summary {
+  id        Int       @id @default(autoincrement())
+  projectId Int       @unique
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  subject   String
+  content   String
+  files     SummaryFile[]
+}
+
+model SummaryFile {
+  id        Int     @id @default(autoincrement())
+  summaryId Int
+  summary   Summary @relation(fields: [summaryId], references: [id], onDelete: Cascade)
+  filename  String
+
+  @@index([summaryId])
+}
+
+model Quiz {
+  id        Int            @id @default(autoincrement())
+  projectId Int            @unique
+  project   Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+}
+
+model QuizQuestion {
+  id       Int    @id @default(autoincrement())
+  quizId   Int
+  quiz     Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  question String
+  answer   String
+  decoy1   String
+  decoy2   String
+  decoy3   String
+
+  @@index([quizId])
+}
+
+model Deck {
+  id         Int         @id @default(autoincrement())
+  projectId  Int         @unique
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  flashcards Flashcard[]
+}
+
+model Flashcard {
+  id     Int    @id @default(autoincrement())
+  front  String
+  back   String
+  deckId Int
+  deck   Deck   @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@index([deckId])
+}
+
+model Tag {
+  id       Int          @id @default(autoincrement())
+  name     String       @unique
+  projects ProjectTag[]
+}
+
+model ProjectTag {
+  projectId Int
+  tagId     Int
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, tagId])
+  @@index([tagId])
+}
