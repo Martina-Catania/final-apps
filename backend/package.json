@@ -24,6 +24,7 @@
     "testEnvironment": "node",
     "roots": ["<rootDir>/tests"],
     "testMatch": ["**/*.test.ts"],
+    "collectCoverageFrom": ["<rootDir>/src/**/*.ts"],
     "extensionsToTreatAsEsm": [".ts"],
     "moduleNameMapper": {
       "^(\\.{1,2}/.*)\\.js$": "$1"
