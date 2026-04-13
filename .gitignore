@@ -49,3 +49,6 @@ android/
 
 # Prueba para el workshop
 copilot-instructions.md
+
+#coverage reports
+coverage/
