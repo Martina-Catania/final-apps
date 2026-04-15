@@ -48,4 +48,32 @@ describe("quiz-question-routes", () => {
       include: { quiz: true },
     });
   });
+
+  it("returns quiz question by id when found", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/quiz-questions", createQuizQuestionRouter(ctx));
+
+    mocks.quizQuestion.findUnique.mockResolvedValue({ id: 7, quizId: 2 } as never);
+
+    const response = await request(app).get("/quiz-questions/7");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: 7, quizId: 2 });
+  });
+
+  it("patches quiz question with numeric quizId", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/quiz-questions", createQuizQuestionRouter(ctx));
+
+    mocks.quizQuestion.update.mockResolvedValue({ id: 7, quizId: 3 } as never);
+
+    const response = await request(app).patch("/quiz-questions/7").send({ quizId: 3 });
+
+    expect(response.status).toBe(200);
+    expect(mocks.quizQuestion.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ quizId: 3 }),
+      }),
+    );
+  });
 });

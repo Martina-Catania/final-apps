@@ -55,4 +55,16 @@ describe("summary-routes", () => {
     expect(response.body.error).toBe("Project type must be SUMMARY");
     expect(mocks.summary.create).not.toHaveBeenCalled();
   });
+
+  it("returns summary by id when found", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/summaries", createSummaryRouter(ctx));
+
+    mocks.summary.findUnique.mockResolvedValue({ id: 6, subject: "S" } as never);
+
+    const response = await request(app).get("/summaries/6");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: 6, subject: "S" });
+  });
 });

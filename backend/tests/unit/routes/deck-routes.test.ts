@@ -37,6 +37,18 @@ describe("deck-routes", () => {
     });
   });
 
+  it("returns deck by id when found", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/decks", createDeckRouter(ctx));
+
+    mocks.deck.findUnique.mockResolvedValue({ id: 1, projectId: 7 } as never);
+
+    const response = await request(app).get("/decks/1");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: 1, projectId: 7 });
+  });
+
   it("rejects create when project type is not DECK", async () => {
     const { ctx, mocks } = createRouteMockContext();
     const app = createRouteApp("/decks", createDeckRouter(ctx));

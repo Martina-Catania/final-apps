@@ -34,4 +34,32 @@ describe("summary-file-routes", () => {
       include: { summary: true },
     });
   });
+
+  it("returns summary file by id when found", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/summary-files", createSummaryFileRouter(ctx));
+
+    mocks.summaryFile.findUnique.mockResolvedValue({ id: 4, summaryId: 1, filename: "notes.pdf" } as never);
+
+    const response = await request(app).get("/summary-files/4");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: 4, summaryId: 1, filename: "notes.pdf" });
+  });
+
+  it("patches summary file with numeric summaryId", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/summary-files", createSummaryFileRouter(ctx));
+
+    mocks.summaryFile.update.mockResolvedValue({ id: 4, summaryId: 2 } as never);
+
+    const response = await request(app).patch("/summary-files/4").send({ summaryId: 2 });
+
+    expect(response.status).toBe(200);
+    expect(mocks.summaryFile.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ summaryId: 2 }),
+      }),
+    );
+  });
 });

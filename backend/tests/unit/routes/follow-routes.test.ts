@@ -30,4 +30,16 @@ describe("follow-routes", () => {
     expect(response.body.error).toBe("Users cannot follow themselves");
     expect(mocks.follow.create).not.toHaveBeenCalled();
   });
+
+  it("returns a follow relation when found", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/follows", createFollowRouter(ctx));
+
+    mocks.follow.findUnique.mockResolvedValue({ followerId: 1, followingId: 2 } as never);
+
+    const response = await request(app).get("/follows/1/2");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ followerId: 1, followingId: 2 });
+  });
 });

@@ -41,4 +41,34 @@ describe("project-routes", () => {
       orderBy: { tagId: "asc" },
     });
   });
+
+  it("returns a project by id when found", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/projects", createProjectRouter(ctx));
+
+    mocks.project.findUnique.mockResolvedValue({ id: 20, title: "P" } as never);
+
+    const response = await request(app).get("/projects/20");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: 20, title: "P" });
+  });
+
+  it("patches project with type and userId", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/projects", createProjectRouter(ctx));
+
+    mocks.project.update.mockResolvedValue({ id: 20, type: ProjectType.QUIZ, userId: 8 } as never);
+
+    const response = await request(app)
+      .patch("/projects/20")
+      .send({ type: ProjectType.QUIZ, userId: 8 });
+
+    expect(response.status).toBe(200);
+    expect(mocks.project.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ type: ProjectType.QUIZ, userId: 8 }),
+      }),
+    );
+  });
 });

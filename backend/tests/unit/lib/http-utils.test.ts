@@ -14,6 +14,7 @@ describe("http utils", () => {
   it("validates required strings", () => {
     expect(requireString(" hello ", "name")).toBe("hello");
     expect(() => requireString("", "name")).toThrow("name cannot be empty");
+    expect(() => requireString(123, "name")).toThrow("name must be a string");
   });
 
   it("validates required ints", () => {

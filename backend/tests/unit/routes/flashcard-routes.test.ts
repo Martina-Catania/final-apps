@@ -33,4 +33,32 @@ describe("flashcard-routes", () => {
     expect((await request(app).patch("/flashcards/1").send({ front: "Updated" })).status).toBe(200);
     expect((await request(app).delete("/flashcards/1")).status).toBe(200);
   });
+
+  it("returns flashcard by id when found", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/flashcards", createFlashcardRouter(ctx));
+
+    mocks.flashcard.findUnique.mockResolvedValue({ id: 1, deckId: 3, front: "Q", back: "A" } as never);
+
+    const response = await request(app).get("/flashcards/1");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: 1, deckId: 3, front: "Q", back: "A" });
+  });
+
+  it("patches flashcard with numeric deckId", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/flashcards", createFlashcardRouter(ctx));
+
+    mocks.flashcard.update.mockResolvedValue({ id: 1, deckId: 9 } as never);
+
+    const response = await request(app).patch("/flashcards/1").send({ deckId: 9 });
+
+    expect(response.status).toBe(200);
+    expect(mocks.flashcard.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ deckId: 9 }),
+      }),
+    );
+  });
 });

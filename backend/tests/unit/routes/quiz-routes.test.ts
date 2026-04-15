@@ -33,4 +33,48 @@ describe("quiz-routes", () => {
     expect(response.body.error).toBe("Project type must be QUIZ");
     expect(mocks.quiz.create).not.toHaveBeenCalled();
   });
+
+  it("returns quiz by id when found", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/quizzes", createQuizRouter(ctx));
+
+    mocks.quiz.findUnique.mockResolvedValue({ id: 3, projectId: 7 } as never);
+
+    const response = await request(app).get("/quizzes/3");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: 3, projectId: 7 });
+  });
+
+  it("creates quiz when project type is QUIZ", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/quizzes", createQuizRouter(ctx));
+
+    mocks.project.findUnique.mockResolvedValue({ type: ProjectType.QUIZ } as never);
+    mocks.quiz.create.mockResolvedValue({ id: 10, projectId: 9 } as never);
+
+    const response = await request(app).post("/quizzes").send({ projectId: 9 });
+
+    expect(response.status).toBe(201);
+    expect(mocks.quiz.create).toHaveBeenCalledWith({
+      data: { projectId: 9 },
+      include: { project: true, questions: true },
+    });
+  });
+
+  it("patches quiz without projectId", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/quizzes", createQuizRouter(ctx));
+
+    mocks.quiz.update.mockResolvedValue({ id: 3 } as never);
+
+    const response = await request(app).patch("/quizzes/3").send({});
+
+    expect(response.status).toBe(200);
+    expect(mocks.quiz.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ projectId: undefined }),
+      }),
+    );
+  });
 });

@@ -38,4 +38,16 @@ describe("tag-routes", () => {
       },
     });
   });
+
+  it("returns tag by id when found", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/tags", createTagRouter(ctx));
+
+    mocks.tag.findUnique.mockResolvedValue({ id: 2, name: "next" } as never);
+
+    const response = await request(app).get("/tags/2");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: 2, name: "next" });
+  });
 });

@@ -43,4 +43,16 @@ describe("user-routes", () => {
       orderBy: { createdAt: "desc" },
     });
   });
+
+  it("returns user by id when found", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/users", createUserRouter(ctx));
+
+    mocks.user.findUnique.mockResolvedValue({ id: 11, username: "alpha" } as never);
+
+    const response = await request(app).get("/users/11");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: 11, username: "alpha" });
+  });
 });

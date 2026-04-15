@@ -32,4 +32,16 @@ describe("project-tag-routes", () => {
       include: { project: true, tag: true },
     });
   });
+
+  it("returns a project-tag relation when found", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/project-tags", createProjectTagRouter(ctx));
+
+    mocks.projectTag.findUnique.mockResolvedValue({ projectId: 1, tagId: 2 } as never);
+
+    const response = await request(app).get("/project-tags/1/2");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ projectId: 1, tagId: 2 });
+  });
 });
