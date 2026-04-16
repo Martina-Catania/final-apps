@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { useThemeTokens } from "../hooks";
-import { AppButton } from "./button";
+import { AppButton } from "./Button";
 
 export type UploadedFile = {
   name: string;

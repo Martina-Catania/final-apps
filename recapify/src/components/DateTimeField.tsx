@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 
 import { useThemeTokens } from "../hooks";
-import { AppButton } from "./button";
+import { AppButton } from "./Button";
 
 type PickerMode = "date" | "time";
 

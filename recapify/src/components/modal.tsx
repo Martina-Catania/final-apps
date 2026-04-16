@@ -3,7 +3,7 @@ import { type ReactNode } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useThemeTokens } from "../hooks";
-import { AppButton, type ButtonVariant } from "./button";
+import { AppButton, type ButtonVariant } from "./Button";
 
 type ModalAction = {
   label: string;

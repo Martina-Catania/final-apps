@@ -1,8 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { useThemeTokens } from "../hooks";
-import { AppButton } from "./button";
-import { Avatar } from "./avatar";
+import { AppButton } from "./Button";
+import { Avatar } from "./Avatar";
 
 type ProfileCardProps = {
   name: string;
