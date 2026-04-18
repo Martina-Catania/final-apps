@@ -42,6 +42,13 @@ export function createAuthRouter(ctx: AppContext) {
         ctx,
       );
 
+      console.info("[auth] Account created", {
+        userId: result.user.id,
+        email: result.user.email,
+        username: result.user.username,
+        ip: req.ip,
+      });
+
       res.status(201).json(result);
     }),
   );
@@ -59,6 +66,12 @@ export function createAuthRouter(ctx: AppContext) {
         },
         ctx,
       );
+
+      console.info("[auth] User logged in", {
+        userId: result.user.id,
+        email: result.user.email,
+        ip: req.ip,
+      });
 
       res.json(result);
     }),
