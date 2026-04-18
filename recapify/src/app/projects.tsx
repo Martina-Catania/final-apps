@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Button, DrawerPanel, SkeletonCard } from "../components";
+import { Button, SkeletonCard } from "../components";
 import { useAuth } from "../context/auth-context";
 import { useThemeTokens } from "../hooks";
 import { AppTabLayout, type AppTabKey } from "../screens/app-tab-layout";
@@ -19,7 +19,6 @@ export default function ProjectsPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -73,7 +72,6 @@ export default function ProjectsPage() {
   return (
     <AppTabLayout
       activeTab="projects"
-      onMenuPress={() => setIsDrawerOpen(true)}
       onTabPress={handleTabPress}
       title="Project Showcase"
     >
@@ -210,46 +208,6 @@ export default function ProjectsPage() {
           : null}
       </ScrollView>
 
-        <DrawerPanel
-          onClose={() => setIsDrawerOpen(false)}
-          title="Menu"
-          visible={isDrawerOpen}
-        >
-          <View style={{ gap: spacing.sm }}>
-            <Button
-              fullWidth
-              iconName="home-outline"
-              label="Home"
-              onPress={() => {
-                setIsDrawerOpen(false);
-                router.replace("/");
-              }}
-              variant="default"
-            />
-
-            <Button
-              fullWidth
-              iconName="grid-outline"
-              label="Showcase"
-              onPress={() => {
-                setIsDrawerOpen(false);
-                router.push("../showcase");
-              }}
-              variant="default"
-            />
-
-            <Button
-              fullWidth
-              iconName="add-circle-outline"
-              label="Create quiz"
-              onPress={() => {
-                setIsDrawerOpen(false);
-                router.push("../quiz/create");
-              }}
-              variant="primary"
-            />
-          </View>
-        </DrawerPanel>
       </>
     </AppTabLayout>
   );

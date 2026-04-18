@@ -1,16 +1,13 @@
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import {
   Button,
-  AppToggle,
   Carousel,
-  DrawerPanel,
   SkeletonCard,
 } from "../components";
 import { useAuth } from "../context/auth-context";
-import { useThemePreference } from "../context/theme-context";
 import { useThemeTokens } from "../hooks";
 import { AppTabLayout, type AppTabKey } from "../screens/app-tab-layout";
 import {
@@ -30,12 +27,9 @@ type HomeCarouselItem = {
 
 export default function Index() {
   const router = useRouter();
-  const { token, user, logout } = useAuth();
-  const { mode, setMode } = useThemePreference();
+  const { token, user } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(true);
   const [quizError, setQuizError] = useState<string | null>(null);
@@ -93,16 +87,6 @@ export default function Index() {
     });
   }, [colors.primary, quizzes]);
 
-  const handleSignOut = async () => {
-    setIsSigningOut(true);
-
-    try {
-      await logout();
-    } finally {
-      setIsSigningOut(false);
-    }
-  };
-
   const handleTabPress = (key: AppTabKey) => {
     if (key === "home") {
       return;
@@ -119,7 +103,6 @@ export default function Index() {
   return (
     <AppTabLayout
       activeTab="home"
-      onMenuPress={() => setIsDrawerOpen(true)}
       onTabPress={handleTabPress}
       title="Recapify"
     >
@@ -259,85 +242,6 @@ export default function Index() {
           </View>
         </ScrollView>
 
-        <DrawerPanel
-          onClose={() => setIsDrawerOpen(false)}
-          title="Profile"
-          visible={isDrawerOpen}
-        >
-          <View style={{ gap: spacing.md }}>
-            <Pressable
-              onPress={() => {
-                if (!user?.id) {
-                  return;
-                }
-
-                setIsDrawerOpen(false);
-                router.push({
-                  pathname: "./profile/[id]",
-                  params: { id: String(user.id) },
-                });
-              }}
-              style={({ pressed }) => [
-                styles.profileCard,
-                {
-                  backgroundColor: colors.surfaceMuted,
-                  borderColor: colors.border,
-                  borderRadius: radius.sm,
-                  gap: spacing.xxs,
-                  opacity: pressed ? 0.85 : 1,
-                  padding: spacing.md,
-                },
-              ]}
-            >
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: typography.secondary.lg,
-                  fontWeight: typography.weights.bold,
-                }}
-              >
-                @{user?.username ?? "unknown"}
-              </Text>
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: typography.secondary.sm,
-                }}
-              >
-                {user?.email ?? "No email available"}
-              </Text>
-            </Pressable>
-
-            <AppToggle
-              description={`Current mode: ${mode}`}
-              label="Dark theme"
-              onValueChange={(nextValue) => setMode(nextValue ? "dark" : "light")}
-              value={mode === "dark"}
-            />
-
-            <Button
-              fullWidth
-              iconName="grid-outline"
-              label="Open component showcase"
-              onPress={() => {
-                setIsDrawerOpen(false);
-                router.push("./showcase");
-              }}
-              variant="secondary"
-            />
-
-            <Button
-              disabled={isSigningOut}
-              fullWidth
-              iconName="log-out-outline"
-              label={isSigningOut ? "Signing out..." : "Log out"}
-              onPress={() => {
-                void handleSignOut();
-              }}
-              variant="default"
-            />
-          </View>
-        </DrawerPanel>
       </>
     </AppTabLayout>
   );
@@ -354,8 +258,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-  },
-  profileCard: {
-    borderWidth: 1,
   },
 });

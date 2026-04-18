@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import {
   PRIMARY_TEXT_SIZES,
@@ -17,7 +17,6 @@ import {
   BottomNavBar,
   Carousel,
   DateTimeField,
-  DrawerPanel,
   FileUploadField,
   Pagination,
   ProfileCard,
@@ -299,7 +298,6 @@ export default function Index() {
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const modal = useDisclosure();
-  const drawer = useDisclosure();
   const actionSheet = useActionSheet<"share" | "archive" | "delete">();
 
   const pagination = usePagination(TOTAL_SUMMARIES, {
@@ -350,7 +348,6 @@ export default function Index() {
   return (
     <AppTabLayout
       activeTab="showcase"
-      onMenuPress={drawer.open}
       onTabPress={handleTabPress}
       title="Component Showcase"
     >
@@ -583,15 +580,17 @@ export default function Index() {
         </ShowcaseSection>
 
         <ShowcaseSection
-          subtitle="Reusable side drawer built on core modal and animated panel patterns."
+          subtitle="The app drawer is shared through the tab layout. Use the top-left menu button to open it."
           title="Drawer"
         >
-          <Button
-            iconName="menu-outline"
-            label="Open drawer"
-            onPress={drawer.open}
-            variant="default"
-          />
+          <Text
+            style={{
+              color: colors.textSecondary,
+              fontSize: typography.secondary.md,
+            }}
+          >
+            This screen now reuses the same drawer content as Home and Projects.
+          </Text>
         </ShowcaseSection>
 
         <ShowcaseSection
@@ -675,43 +674,6 @@ export default function Index() {
         title="Project actions"
       />
 
-      <DrawerPanel onClose={drawer.close} title="Quick navigation" visible={drawer.isOpen}>
-        <View style={{ gap: spacing.sm }}>
-          {BOTTOM_TABS.map((item) => {
-            const isActive = item.key === activeTab;
-
-            return (
-              <Pressable
-                key={item.key}
-                onPress={() => {
-                  setActiveTab(item.key);
-                  drawer.close();
-                }}
-                style={({ pressed }) => [
-                  styles.drawerItem,
-                  {
-                    backgroundColor: isActive ? colors.primaryMuted : colors.surface,
-                    borderColor: colors.border,
-                    opacity: pressed ? 0.78 : 1,
-                    padding: spacing.sm,
-                  },
-                ]}
-              >
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.secondary.md,
-                    fontWeight: typography.weights.medium,
-                  }}
-                >
-                  {item.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </DrawerPanel>
-
       <AppModal
         actions={[
           {
@@ -770,10 +732,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   listRow: {
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  drawerItem: {
     borderRadius: 10,
     borderWidth: 1,
   },
