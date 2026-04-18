@@ -1,5 +1,8 @@
 import request from "supertest";
+import { jest } from "@jest/globals";
 import { createApp } from "../../src/app.js";
+import { generateAuthToken } from "../../src/utils/jwt.js";
+import { hashPassword } from "../../src/utils/password.js";
 import { asAppContext, createMockContext, type MockContext } from "../context.js";
 
 describe("api routes", () => {
@@ -7,6 +10,12 @@ describe("api routes", () => {
 
   beforeEach(() => {
     mockCtx = createMockContext();
+    process.env.JWT_SECRET = "test-secret";
+    process.env.JWT_EXPIRES_IN = "1h";
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("serves health endpoint", async () => {
@@ -15,6 +24,39 @@ describe("api routes", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.status).toBe("ok");
+  });
+
+  it("returns CORS headers for localhost frontend origins", async () => {
+    const app = createApp(asAppContext(mockCtx));
+
+    const response = await request(app)
+      .get("/health")
+      .set("Origin", "http://localhost:8081");
+
+    expect(response.status).toBe(200);
+    expect(response.headers["access-control-allow-origin"]).toBe(
+      "http://localhost:8081",
+    );
+    expect(response.headers["access-control-allow-methods"]).toBe(
+      "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+    );
+  });
+
+  it("handles CORS preflight requests", async () => {
+    const app = createApp(asAppContext(mockCtx));
+
+    const response = await request(app)
+      .options("/api/auth/register")
+      .set("Origin", "http://localhost:8081")
+      .set("Access-Control-Request-Method", "POST");
+
+    expect(response.status).toBe(204);
+    expect(response.headers["access-control-allow-origin"]).toBe(
+      "http://localhost:8081",
+    );
+    expect(response.headers["access-control-allow-headers"]).toBe(
+      "Content-Type,Authorization",
+    );
   });
 
   it("lists users via injected prisma context", async () => {
@@ -96,5 +138,118 @@ describe("api routes", () => {
 
     expect(response.status).toBe(404);
     expect(response.body.error).toBe("Route not found");
+  });
+
+  it("registers a user and returns auth payload", async () => {
+    const app = createApp(asAppContext(mockCtx));
+
+    jest.spyOn(global, "fetch").mockResolvedValue(
+      new Response("0000000000000000000000000000000000000000:2", {
+        status: 200,
+      }),
+    );
+
+    mockCtx.mocks.user.findUnique
+      .mockResolvedValueOnce(null as never)
+      .mockResolvedValueOnce(null as never);
+    mockCtx.mocks.user.create.mockResolvedValue({
+      id: 11,
+      email: "new@example.com",
+      username: "new_user",
+      name: "New",
+      timetable: null,
+    } as never);
+
+    const response = await request(app).post("/api/auth/register").send({
+      email: "NEW@EXAMPLE.COM",
+      username: "new_user",
+      password: "StrongPass1",
+      name: "New",
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body.user.id).toBe(11);
+    expect(response.body.user.email).toBe("new@example.com");
+    expect(typeof response.body.token).toBe("string");
+    expect(mockCtx.mocks.user.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects registration when password is weak", async () => {
+    const app = createApp(asAppContext(mockCtx));
+
+    const response = await request(app).post("/api/auth/register").send({
+      email: "new@example.com",
+      username: "new_user",
+      password: "abc",
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("Password does not meet security requirements");
+    expect(mockCtx.mocks.user.create).not.toHaveBeenCalled();
+  });
+
+  it("logs in a user and returns auth payload", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    const hashedPassword = await hashPassword("StrongPass1");
+
+    mockCtx.mocks.user.findUnique.mockResolvedValue({
+      id: 5,
+      email: "demo@example.com",
+      username: "demo",
+      name: "Demo",
+      timetable: null,
+      hashedPassword,
+    } as never);
+
+    const response = await request(app).post("/api/auth/login").send({
+      email: "demo@example.com",
+      password: "StrongPass1",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.user.id).toBe(5);
+    expect(typeof response.body.token).toBe("string");
+  });
+
+  it("rejects login when credentials are invalid", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    mockCtx.mocks.user.findUnique.mockResolvedValue(null as never);
+
+    const response = await request(app).post("/api/auth/login").send({
+      email: "missing@example.com",
+      password: "StrongPass1",
+    });
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe("Invalid email or password");
+  });
+
+  it("returns current user when bearer token is valid", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    const token = generateAuthToken(7);
+
+    mockCtx.mocks.user.findUnique.mockResolvedValue({
+      id: 7,
+      email: "auth@example.com",
+      username: "auth_user",
+      name: "Auth",
+      timetable: null,
+    } as never);
+
+    const response = await request(app)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.user.id).toBe(7);
+    expect(response.body.user.email).toBe("auth@example.com");
+  });
+
+  it("rejects current-user request without token", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    const response = await request(app).get("/api/auth/me");
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe("Authorization token is required");
   });
 });

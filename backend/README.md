@@ -111,6 +111,7 @@ tests/
 
 The API is mounted at `/api` with organized route modules:
 
+- `/api/auth/` — Register, login, and current-user session endpoints
 - `/api/users/` — User management
 - `/api/projects/` — Project CRUD
 - `/api/decks/` — Deck-specific operations
@@ -127,10 +128,18 @@ curl http://localhost:3000/health
 # {"status":"ok"}
 ```
 
+Auth endpoints:
+
+- `POST /api/auth/register` — Create a user and return `{ user, token }`
+- `POST /api/auth/login` — Authenticate user and return `{ user, token }`
+- `GET /api/auth/me` — Requires `Authorization: Bearer <token>`, returns `{ user }`
+
 ## Important Notes
 
 - **Database Location**: `backend/dev.db`
 - **Environment**: `backend/.env`
+- **JWT Environment**: set `JWT_SECRET` and optional `JWT_EXPIRES_IN` in `backend/.env`
+- **CORS**: by default, `http://localhost` and `http://127.0.0.1` origins are allowed for local web development. To lock this down, set `CORS_ORIGIN` (comma-separated origins) in `backend/.env`
 - **Generated Code**: Files in `backend/generated/prisma/` are auto-generated; do not edit manually
 - **Migrations**: All schema changes must go through Prisma migrations; do not manually edit the database
 - **No Build Output**: This is a dev/source server; use `npm run build` to generate TypeScript output to `dist/`

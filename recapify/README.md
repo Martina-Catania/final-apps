@@ -2,6 +2,21 @@
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
+## Auth Workflow
+
+This app now includes a JWT-based auth workflow backed by `final-apps/backend`.
+
+- Public routes: `/login`, `/register`
+- Protected routes: all other routes (including `/`)
+- Session storage: AsyncStorage (token + user)
+
+By default the app calls `http://localhost:3000/api` on web/iOS and
+`http://10.0.2.2:3000/api` on Android emulator. You can override with:
+
+```bash
+EXPO_PUBLIC_API_BASE_URL=http://your-host:3000/api
+```
+
 ## Get started
 
 1. Install dependencies

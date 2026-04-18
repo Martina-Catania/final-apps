@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { AppContext } from "../context.js";
+import { createAuthRouter } from "./auth-routes.js";
 import { createDeckRouter } from "./deck-routes.js";
 import { createFlashcardRouter } from "./flashcard-routes.js";
 import { createFollowRouter } from "./follow-routes.js";
@@ -15,6 +16,7 @@ import { createUserRouter } from "./user-routes.js";
 export function createApiRouter(ctx: AppContext) {
 	const apiRouter = Router();
 
+	apiRouter.use("/auth", createAuthRouter(ctx));
 	apiRouter.use("/users", createUserRouter(ctx));
 	apiRouter.use("/projects", createProjectRouter(ctx));
 	apiRouter.use("/follows", createFollowRouter(ctx));

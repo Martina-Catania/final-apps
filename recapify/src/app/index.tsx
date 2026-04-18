@@ -25,6 +25,7 @@ import {
   SkeletonCard,
   type UploadedFile,
 } from "../components";
+import { useAuth } from "../context/auth-context";
 import { useThemeTokens } from "../hooks";
 
 type ShowcaseSectionProps = {
@@ -281,6 +282,7 @@ const wait = (ms: number) => {
 
 export default function Index() {
   const { colors, spacing, typography, mode } = useThemeTokens();
+  const { logout, user } = useAuth();
   const [activeTab, setActiveTab] = useState("home");
   const [searchText, setSearchText] = useState("");
   const [secretTextVisible, setSecretTextVisible] = useState(false);
@@ -291,6 +293,7 @@ export default function Index() {
   const [refreshCount, setRefreshCount] = useState(0);
   const [selectedAction, setSelectedAction] = useState("none");
   const [followCount, setFollowCount] = useState(320);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const modal = useDisclosure();
   const drawer = useDisclosure();
@@ -317,6 +320,16 @@ export default function Index() {
 
     return items.slice(start, end);
   }, [pagination.currentPage]);
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+
+    try {
+      await logout();
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -358,6 +371,24 @@ export default function Index() {
           >
             Theme mode: {mode}. Pull down to test refresh. Refresh count: {refreshCount}.
           </Text>
+          <View style={[styles.heroFooter, { gap: spacing.sm }]}>
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: typography.secondary.sm,
+              }}
+            >
+              Signed in as {user?.username ?? user?.email ?? "current user"}
+            </Text>
+            <AppButton
+              disabled={isSigningOut}
+              label={isSigningOut ? "Signing out..." : "Sign out"}
+              onPress={() => {
+                void handleSignOut();
+              }}
+              variant="default"
+            />
+          </View>
         </View>
 
         <ShowcaseSection
@@ -691,6 +722,12 @@ const styles = StyleSheet.create({
   hero: {
     borderRadius: 18,
     borderWidth: 1,
+  },
+  heroFooter: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   section: {
     borderRadius: 18,
