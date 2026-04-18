@@ -150,7 +150,7 @@ export default function Index() {
               <Button
                 iconName="arrow-forward-outline"
                 label="See more"
-                onPress={() => router.push("/projects")}
+                onPress={() => router.push("/search")}
                 variant="secondary"
               />
             </View>

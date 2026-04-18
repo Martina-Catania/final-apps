@@ -9,7 +9,7 @@ import { useThemeTokens } from "../hooks";
 import { getApiHostUrl } from "../utils/api-config";
 import { SafeAreaPage } from "./safe-area-page";
 
-export type AppTabKey = "home" | "projects" | "showcase";
+export type AppTabKey = "home" | "create" | "search";
 
 type AppTabLayoutProps = {
   title: string;
@@ -26,16 +26,16 @@ const APP_TAB_ITEMS = [
     activeIconName: "home" as const,
   },
   {
-    key: "projects",
-    label: "Projects",
-    iconName: "folder-open-outline" as const,
-    activeIconName: "folder-open" as const,
+    key: "create",
+    label: "Create",
+    iconName: "add-circle-outline" as const,
+    activeIconName: "add-circle" as const,
   },
   {
-    key: "showcase",
-    label: "Showcase",
-    iconName: "grid-outline" as const,
-    activeIconName: "grid" as const,
+    key: "search",
+    label: "Search",
+    iconName: "search-outline" as const,
+    activeIconName: "search" as const,
   },
 ];
 

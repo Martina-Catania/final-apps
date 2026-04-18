@@ -3,17 +3,17 @@ import { AppTabLayout, type AppTabKey } from "../../../screens/app-tab-layout";
 
 const TAB_TITLES: Record<AppTabKey, string> = {
   home: "Recapify",
-  projects: "Project Showcase",
-  showcase: "Component Showcase",
+  create: "Create",
+  search: "Search",
 };
 
 const getActiveTab = (pathname: string): AppTabKey => {
-  if (pathname === "/projects" || pathname.startsWith("/projects/")) {
-    return "projects";
+  if (pathname === "/create" || pathname.startsWith("/create/")) {
+    return "create";
   }
 
-  if (pathname === "/showcase" || pathname.startsWith("/showcase/")) {
-    return "showcase";
+  if (pathname === "/search" || pathname.startsWith("/search/")) {
+    return "search";
   }
 
   return "home";
@@ -35,12 +35,12 @@ export default function TabsLayout() {
       return;
     }
 
-    if (key === "projects") {
-      router.push("/projects");
+    if (key === "create") {
+      router.push("/create");
       return;
     }
 
-    router.push("/showcase");
+    router.push("/search");
   };
 
   return (
