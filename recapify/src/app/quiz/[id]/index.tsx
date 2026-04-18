@@ -8,14 +8,14 @@ import {
   Text,
   View,
 } from "react-native";
-import { Button } from "../../components";
-import { useAuth } from "../../context/auth-context";
-import { useThemeTokens } from "../../hooks";
+import { Button } from "../../../components";
+import { useAuth } from "../../../context/auth-context";
+import { useThemeTokens } from "../../../hooks";
 import {
   getQuizApiErrorMessage,
   getQuizByIdRequest,
   type Quiz,
-} from "../../utils/quiz-api";
+} from "../../../utils/quiz-api";
 
 function parseQuizId(value: string | string[] | undefined): number | null {
   const firstValue = Array.isArray(value) ? value[0] : value;
@@ -196,6 +196,18 @@ export default function QuizDetailPage() {
           </View>
 
           <View style={{ gap: spacing.sm }}>
+            <Button
+              fullWidth
+              iconName="create-outline"
+              label="Edit quiz"
+              onPress={() =>
+                router.push({
+                  pathname: "/quiz/[id]/edit",
+                  params: { id: String(quiz.id) },
+                })
+              }
+              variant="secondary"
+            />
             <Button
               fullWidth
               iconName="add-circle-outline"

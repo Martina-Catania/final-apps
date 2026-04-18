@@ -43,6 +43,21 @@ export type CreateQuizQuestionInput = {
   decoy3: string;
 };
 
+export type UpdateProjectInput = {
+  title?: string;
+  type?: ProjectType;
+  userId?: number;
+};
+
+export type UpdateQuizQuestionInput = {
+  quizId?: number;
+  question?: string;
+  answer?: string;
+  decoy1?: string;
+  decoy2?: string;
+  decoy3?: string;
+};
+
 export class QuizApiError extends Error {
   statusCode: number;
   details?: unknown;
@@ -150,6 +165,46 @@ export function getQuizByIdRequest(quizId: number, token?: string) {
     `/quizzes/${quizId}`,
     {
       method: "GET",
+    },
+    token,
+  );
+}
+
+export function updateProjectRequest(
+  projectId: number,
+  input: UpdateProjectInput,
+  token?: string,
+) {
+  return requestJson<Project>(
+    `/projects/${projectId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    },
+    token,
+  );
+}
+
+export function updateQuizQuestionRequest(
+  questionId: number,
+  input: UpdateQuizQuestionInput,
+  token?: string,
+) {
+  return requestJson<QuizQuestion>(
+    `/quiz-questions/${questionId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    },
+    token,
+  );
+}
+
+export function deleteQuizQuestionRequest(questionId: number, token?: string) {
+  return requestJson<QuizQuestion>(
+    `/quiz-questions/${questionId}`,
+    {
+      method: "DELETE",
     },
     token,
   );
