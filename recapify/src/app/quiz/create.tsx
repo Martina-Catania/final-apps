@@ -233,24 +233,33 @@ export default function QuizCreatePage() {
               },
             ]}
           >
-            <View style={{ gap: spacing.xs }}>
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: typography.primary.md,
-                  fontWeight: typography.weights.bold,
-                }}
-              >
-                Create Quiz
-              </Text>
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: typography.secondary.md,
-                }}
-              >
-                Set a quiz name, add questions, and save everything in one step.
-              </Text>
+            <View style={[styles.headerRow, { gap: spacing.sm }]}>
+              <Button
+                accessibilityLabel="Back"
+                iconName="arrow-back-outline"
+                onPress={() => router.back()}
+                variant="icon"
+              />
+
+              <View style={[styles.headerText, { gap: spacing.xs }]}>
+                <Text
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: typography.primary.md,
+                    fontWeight: typography.weights.bold,
+                  }}
+                >
+                  Create Quiz
+                </Text>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: typography.secondary.md,
+                  }}
+                >
+                  Set a quiz name, add questions, and save everything in one step.
+                </Text>
+              </View>
             </View>
 
             <AppTextInput
@@ -396,13 +405,6 @@ export default function QuizCreatePage() {
                 }}
                 variant="primary"
               />
-              <Button
-                fullWidth
-                iconName="home-outline"
-                label="Back to home"
-                onPress={() => router.replace("/")}
-                variant="default"
-              />
             </View>
           </View>
         </ScrollView>
@@ -429,6 +431,13 @@ const styles = StyleSheet.create({
   },
   questionCard: {
     borderWidth: 1,
+  },
+  headerRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+  },
+  headerText: {
+    flex: 1,
   },
   rowBetween: {
     alignItems: "center",

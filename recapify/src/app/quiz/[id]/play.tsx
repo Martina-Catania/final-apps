@@ -364,32 +364,35 @@ export default function QuizPlayPage() {
               },
             ]}
           >
-            <View style={[styles.rowBetween, { gap: spacing.sm }]}>
+            <View style={[styles.headerRow, { gap: spacing.sm }]}>
               <Button
+                accessibilityLabel="Back"
                 iconName="arrow-back-outline"
-                label="Back"
                 onPress={goBackOnStack}
                 variant="icon"
               />
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: typography.secondary.md,
-                }}
-              >
-                Question 1 of {playQuestions.length}
-              </Text>
+
+              <View style={[styles.headerText, { gap: spacing.xs }]}>
+                <Text
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: typography.primary.lg,
+                    fontWeight: typography.weights.bold,
+                  }}
+                >
+                  {quizTitle}
+                </Text>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: typography.secondary.md,
+                  }}
+                >
+                  Question 1 of {playQuestions.length}
+                </Text>
+              </View>
             </View>
 
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: typography.primary.lg,
-                fontWeight: typography.weights.bold,
-              }}
-            >
-              {quizTitle}
-            </Text>
             <Pressable
               onPress={() => {
                 if (!creatorUserId) {
@@ -665,6 +668,13 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     borderWidth: 1,
+  },
+  headerRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+  },
+  headerText: {
+    flex: 1,
   },
   rowBetween: {
     alignItems: "center",

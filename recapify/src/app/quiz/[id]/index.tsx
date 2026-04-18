@@ -224,15 +224,8 @@ export default function QuizDetailPage() {
               fullWidth
               iconName="add-circle-outline"
               label="Create another quiz"
-              onPress={() => router.replace("../create")}
+              onPress={() => router.replace("/quiz/create")}
               variant="primary"
-            />
-            <Button
-              fullWidth
-              iconName="home-outline"
-              label="Back to home"
-              onPress={() => router.replace("/")}
-              variant="default"
             />
           </View>
         </View>
