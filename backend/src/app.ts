@@ -1,4 +1,5 @@
 import express from "express";
+import path from "node:path";
 import { defaultAppContext, type AppContext } from "./context.js";
 import { corsMiddleware } from "./middleware/cors.js";
 import { errorHandler } from "./middleware/error-handler.js";
@@ -14,6 +15,8 @@ export function createApp(ctx: AppContext = defaultAppContext) {
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
   });
+
+  app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
   app.use("/api", createApiRouter(ctx));
   app.use(notFoundHandler);

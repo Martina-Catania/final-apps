@@ -4,20 +4,16 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import {
   Button,
-  AppToggle,
   Carousel,
-  DrawerPanel,
   SkeletonCard,
-} from "../components";
-import { useAuth } from "../context/auth-context";
-import { useThemePreference } from "../context/theme-context";
-import { useThemeTokens } from "../hooks";
-import { PageShell, type ShellTabKey } from "../screens/page-shell";
+} from "../../../components";
+import { useAuth } from "../../../context/auth-context";
+import { useThemeTokens } from "../../../hooks";
 import {
   getQuizApiErrorMessage,
   listQuizzesRequest,
   type Quiz,
-} from "../utils/quiz-api";
+} from "../../../utils/quiz-api";
 
 type HomeCarouselItem = {
   id: string;
@@ -30,12 +26,9 @@ type HomeCarouselItem = {
 
 export default function Index() {
   const router = useRouter();
-  const { token, user, logout } = useAuth();
-  const { mode, setMode } = useThemePreference();
+  const { token, user } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(true);
   const [quizError, setQuizError] = useState<string | null>(null);
@@ -93,43 +86,13 @@ export default function Index() {
     });
   }, [colors.primary, quizzes]);
 
-  const handleSignOut = async () => {
-    setIsSigningOut(true);
-
-    try {
-      await logout();
-    } finally {
-      setIsSigningOut(false);
-    }
-  };
-
-  const handleTabPress = (key: ShellTabKey) => {
-    if (key === "home") {
-      return;
-    }
-
-    if (key === "projects") {
-      router.push("./projects");
-      return;
-    }
-
-    router.push("./showcase");
-  };
-
   return (
-    <PageShell
-      activeTab="home"
-      onMenuPress={() => setIsDrawerOpen(true)}
-      onTabPress={handleTabPress}
-      title="Recapify"
+    <ScrollView
+      contentContainerStyle={{
+        gap: spacing.lg,
+        padding: spacing.lg,
+      }}
     >
-      <>
-        <ScrollView
-          contentContainerStyle={{
-            gap: spacing.lg,
-            padding: spacing.lg,
-          }}
-        >
           <View
             style={[
               styles.heroCard,
@@ -149,7 +112,7 @@ export default function Index() {
                 fontWeight: typography.weights.bold,
               }}
             >
-              Welcome back{user?.name ? `, ${user.name}` : ""}
+              Welcome back{user?.username ? `, ${user.username}` : ""}
             </Text>
             <Text
               style={{
@@ -187,7 +150,7 @@ export default function Index() {
               <Button
                 iconName="arrow-forward-outline"
                 label="See more"
-                onPress={() => router.push("./projects")}
+                onPress={() => router.push("/search")}
                 variant="secondary"
               />
             </View>
@@ -231,7 +194,7 @@ export default function Index() {
                 <Button
                   iconName="add-circle-outline"
                   label="Create quiz"
-                  onPress={() => router.push("./quiz/create")}
+                  onPress={() => router.push("/quiz/create")}
                   variant="primary"
                 />
               </View>
@@ -250,92 +213,14 @@ export default function Index() {
                   }
 
                   router.push({
-                    pathname: "./quiz/[id]/play",
+                    pathname: "/quiz/[id]/play",
                     params: { id: String(selectedQuiz.quizId) },
                   });
                 }}
               />
             ) : null}
           </View>
-        </ScrollView>
-
-        <DrawerPanel
-          onClose={() => setIsDrawerOpen(false)}
-          title="Profile"
-          visible={isDrawerOpen}
-        >
-          <View style={{ gap: spacing.md }}>
-            <View
-              style={[
-                styles.profileCard,
-                {
-                  backgroundColor: colors.surfaceMuted,
-                  borderColor: colors.border,
-                  borderRadius: radius.sm,
-                  gap: spacing.xxs,
-                  padding: spacing.md,
-                },
-              ]}
-            >
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: typography.secondary.lg,
-                  fontWeight: typography.weights.bold,
-                }}
-              >
-                {user?.name ?? "Current user"}
-              </Text>
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: typography.secondary.sm,
-                }}
-              >
-                @{user?.username ?? "unknown"}
-              </Text>
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: typography.secondary.sm,
-                }}
-              >
-                {user?.email ?? "No email available"}
-              </Text>
-            </View>
-
-            <AppToggle
-              description={`Current mode: ${mode}`}
-              label="Dark theme"
-              onValueChange={(nextValue) => setMode(nextValue ? "dark" : "light")}
-              value={mode === "dark"}
-            />
-
-            <Button
-              fullWidth
-              iconName="grid-outline"
-              label="Open component showcase"
-              onPress={() => {
-                setIsDrawerOpen(false);
-                router.push("./showcase");
-              }}
-              variant="secondary"
-            />
-
-            <Button
-              disabled={isSigningOut}
-              fullWidth
-              iconName="log-out-outline"
-              label={isSigningOut ? "Signing out..." : "Log out"}
-              onPress={() => {
-                void handleSignOut();
-              }}
-              variant="default"
-            />
-          </View>
-        </DrawerPanel>
-      </>
-    </PageShell>
+    </ScrollView>
   );
 }
 
@@ -350,8 +235,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-  },
-  profileCard: {
-    borderWidth: 1,
   },
 });

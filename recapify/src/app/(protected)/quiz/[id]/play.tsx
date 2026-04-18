@@ -3,20 +3,20 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { Button } from "../../../components";
-import { useAuth } from "../../../context/auth-context";
-import { useThemeTokens } from "../../../hooks";
+import { Button } from "../../../../components";
+import { useAuth } from "../../../../context/auth-context";
+import { useThemeTokens } from "../../../../hooks";
+import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import {
   getQuizApiErrorMessage,
   getQuizByIdRequest,
   type QuizQuestion,
-} from "../../../utils/quiz-api";
+} from "../../../../utils/quiz-api";
 
 type PlayOption = {
   key: string;
@@ -88,7 +88,8 @@ export default function QuizPlayPage() {
   const { colors, spacing, typography, radius } = useThemeTokens();
 
   const [quizTitle, setQuizTitle] = useState("");
-  const [creatorSubtitle, setCreatorSubtitle] = useState("");
+  const [creatorLabel, setCreatorLabel] = useState("");
+  const [creatorUserId, setCreatorUserId] = useState<number | null>(null);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [roundKey, setRoundKey] = useState(0);
   const [hasStartedQuiz, setHasStartedQuiz] = useState(false);
@@ -113,17 +114,16 @@ export default function QuizPlayPage() {
 
   const isFinished = playQuestions.length > 0 && currentQuestionIndex >= playQuestions.length;
 
-  const goToQuizDetail = useCallback(() => {
-    if (!quizId) {
-      router.replace("/");
+  const goBackOnStack = useCallback(() => {
+    const maybeRouter = router as typeof router & { canGoBack?: () => boolean };
+
+    if (typeof maybeRouter.canGoBack === "function" && maybeRouter.canGoBack()) {
+      router.back();
       return;
     }
 
-    router.replace({
-      pathname: "/quiz/[id]",
-      params: { id: String(quizId) },
-    });
-  }, [quizId, router]);
+    router.replace("../../..");
+  }, [router]);
 
   const loadQuiz = useCallback(async () => {
     if (!quizId) {
@@ -137,15 +137,16 @@ export default function QuizPlayPage() {
 
     try {
       const payload = await getQuizByIdRequest(quizId, token ?? undefined);
-      const ownName = user?.name?.trim();
       const ownUsername = user?.username?.trim();
-      const creatorLabel =
+      const creatorUsername = payload.project.user?.username?.trim();
+      const nextCreatorLabel =
         payload.project.userId === user?.id
-          ? ownName || (ownUsername ? `@${ownUsername}` : `User #${payload.project.userId}`)
-          : `User #${payload.project.userId}`;
+          ? (ownUsername ? `@${ownUsername}` : `User #${payload.project.userId}`)
+          : (creatorUsername ? `@${creatorUsername}` : `User #${payload.project.userId}`);
 
       setQuizTitle(payload.project.title);
-      setCreatorSubtitle(`Created by ${creatorLabel}`);
+      setCreatorLabel(nextCreatorLabel);
+      setCreatorUserId(payload.project.userId);
       setQuizQuestions(payload.questions);
       setCurrentQuestionIndex(0);
       setSelectedOptionKey(null);
@@ -156,7 +157,8 @@ export default function QuizPlayPage() {
     } catch (error) {
       setErrorMessage(getQuizApiErrorMessage(error, "Unable to load quiz"));
       setQuizTitle("");
-      setCreatorSubtitle("");
+      setCreatorLabel("");
+      setCreatorUserId(null);
       setQuizQuestions([]);
     } finally {
       setIsLoading(false);
@@ -209,17 +211,17 @@ export default function QuizPlayPage() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
   if (errorMessage) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View
           style={[
             styles.card,
@@ -263,26 +265,26 @@ export default function QuizPlayPage() {
             <Button
               fullWidth
               iconName="arrow-back-outline"
-              label="Back to quiz"
-              onPress={goToQuizDetail}
+              label="Back"
+              onPress={goBackOnStack}
               variant="default"
             />
             <Button
               fullWidth
               iconName="home-outline"
               label="Back to home"
-              onPress={() => router.replace("/")}
+              onPress={() => router.replace("../../..")}
               variant="default"
             />
           </View>
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
   if (playQuestions.length === 0) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View
           style={[
             styles.card,
@@ -317,20 +319,20 @@ export default function QuizPlayPage() {
             <Button
               fullWidth
               iconName="arrow-back-outline"
-              label="Back to quiz"
-              onPress={goToQuizDetail}
+              label="Back"
+              onPress={goBackOnStack}
               variant="default"
             />
             <Button
               fullWidth
               iconName="home-outline"
               label="Back to home"
-              onPress={() => router.replace("/")}
+              onPress={() => router.replace("../../..")}
               variant="default"
             />
           </View>
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
@@ -339,7 +341,7 @@ export default function QuizPlayPage() {
     const questionLabel = totalQuestions === 1 ? "question" : "questions";
 
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View
           style={[
             styles.introScreen,
@@ -360,23 +362,50 @@ export default function QuizPlayPage() {
               },
             ]}
           >
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: typography.primary.lg,
-                fontWeight: typography.weights.bold,
+            <View style={[styles.headerRow, { gap: spacing.sm }]}>
+              <Button
+                accessibilityLabel="Back"
+                iconName="arrow-back-outline"
+                onPress={goBackOnStack}
+                variant="icon"
+              />
+
+              <View style={[styles.headerText, { gap: spacing.xs }]}>
+                <Text
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: typography.primary.lg,
+                    fontWeight: typography.weights.bold,
+                  }}
+                >
+                  {quizTitle}
+                </Text>
+              </View>
+            </View>
+
+            <Pressable
+              onPress={() => {
+                if (!creatorUserId) {
+                  return;
+                }
+
+                router.push({
+                  pathname: "../../../profile/[id]",
+                  params: { id: String(creatorUserId) },
+                });
               }}
+              style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
             >
-              {quizTitle}
-            </Text>
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontSize: typography.secondary.md,
-              }}
-            >
-              {creatorSubtitle || "Created by unknown user"}
-            </Text>
+              <Text
+                style={{
+                  color: colors.primary,
+                  fontSize: typography.secondary.md,
+                  fontWeight: typography.weights.semibold,
+                }}
+              >
+                Created by {creatorLabel || "unknown user"}
+              </Text>
+            </Pressable>
             <Text
               style={{
                 color: colors.textSecondary,
@@ -396,7 +425,7 @@ export default function QuizPlayPage() {
             />
           </View>
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
@@ -405,7 +434,7 @@ export default function QuizPlayPage() {
     const percentage = Math.round((correctAnswersCount / totalQuestions) * 100);
 
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View
           style={[
             styles.card,
@@ -458,12 +487,12 @@ export default function QuizPlayPage() {
               fullWidth
               iconName="home-outline"
               label="Go home"
-              onPress={() => router.replace("/")}
+              onPress={() => router.replace("../../..")}
               variant="default"
             />
           </View>
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
@@ -471,7 +500,7 @@ export default function QuizPlayPage() {
   const isLastQuestion = currentQuestionIndex === playQuestions.length - 1;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+    <SafeAreaPage backgroundColor={colors.background}>
       <ScrollView
         contentContainerStyle={{
           gap: spacing.lg,
@@ -491,12 +520,6 @@ export default function QuizPlayPage() {
           ]}
         >
           <View style={[styles.rowBetween, { gap: spacing.sm }]}>
-            <Button
-              iconName="arrow-back-outline"
-              label="Back"
-              onPress={goToQuizDetail}
-              variant="icon"
-            />
             <Text
               style={{
                 color: colors.textSecondary,
@@ -607,7 +630,7 @@ export default function QuizPlayPage() {
           ) : null}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaPage>
   );
 }
 
@@ -635,6 +658,13 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     borderWidth: 1,
+  },
+  headerRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+  },
+  headerText: {
+    flex: 1,
   },
   rowBetween: {
     alignItems: "center",

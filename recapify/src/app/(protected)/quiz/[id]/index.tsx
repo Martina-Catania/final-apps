@@ -2,20 +2,20 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { Button } from "../../../components";
-import { useAuth } from "../../../context/auth-context";
-import { useThemeTokens } from "../../../hooks";
+import { Button } from "../../../../components";
+import { useAuth } from "../../../../context/auth-context";
+import { useThemeTokens } from "../../../../hooks";
+import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import {
   getQuizApiErrorMessage,
   getQuizByIdRequest,
   type Quiz,
-} from "../../../utils/quiz-api";
+} from "../../../../utils/quiz-api";
 
 function parseQuizId(value: string | string[] | undefined): number | null {
   const firstValue = Array.isArray(value) ? value[0] : value;
@@ -75,17 +75,17 @@ export default function QuizDetailPage() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
   if (errorMessage || !quiz) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View
           style={[
             styles.errorCard,
@@ -137,17 +137,17 @@ export default function QuizDetailPage() {
               fullWidth
               iconName="home-outline"
               label="Back to home"
-              onPress={() => router.replace("/")}
+              onPress={() => router.replace("../..")}
               variant="default"
             />
           </View>
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+    <SafeAreaPage backgroundColor={colors.background}>
       <ScrollView
         contentContainerStyle={{
           gap: spacing.lg,
@@ -224,15 +224,8 @@ export default function QuizDetailPage() {
               fullWidth
               iconName="add-circle-outline"
               label="Create another quiz"
-              onPress={() => router.replace("../create")}
+              onPress={() => router.replace("/quiz/create")}
               variant="primary"
-            />
-            <Button
-              fullWidth
-              iconName="home-outline"
-              label="Back to home"
-              onPress={() => router.replace("/")}
-              variant="default"
             />
           </View>
         </View>
@@ -314,7 +307,7 @@ export default function QuizDetailPage() {
           ))}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaPage>
   );
 }
 

@@ -1,21 +1,21 @@
-import { Link, useRouter } from "expo-router";
+import { Link } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { Button } from "../components";
-import { AppTextInput } from "../components/TextInput";
-import { useAuth } from "../context/auth-context";
-import { useThemeTokens } from "../hooks";
-import { AuthApiError } from "../utils/auth-api";
-import { validatePasswordWithBreachCheck } from "../utils/password-validation";
+import { Button } from "../../components";
+import { AppTextInput } from "../../components/TextInput";
+import { useAuth } from "../../context/auth-context";
+import { useThemeTokens } from "../../hooks";
+import { SafeAreaPage } from "../../screens/safe-area-page";
+import { AuthApiError } from "../../utils/auth-api";
+import { validatePasswordWithBreachCheck } from "../../utils/password-validation";
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof AuthApiError) {
@@ -47,7 +47,6 @@ function getErrorMessage(error: unknown): string {
 export default function RegisterPage() {
   const { colors, spacing, typography, radius } = useThemeTokens();
   const { register } = useAuth();
-  const router = useRouter();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -102,8 +101,6 @@ export default function RegisterPage() {
         username: username.trim(),
         password,
       });
-
-      router.replace("/");
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     } finally {
@@ -112,7 +109,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+    <SafeAreaPage backgroundColor={colors.background}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardAvoiding}
@@ -263,7 +260,7 @@ export default function RegisterPage() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaPage>
   );
 }
 

@@ -15,6 +15,7 @@ export function createRouteMockContext() {
     },
     project: {
       findMany: jest.fn(),
+      count: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
@@ -22,6 +23,7 @@ export function createRouteMockContext() {
     },
     follow: {
       findMany: jest.fn(),
+      count: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
       delete: jest.fn(),

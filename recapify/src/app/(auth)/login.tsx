@@ -1,24 +1,23 @@
-import { Link, useRouter } from "expo-router";
+import { Link } from "expo-router";
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { Button } from "../components";
-import { AppTextInput } from "../components/TextInput";
-import { useAuth } from "../context/auth-context";
-import { useThemeTokens } from "../hooks";
+import { Button } from "../../components";
+import { AppTextInput } from "../../components/TextInput";
+import { useAuth } from "../../context/auth-context";
+import { useThemeTokens } from "../../hooks";
+import { SafeAreaPage } from "../../screens/safe-area-page";
 
 export default function LoginPage() {
   const { colors, spacing, typography, radius } = useThemeTokens();
   const { login } = useAuth();
-  const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +31,6 @@ export default function LoginPage() {
 
     try {
       await login(email.trim(), password);
-      router.replace("/");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to sign in");
     } finally {
@@ -41,7 +39,7 @@ export default function LoginPage() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+    <SafeAreaPage backgroundColor={colors.background}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardAvoiding}
@@ -158,7 +156,7 @@ export default function LoginPage() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaPage>
   );
 }
 

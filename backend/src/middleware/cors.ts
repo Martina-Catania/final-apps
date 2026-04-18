@@ -16,14 +16,41 @@ function parseConfiguredOrigins(rawOrigins: string | undefined): Set<string> {
   );
 }
 
+function isPrivateIpv4Address(hostname: string): boolean {
+  const segments = hostname.split(".");
+  if (segments.length !== 4) {
+    return false;
+  }
+
+  const octets = segments.map((segment) => Number.parseInt(segment, 10));
+  if (octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)) {
+    return false;
+  }
+
+  const [first, second] = octets;
+
+  if (first === 10) {
+    return true;
+  }
+
+  if (first === 172 && second >= 16 && second <= 31) {
+    return true;
+  }
+
+  return first === 192 && second === 168;
+}
+
 function isLocalDevOrigin(origin: string): boolean {
   try {
     const parsed = new URL(origin);
     const isHttp = parsed.protocol === "http:" || parsed.protocol === "https:";
     const isLoopbackHost =
-      parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+      parsed.hostname === "localhost" ||
+      parsed.hostname === "127.0.0.1" ||
+      parsed.hostname === "::1";
+    const isPrivateLanHost = isPrivateIpv4Address(parsed.hostname);
 
-    return isHttp && isLoopbackHost;
+    return isHttp && (isLoopbackHost || isPrivateLanHost);
   } catch {
     return false;
   }

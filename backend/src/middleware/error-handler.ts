@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { MulterError } from "multer";
 import { Prisma } from "../../generated/prisma/index.js";
 import { ApiError } from "../utils/api-error.js";
 
@@ -13,6 +14,16 @@ export function errorHandler(
       error: error.message,
       details: error.details,
     });
+    return;
+  }
+
+  if (error instanceof MulterError) {
+    if (error.code === "LIMIT_FILE_SIZE") {
+      res.status(400).json({ error: "Avatar image must be 5MB or smaller" });
+      return;
+    }
+
+    res.status(400).json({ error: error.message });
     return;
   }
 

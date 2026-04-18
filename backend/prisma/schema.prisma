@@ -24,7 +24,7 @@ model User {
   email          String    @unique
   username       String    @unique
   hashedPassword String
-  name           String    @default("")
+  avatarUrl      String?
   timetable      String?
   projects       Project[]
   followers      Follow[]  @relation("following")

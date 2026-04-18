@@ -42,6 +42,19 @@ describe("api routes", () => {
     );
   });
 
+  it("returns CORS headers for private LAN frontend origins", async () => {
+    const app = createApp(asAppContext(mockCtx));
+
+    const response = await request(app)
+      .get("/health")
+      .set("Origin", "http://192.168.1.100:8081");
+
+    expect(response.status).toBe(200);
+    expect(response.headers["access-control-allow-origin"]).toBe(
+      "http://192.168.1.100:8081",
+    );
+  });
+
   it("handles CORS preflight requests", async () => {
     const app = createApp(asAppContext(mockCtx));
 
@@ -82,7 +95,6 @@ describe("api routes", () => {
       email: "gamma@example.com",
       username: "gamma_user",
       hashedPassword: "gamma_hash",
-      name: "Gamma",
       timetable: null,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -92,7 +104,6 @@ describe("api routes", () => {
       email: "gamma@example.com",
       username: "gamma_user",
       hashedPassword: "gamma_hash",
-      name: "Gamma",
     });
 
     expect(response.status).toBe(201);
@@ -156,7 +167,6 @@ describe("api routes", () => {
       id: 11,
       email: "new@example.com",
       username: "new_user",
-      name: "New",
       timetable: null,
     } as never);
 
@@ -164,7 +174,6 @@ describe("api routes", () => {
       email: "NEW@EXAMPLE.COM",
       username: "new_user",
       password: "StrongPass1",
-      name: "New",
     });
 
     expect(response.status).toBe(201);
@@ -196,7 +205,6 @@ describe("api routes", () => {
       id: 5,
       email: "demo@example.com",
       username: "demo",
-      name: "Demo",
       timetable: null,
       hashedPassword,
     } as never);
@@ -232,7 +240,6 @@ describe("api routes", () => {
       id: 7,
       email: "auth@example.com",
       username: "auth_user",
-      name: "Auth",
       timetable: null,
     } as never);
 
@@ -251,5 +258,58 @@ describe("api routes", () => {
 
     expect(response.status).toBe(401);
     expect(response.body.error).toBe("Authorization token is required");
+  });
+
+  it("updates current user profile", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    const token = generateAuthToken(7);
+
+    mockCtx.mocks.user.findUnique.mockResolvedValue(null as never);
+    mockCtx.mocks.user.update.mockResolvedValue({
+      id: 7,
+      email: "auth@example.com",
+      username: "updated_user",
+      avatarUrl: null,
+      timetable: null,
+    } as never);
+
+    const response = await request(app)
+      .patch("/api/auth/me/profile")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        username: "updated_user",
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.user.username).toBe("updated_user");
+  });
+
+  it("changes current user password", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    const token = generateAuthToken(7);
+    const hashedPassword = await hashPassword("StrongPass1");
+
+    jest.spyOn(global, "fetch").mockResolvedValue(
+      new Response("0000000000000000000000000000000000000000:2", {
+        status: 200,
+      }),
+    );
+
+    mockCtx.mocks.user.findUnique.mockResolvedValue({
+      id: 7,
+      hashedPassword,
+    } as never);
+    mockCtx.mocks.user.update.mockResolvedValue({ id: 7 } as never);
+
+    const response = await request(app)
+      .patch("/api/auth/me/password")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        currentPassword: "StrongPass1",
+        newPassword: "StrongerPass2",
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
   });
 });

@@ -1,27 +1,31 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { Button } from "../../components";
-import { AppTextInput } from "../../components/TextInput";
-import { useAuth } from "../../context/auth-context";
-import { useThemeTokens } from "../../hooks";
+import { Button } from "../../../../components";
+import { AppTextInput } from "../../../../components/TextInput";
+import { useAuth } from "../../../../context/auth-context";
+import { useThemeTokens } from "../../../../hooks";
+import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import {
-  createQuizProjectRequest,
   createQuizQuestionRequest,
-  createQuizRequest,
+  deleteQuizQuestionRequest,
   getQuizApiErrorMessage,
-} from "../../utils/quiz-api";
+  getQuizByIdRequest,
+  updateProjectRequest,
+  updateQuizQuestionRequest,
+} from "../../../../utils/quiz-api";
 
 type QuestionDraft = {
   key: string;
+  questionId: number | null;
   question: string;
   answer: string;
   decoy1: string;
@@ -29,13 +33,30 @@ type QuestionDraft = {
   decoy3: string;
 };
 
-type QuestionField = Exclude<keyof QuestionDraft, "key">;
+type QuestionField = Exclude<keyof QuestionDraft, "key" | "questionId">;
 
 type QuestionFieldErrors = Partial<Record<QuestionField, string>>;
 
+function parseQuizId(value: string | string[] | undefined): number | null {
+  const firstValue = Array.isArray(value) ? value[0] : value;
+
+  if (!firstValue) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(firstValue, 10);
+
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
+
 function createQuestionDraft(index: number): QuestionDraft {
   return {
-    key: `q-${index}`,
+    key: `new-${index}`,
+    questionId: null,
     question: "",
     answer: "",
     decoy1: "",
@@ -44,25 +65,26 @@ function createQuestionDraft(index: number): QuestionDraft {
   };
 }
 
-function wait(ms: number) {
-  return new Promise<void>((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-export default function QuizCreatePage() {
+export default function QuizEditPage() {
+  const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+  const quizId = useMemo(() => parseQuizId(id), [id]);
   const router = useRouter();
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
+  const [projectId, setProjectId] = useState<number | null>(null);
   const [quizTitle, setQuizTitle] = useState("");
-  const [questions, setQuestions] = useState<QuestionDraft[]>([createQuestionDraft(1)]);
-  const [nextQuestionIndex, setNextQuestionIndex] = useState(2);
+  const [questions, setQuestions] = useState<QuestionDraft[]>([]);
+  const [initialQuestionIds, setInitialQuestionIds] = useState<number[]>([]);
+  const [nextQuestionIndex, setNextQuestionIndex] = useState(1);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [titleError, setTitleError] = useState<string | null>(null);
   const [questionsError, setQuestionsError] = useState<string | null>(null);
   const [questionErrors, setQuestionErrors] = useState<Record<string, QuestionFieldErrors>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const addQuestion = () => {
     setQuestions((current) => [...current, createQuestionDraft(nextQuestionIndex)]);
@@ -158,11 +180,61 @@ export default function QuizCreatePage() {
     return isValid;
   };
 
+  const loadQuiz = useCallback(async () => {
+    if (!quizId) {
+      setLoadError("Invalid quiz id");
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setLoadError(null);
+
+    try {
+      const payload = await getQuizByIdRequest(quizId, token ?? undefined);
+      setProjectId(payload.projectId);
+      setQuizTitle(payload.project.title);
+      setInitialQuestionIds(payload.questions.map((item) => item.id));
+
+      const mappedQuestions: QuestionDraft[] = payload.questions.map((item, index) => ({
+        key: `existing-${item.id}-${index + 1}`,
+        questionId: item.id,
+        question: item.question,
+        answer: item.answer,
+        decoy1: item.decoy1,
+        decoy2: item.decoy2,
+        decoy3: item.decoy3,
+      }));
+
+      if (mappedQuestions.length === 0) {
+        setQuestions([createQuestionDraft(1)]);
+        setNextQuestionIndex(2);
+      } else {
+        setQuestions(mappedQuestions);
+        setNextQuestionIndex(mappedQuestions.length + 1);
+      }
+    } catch (error) {
+      setLoadError(getQuizApiErrorMessage(error, "Unable to load quiz"));
+      setQuestions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [quizId, token]);
+
+  useEffect(() => {
+    void loadQuiz();
+  }, [loadQuiz]);
+
   const handleSaveQuiz = async () => {
     setSubmitError(null);
 
-    if (!token || !user?.id) {
-      setSubmitError("You must be signed in to create quizzes");
+    if (!token) {
+      setSubmitError("You must be signed in to edit quizzes");
+      return;
+    }
+
+    if (!quizId || !projectId) {
+      setSubmitError("Unable to edit this quiz");
       return;
     }
 
@@ -173,41 +245,119 @@ export default function QuizCreatePage() {
     setIsSubmitting(true);
 
     try {
-      const project = await createQuizProjectRequest(
+      await updateProjectRequest(
+        projectId,
         {
           title: quizTitle.trim(),
-          userId: user.id,
         },
         token,
       );
 
-      const quiz = await createQuizRequest(project.id, token);
+      const remainingQuestionIds = new Set(initialQuestionIds);
 
       for (const question of questions) {
-        await createQuizQuestionRequest(
-          {
-            quizId: quiz.id,
-            question: question.question.trim(),
-            answer: question.answer.trim(),
-            decoy1: question.decoy1.trim(),
-            decoy2: question.decoy2.trim(),
-            decoy3: question.decoy3.trim(),
-          },
-          token,
-        );
+        const payload = {
+          question: question.question.trim(),
+          answer: question.answer.trim(),
+          decoy1: question.decoy1.trim(),
+          decoy2: question.decoy2.trim(),
+          decoy3: question.decoy3.trim(),
+        };
+
+        if (question.questionId) {
+          await updateQuizQuestionRequest(question.questionId, payload, token);
+          remainingQuestionIds.delete(question.questionId);
+        } else {
+          await createQuizQuestionRequest(
+            {
+              quizId,
+              ...payload,
+            },
+            token,
+          );
+        }
       }
 
-      await wait(1000);
-      router.replace(`./${quiz.id}`);
+      for (const questionId of remainingQuestionIds) {
+        await deleteQuizQuestionRequest(questionId, token);
+      }
+
+      router.replace("..");
     } catch (error) {
-      setSubmitError(getQuizApiErrorMessage(error, "Unable to create quiz"));
+      setSubmitError(getQuizApiErrorMessage(error, "Unable to update quiz"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <SafeAreaPage backgroundColor={colors.background}>
+        <View style={styles.centered}>
+          <ActivityIndicator color={colors.primary} size="large" />
+        </View>
+      </SafeAreaPage>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <SafeAreaPage backgroundColor={colors.background}>
+        <View
+          style={[
+            styles.errorCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderRadius: radius.md,
+              gap: spacing.md,
+              margin: spacing.lg,
+              padding: spacing.lg,
+            },
+          ]}
+        >
+          <Text
+            style={{
+              color: colors.textPrimary,
+              fontSize: typography.primary.md,
+              fontWeight: typography.weights.bold,
+            }}
+          >
+            Quiz could not be loaded
+          </Text>
+          <Text
+            style={{
+              color: colors.danger,
+              fontSize: typography.secondary.md,
+            }}
+          >
+            {loadError}
+          </Text>
+          <View style={{ gap: spacing.sm }}>
+            <Button
+              fullWidth
+              iconName="arrow-back-outline"
+              label="Back"
+              onPress={() => router.back()}
+              variant="default"
+            />
+            <Button
+              fullWidth
+              iconName="refresh-outline"
+              label="Try again"
+              onPress={() => {
+                void loadQuiz();
+              }}
+              variant="primary"
+            />
+          </View>
+        </View>
+      </SafeAreaPage>
+    );
+  }
+
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+    <SafeAreaPage backgroundColor={colors.background}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardAvoiding}
@@ -233,24 +383,33 @@ export default function QuizCreatePage() {
               },
             ]}
           >
-            <View style={{ gap: spacing.xs }}>
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: typography.primary.md,
-                  fontWeight: typography.weights.bold,
-                }}
-              >
-                Create Quiz
-              </Text>
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: typography.secondary.md,
-                }}
-              >
-                Set a quiz name, add questions, and save everything in one step.
-              </Text>
+            <View style={[styles.headerRow, { gap: spacing.sm }]}>
+              <Button
+                accessibilityLabel="Back"
+                iconName="arrow-back-outline"
+                onPress={() => router.back()}
+                variant="icon"
+              />
+
+              <View style={[styles.headerText, { gap: spacing.xs }]}>
+                <Text
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: typography.primary.md,
+                    fontWeight: typography.weights.bold,
+                  }}
+                >
+                  Edit Quiz
+                </Text>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: typography.secondary.md,
+                  }}
+                >
+                  Update the quiz name and questions. Changes are only saved when you press Save changes.
+                </Text>
+              </View>
             </View>
 
             <AppTextInput
@@ -259,7 +418,7 @@ export default function QuizCreatePage() {
               placeholder="Examples: Biology Basics"
               value={quizTitle}
               errorText={titleError ?? undefined}
-              helperText="Name your quiz."
+              helperText="Rename your quiz."
             />
 
             <View style={{ gap: spacing.sm }}>
@@ -390,24 +549,25 @@ export default function QuizCreatePage() {
                 disabled={isSubmitting}
                 fullWidth
                 iconName="save-outline"
-                label={isSubmitting ? "Creating quiz..." : "Save quiz"}
+                label={isSubmitting ? "Saving changes..." : "Save changes"}
                 onPress={() => {
                   void handleSaveQuiz();
                 }}
                 variant="primary"
               />
               <Button
+                disabled={isSubmitting}
                 fullWidth
-                iconName="home-outline"
-                label="Back to home"
-                onPress={() => router.replace("/")}
+                iconName="close-outline"
+                label="Cancel"
+                onPress={() => router.back()}
                 variant="default"
               />
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaPage>
   );
 }
 
@@ -421,14 +581,29 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
   },
+  centered: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+  },
   card: {
     alignSelf: "center",
     borderWidth: 1,
     maxWidth: 760,
     width: "100%",
   },
+  errorCard: {
+    borderWidth: 1,
+  },
   questionCard: {
     borderWidth: 1,
+  },
+  headerRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+  },
+  headerText: {
+    flex: 1,
   },
   rowBetween: {
     alignItems: "center",
