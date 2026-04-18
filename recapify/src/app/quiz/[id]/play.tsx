@@ -88,7 +88,8 @@ export default function QuizPlayPage() {
   const { colors, spacing, typography, radius } = useThemeTokens();
 
   const [quizTitle, setQuizTitle] = useState("");
-  const [creatorSubtitle, setCreatorSubtitle] = useState("");
+  const [creatorLabel, setCreatorLabel] = useState("");
+  const [creatorUserId, setCreatorUserId] = useState<number | null>(null);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [roundKey, setRoundKey] = useState(0);
   const [hasStartedQuiz, setHasStartedQuiz] = useState(false);
@@ -139,13 +140,16 @@ export default function QuizPlayPage() {
       const payload = await getQuizByIdRequest(quizId, token ?? undefined);
       const ownName = user?.name?.trim();
       const ownUsername = user?.username?.trim();
-      const creatorLabel =
+      const creatorName = payload.project.user?.name?.trim();
+      const creatorUsername = payload.project.user?.username?.trim();
+      const nextCreatorLabel =
         payload.project.userId === user?.id
           ? ownName || (ownUsername ? `@${ownUsername}` : `User #${payload.project.userId}`)
-          : `User #${payload.project.userId}`;
+          : (creatorUsername ? `@${creatorUsername}` : creatorName || `User #${payload.project.userId}`);
 
       setQuizTitle(payload.project.title);
-      setCreatorSubtitle(`Created by ${creatorLabel}`);
+      setCreatorLabel(nextCreatorLabel);
+      setCreatorUserId(payload.project.userId);
       setQuizQuestions(payload.questions);
       setCurrentQuestionIndex(0);
       setSelectedOptionKey(null);
@@ -156,7 +160,8 @@ export default function QuizPlayPage() {
     } catch (error) {
       setErrorMessage(getQuizApiErrorMessage(error, "Unable to load quiz"));
       setQuizTitle("");
-      setCreatorSubtitle("");
+      setCreatorLabel("");
+      setCreatorUserId(null);
       setQuizQuestions([]);
     } finally {
       setIsLoading(false);
@@ -369,14 +374,29 @@ export default function QuizPlayPage() {
             >
               {quizTitle}
             </Text>
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontSize: typography.secondary.md,
+            <Pressable
+              onPress={() => {
+                if (!creatorUserId) {
+                  return;
+                }
+
+                router.push({
+                  pathname: "../../../profile/[id]",
+                  params: { id: String(creatorUserId) },
+                });
               }}
+              style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
             >
-              {creatorSubtitle || "Created by unknown user"}
-            </Text>
+              <Text
+                style={{
+                  color: colors.primary,
+                  fontSize: typography.secondary.md,
+                  fontWeight: typography.weights.semibold,
+                }}
+              >
+                Created by {creatorLabel || "unknown user"}
+              </Text>
+            </Pressable>
             <Text
               style={{
                 color: colors.textSecondary,

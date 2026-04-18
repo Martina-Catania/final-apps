@@ -5,6 +5,7 @@ export type AuthUser = {
   email: string;
   username: string;
   name: string;
+  avatarUrl: string | null;
   timetable: string | null;
 };
 

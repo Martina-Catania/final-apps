@@ -18,13 +18,14 @@ const useFileUpload = () => {
   const [isPicking, setIsPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const pickFile = async () => {
+  const pickFile = async (allowedTypes?: DocumentPicker.DocumentPickerOptions["type"]) => {
     setIsPicking(true);
     setError(null);
 
     try {
       const result = await DocumentPicker.getDocumentAsync({
         copyToCacheDirectory: true,
+        type: allowedTypes,
       });
 
       if (result.canceled) {
@@ -63,6 +64,9 @@ type FileUploadFieldProps = {
   label?: string;
   helperText?: string;
   onFileSelected?: (file: UploadedFile | null) => void;
+  allowedTypes?: DocumentPicker.DocumentPickerOptions["type"];
+  pickButtonLabel?: string;
+  clearButtonLabel?: string;
 };
 
 const bytesToSize = (bytes?: number) => {
@@ -83,6 +87,9 @@ export const FileUploadField = ({
   label = "Upload file",
   helperText = "Pick any file to test the upload flow.",
   onFileSelected,
+  allowedTypes,
+  pickButtonLabel = "Pick file",
+  clearButtonLabel = "Clear",
 }: FileUploadFieldProps) => {
   const { file, isPicking, error, pickFile, clearFile } = useFileUpload();
   const { colors, iconSizes, spacing, typography } = useThemeTokens();
@@ -92,7 +99,7 @@ export const FileUploadField = ({
   }, [file, onFileSelected]);
 
   const handlePick = async () => {
-    await pickFile();
+    await pickFile(allowedTypes);
   };
 
   return (
@@ -129,11 +136,11 @@ export const FileUploadField = ({
       <View style={[styles.buttonRow, { gap: spacing.sm }]}>
         <Button
           iconName="cloud-upload-outline"
-          label={isPicking ? "Picking..." : "Pick file"}
+          label={isPicking ? "Picking..." : pickButtonLabel}
           onPress={handlePick}
           variant="primary"
         />
-        <Button label="Clear" onPress={clearFile} variant="default" />
+        <Button label={clearButtonLabel} onPress={clearFile} variant="default" />
       </View>
 
       {file ? (

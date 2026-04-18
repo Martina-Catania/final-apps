@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import {
   Button,
@@ -265,14 +265,26 @@ export default function Index() {
           visible={isDrawerOpen}
         >
           <View style={{ gap: spacing.md }}>
-            <View
-              style={[
+            <Pressable
+              onPress={() => {
+                if (!user?.id) {
+                  return;
+                }
+
+                setIsDrawerOpen(false);
+                router.push({
+                  pathname: "./profile/[id]",
+                  params: { id: String(user.id) },
+                });
+              }}
+              style={({ pressed }) => [
                 styles.profileCard,
                 {
                   backgroundColor: colors.surfaceMuted,
                   borderColor: colors.border,
                   borderRadius: radius.sm,
                   gap: spacing.xxs,
+                  opacity: pressed ? 0.85 : 1,
                   padding: spacing.md,
                 },
               ]}
@@ -302,7 +314,7 @@ export default function Index() {
               >
                 {user?.email ?? "No email available"}
               </Text>
-            </View>
+            </Pressable>
 
             <AppToggle
               description={`Current mode: ${mode}`}

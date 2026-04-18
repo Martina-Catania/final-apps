@@ -4,6 +4,22 @@ import { createQuizRouter } from "../../../src/routes/quiz-routes.js";
 import { createRouteApp, createRouteMockContext } from "./helpers.js";
 
 describe("quiz-routes", () => {
+  const quizInclude = {
+    project: {
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    },
+    questions: true,
+  };
+
   it("lists quizzes and handles get/create-not-found/update/delete", async () => {
     const { ctx, mocks } = createRouteMockContext();
     const app = createRouteApp("/quizzes", createQuizRouter(ctx));
@@ -58,7 +74,7 @@ describe("quiz-routes", () => {
     expect(response.status).toBe(201);
     expect(mocks.quiz.create).toHaveBeenCalledWith({
       data: { projectId: 9 },
-      include: { project: true, questions: true },
+      include: quizInclude,
     });
   });
 

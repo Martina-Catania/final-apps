@@ -2,11 +2,19 @@ import { Platform } from "react-native";
 
 export type ProjectType = "SUMMARY" | "QUIZ" | "DECK";
 
+export type ProjectCreator = {
+  id: number;
+  username: string;
+  name: string;
+  avatarUrl: string | null;
+};
+
 export type Project = {
   id: number;
   type: ProjectType;
   title: string;
   userId: number;
+  user?: ProjectCreator;
   views: number;
   createdAt: string;
   updatedAt: string;

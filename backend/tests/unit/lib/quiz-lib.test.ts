@@ -16,13 +16,29 @@ function createCtx() {
 }
 
 describe("quiz-lib", () => {
+  const quizInclude = {
+    project: {
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    },
+    questions: true,
+  };
+
   it("lists quizzes", () => {
     const { ctx, quiz } = createCtx();
     listQuizzes(ctx);
 
     expect(quiz.findMany).toHaveBeenCalledWith({
       orderBy: { id: "asc" },
-      include: { project: true, questions: true },
+      include: quizInclude,
     });
   });
 
@@ -32,7 +48,7 @@ describe("quiz-lib", () => {
 
     expect(quiz.findUnique).toHaveBeenCalledWith({
       where: { id: 4 },
-      include: { project: true, questions: true },
+      include: quizInclude,
     });
   });
 
@@ -43,7 +59,7 @@ describe("quiz-lib", () => {
 
     expect(quiz.create).toHaveBeenCalledWith({
       data,
-      include: { project: true, questions: true },
+      include: quizInclude,
     });
   });
 
@@ -55,7 +71,7 @@ describe("quiz-lib", () => {
     expect(quiz.update).toHaveBeenCalledWith({
       where: { id: 7 },
       data,
-      include: { project: true, questions: true },
+      include: quizInclude,
     });
   });
 
@@ -65,7 +81,7 @@ describe("quiz-lib", () => {
 
     expect(quiz.delete).toHaveBeenCalledWith({
       where: { id: 7 },
-      include: { project: true, questions: true },
+      include: quizInclude,
     });
   });
 });

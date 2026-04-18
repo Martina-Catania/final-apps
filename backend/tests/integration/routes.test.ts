@@ -252,4 +252,60 @@ describe("api routes", () => {
     expect(response.status).toBe(401);
     expect(response.body.error).toBe("Authorization token is required");
   });
+
+  it("updates current user profile", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    const token = generateAuthToken(7);
+
+    mockCtx.mocks.user.findUnique.mockResolvedValue(null as never);
+    mockCtx.mocks.user.update.mockResolvedValue({
+      id: 7,
+      email: "auth@example.com",
+      username: "updated_user",
+      name: "Updated Name",
+      avatarUrl: null,
+      timetable: null,
+    } as never);
+
+    const response = await request(app)
+      .patch("/api/auth/me/profile")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        name: "Updated Name",
+        username: "updated_user",
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.user.username).toBe("updated_user");
+    expect(response.body.user.name).toBe("Updated Name");
+  });
+
+  it("changes current user password", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    const token = generateAuthToken(7);
+    const hashedPassword = await hashPassword("StrongPass1");
+
+    jest.spyOn(global, "fetch").mockResolvedValue(
+      new Response("0000000000000000000000000000000000000000:2", {
+        status: 200,
+      }),
+    );
+
+    mockCtx.mocks.user.findUnique.mockResolvedValue({
+      id: 7,
+      hashedPassword,
+    } as never);
+    mockCtx.mocks.user.update.mockResolvedValue({ id: 7 } as never);
+
+    const response = await request(app)
+      .patch("/api/auth/me/password")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        currentPassword: "StrongPass1",
+        newPassword: "StrongerPass2",
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+  });
 });

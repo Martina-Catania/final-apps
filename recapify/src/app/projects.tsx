@@ -1,12 +1,6 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button, DrawerPanel, SkeletonCard } from "../components";
 import { useAuth } from "../context/auth-context";
 import { useThemeTokens } from "../hooks";
@@ -142,24 +136,21 @@ export default function ProjectsPage() {
           ? quizzes.map((quiz) => {
               const questionCount = quiz.questions.length;
               const questionLabel = questionCount === 1 ? "question" : "questions";
+              const creatorLabel =
+                (quiz.project.user?.username ? `@${quiz.project.user.username}` : undefined) ||
+                quiz.project.user?.name?.trim() ||
+                `User #${quiz.project.userId}`;
 
               return (
-                <Pressable
+                <View
                   key={quiz.id}
-                  onPress={() => {
-                    router.push({
-                      pathname: "../quiz/[id]",
-                      params: { id: String(quiz.id) },
-                    });
-                  }}
-                  style={({ pressed }) => [
+                  style={[
                     styles.projectCard,
                     {
                       backgroundColor: colors.surface,
                       borderColor: colors.border,
                       borderRadius: radius.md,
                       gap: spacing.xs,
-                      opacity: pressed ? 0.84 : 1,
                       padding: spacing.md,
                     },
                   ]}
@@ -183,16 +174,38 @@ export default function ProjectsPage() {
                     {questionCount} {questionLabel}
                   </Text>
 
-                  <Text
-                    style={{
-                      color: colors.primary,
-                      fontSize: typography.secondary.sm,
-                      fontWeight: typography.weights.semibold,
+                  <Pressable
+                    onPress={() => {
+                      router.push({
+                        pathname: "./profile/[id]",
+                        params: { id: String(quiz.project.userId) },
+                      });
                     }}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
                   >
-                    Open project
-                  </Text>
-                </Pressable>
+                    <Text
+                      style={{
+                        color: colors.textSecondary,
+                        fontSize: typography.secondary.sm,
+                      }}
+                    >
+                      Created by {creatorLabel}
+                    </Text>
+                  </Pressable>
+
+                  <Button
+                    fullWidth
+                    iconName="arrow-forward-outline"
+                    label="Open project"
+                    onPress={() => {
+                      router.push({
+                        pathname: "../quiz/[id]",
+                        params: { id: String(quiz.id) },
+                      });
+                    }}
+                    variant="default"
+                  />
+                </View>
               );
             })
           : null}

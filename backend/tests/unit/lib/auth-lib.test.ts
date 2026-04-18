@@ -1,6 +1,13 @@
 import { jest } from "@jest/globals";
 import type { AppContext } from "../../../src/context.js";
-import { getCurrentAuthUser, loginUser, registerUser } from "../../../src/lib/auth-lib.js";
+import {
+  changeCurrentAuthUserPassword,
+  getCurrentAuthUser,
+  loginUser,
+  registerUser,
+  updateCurrentAuthUserAvatar,
+  updateCurrentAuthUserProfile,
+} from "../../../src/lib/auth-lib.js";
 import { hashPassword } from "../../../src/utils/password.js";
 
 const ORIGINAL_JWT_SECRET = process.env.JWT_SECRET;
@@ -10,6 +17,7 @@ function createCtx() {
   const user = {
     findUnique: jest.fn(),
     create: jest.fn(),
+    update: jest.fn(),
   };
 
   const ctx = {
@@ -58,6 +66,7 @@ describe("auth-lib", () => {
       email: "new@example.com",
       username: "new_user",
       name: "New User",
+      avatarUrl: null,
       timetable: null,
     } as never);
 
@@ -95,6 +104,7 @@ describe("auth-lib", () => {
       email: "new@example.com",
       username: "new_user",
       name: "New User",
+      avatarUrl: null,
       timetable: null,
     });
   });
@@ -175,6 +185,7 @@ describe("auth-lib", () => {
       email: "demo@example.com",
       username: "demo_user",
       name: "Demo",
+      avatarUrl: null,
       timetable: null,
       hashedPassword,
     } as never);
@@ -197,6 +208,7 @@ describe("auth-lib", () => {
       email: "demo@example.com",
       username: "demo_user",
       name: "Demo",
+      avatarUrl: null,
       timetable: null,
     });
     expect(typeof result.token).toBe("string");
@@ -229,6 +241,7 @@ describe("auth-lib", () => {
       email: "demo@example.com",
       username: "demo_user",
       name: "Demo",
+      avatarUrl: null,
       timetable: null,
       hashedPassword,
     } as never);
@@ -254,6 +267,7 @@ describe("auth-lib", () => {
       email: "auth@example.com",
       username: "auth_user",
       name: "Auth",
+      avatarUrl: null,
       timetable: null,
     } as never);
 
@@ -266,6 +280,7 @@ describe("auth-lib", () => {
         email: true,
         username: true,
         name: true,
+        avatarUrl: true,
         timetable: true,
       },
     });
@@ -274,6 +289,7 @@ describe("auth-lib", () => {
       email: "auth@example.com",
       username: "auth_user",
       name: "Auth",
+      avatarUrl: null,
       timetable: null,
     });
   });
@@ -286,5 +302,169 @@ describe("auth-lib", () => {
       statusCode: 401,
       message: "Unauthorized",
     });
+  });
+
+  it("updates current user profile", async () => {
+    const { ctx, user } = createCtx();
+
+    user.findUnique.mockResolvedValueOnce(null as never);
+    user.update.mockResolvedValue({
+      id: 7,
+      email: "auth@example.com",
+      username: "renamed_user",
+      name: "Renamed",
+      avatarUrl: null,
+      timetable: null,
+    } as never);
+
+    const result = await updateCurrentAuthUserProfile(
+      7,
+      {
+        name: "Renamed",
+        username: "renamed_user",
+      },
+      ctx,
+    );
+
+    expect(user.findUnique).toHaveBeenNthCalledWith(1, {
+      where: { username: "renamed_user" },
+      select: { id: true },
+    });
+    expect(user.update).toHaveBeenCalledWith({
+      where: { id: 7 },
+      data: {
+        name: "Renamed",
+        username: "renamed_user",
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        avatarUrl: true,
+        timetable: true,
+      },
+    });
+    expect(result).toEqual({
+      id: 7,
+      email: "auth@example.com",
+      username: "renamed_user",
+      name: "Renamed",
+      avatarUrl: null,
+      timetable: null,
+    });
+  });
+
+  it("rejects profile update when username is already used by another user", async () => {
+    const { ctx, user } = createCtx();
+    user.findUnique.mockResolvedValue({ id: 9 } as never);
+
+    await expect(
+      updateCurrentAuthUserProfile(
+        7,
+        {
+          username: "taken",
+        },
+        ctx,
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      message: "Username is already in use",
+    });
+
+    expect(user.update).not.toHaveBeenCalled();
+  });
+
+  it("changes password when current password is valid", async () => {
+    const { ctx, user } = createCtx();
+    const hashedPassword = await hashPassword("StrongPass1");
+
+    jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(new Response("0000000000000000000000000000000000000000:2", { status: 200 }));
+
+    user.findUnique.mockResolvedValue({
+      id: 7,
+      hashedPassword,
+    } as never);
+
+    await changeCurrentAuthUserPassword(
+      7,
+      {
+        currentPassword: "StrongPass1",
+        newPassword: "StrongerPass2",
+      },
+      ctx,
+    );
+
+    expect(user.update).toHaveBeenCalledTimes(1);
+    expect(user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 7 },
+        data: expect.objectContaining({
+          hashedPassword: expect.any(String),
+        }),
+      }),
+    );
+  });
+
+  it("rejects password change when current password is wrong", async () => {
+    const { ctx, user } = createCtx();
+    const hashedPassword = await hashPassword("StrongPass1");
+
+    user.findUnique.mockResolvedValue({
+      id: 7,
+      hashedPassword,
+    } as never);
+
+    await expect(
+      changeCurrentAuthUserPassword(
+        7,
+        {
+          currentPassword: "WrongPass1",
+          newPassword: "StrongerPass2",
+        },
+        ctx,
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 401,
+      message: "Current password is incorrect",
+    });
+
+    expect(user.update).not.toHaveBeenCalled();
+  });
+
+  it("updates current user avatar", async () => {
+    const { ctx, user } = createCtx();
+    user.update.mockResolvedValue({
+      id: 7,
+      email: "auth@example.com",
+      username: "auth_user",
+      name: "Auth",
+      avatarUrl: "/uploads/avatars/avatar-1.jpg",
+      timetable: null,
+    } as never);
+
+    const result = await updateCurrentAuthUserAvatar(
+      7,
+      "/uploads/avatars/avatar-1.jpg",
+      ctx,
+    );
+
+    expect(user.update).toHaveBeenCalledWith({
+      where: { id: 7 },
+      data: {
+        avatarUrl: "/uploads/avatars/avatar-1.jpg",
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        avatarUrl: true,
+        timetable: true,
+      },
+    });
+    expect(result.avatarUrl).toBe("/uploads/avatars/avatar-1.jpg");
   });
 });
