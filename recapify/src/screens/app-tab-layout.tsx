@@ -1,10 +1,12 @@
 import { useRouter } from "expo-router";
 import { type ReactNode, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppToggle, Button, BottomNavBar, DrawerPanel } from "../components";
 import { useAuth } from "../context/auth-context";
 import { useThemePreference } from "../context/theme-context";
 import { useThemeTokens } from "../hooks";
+import { getApiHostUrl } from "../utils/api-config";
 import { SafeAreaPage } from "./safe-area-page";
 
 export type AppTabKey = "home" | "projects" | "showcase";
@@ -37,6 +39,20 @@ const APP_TAB_ITEMS = [
   },
 ];
 
+const API_HOST = getApiHostUrl();
+
+function resolveAvatarUri(avatarUrl: string | null) {
+  if (!avatarUrl) {
+    return undefined;
+  }
+
+  if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")) {
+    return avatarUrl;
+  }
+
+  return `${API_HOST}${avatarUrl}`;
+}
+
 export function AppTabLayout({
   title,
   activeTab,
@@ -47,6 +63,7 @@ export function AppTabLayout({
   const { user, logout } = useAuth();
   const { mode, setMode } = useThemePreference();
   const { colors, spacing, typography, radius } = useThemeTokens();
+  const avatarUri = resolveAvatarUri(user?.avatarUrl ?? null);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -141,6 +158,7 @@ export function AppTabLayout({
               style={({ pressed }) => [
                 styles.profileCard,
                 {
+                  alignItems: "flex-start",
                   backgroundColor: colors.surfaceMuted,
                   borderColor: colors.border,
                   borderRadius: radius.sm,
@@ -150,6 +168,23 @@ export function AppTabLayout({
                 },
               ]}
             >
+              <View
+                style={[
+                  styles.profileAvatarContainer,
+                  {
+                    backgroundColor: colors.primaryMuted,
+                    borderColor: colors.primary,
+                    marginBottom: spacing.xxs,
+                  },
+                ]}
+              >
+                {avatarUri ? (
+                  <Image source={{ uri: avatarUri }} style={styles.profileAvatarImage} />
+                ) : (
+                  <Ionicons color={colors.primary} name="person" size={32} />
+                )}
+              </View>
+
               <Text
                 style={{
                   color: colors.textPrimary,
@@ -174,17 +209,6 @@ export function AppTabLayout({
               label="Dark theme"
               onValueChange={(nextValue) => setMode(nextValue ? "dark" : "light")}
               value={mode === "dark"}
-            />
-
-            <Button
-              fullWidth
-              iconName="grid-outline"
-              label="Open component showcase"
-              onPress={() => {
-                setIsDrawerOpen(false);
-                router.push("/showcase");
-              }}
-              variant="secondary"
             />
 
             <Button
@@ -217,5 +241,18 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     borderWidth: 1,
+  },
+  profileAvatarContainer: {
+    alignItems: "center",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 72,
+    justifyContent: "center",
+    overflow: "hidden",
+    width: 72,
+  },
+  profileAvatarImage: {
+    height: "100%",
+    width: "100%",
   },
 });
