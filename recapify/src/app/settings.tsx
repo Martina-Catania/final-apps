@@ -1,13 +1,6 @@
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   Accordion,
   Avatar,
@@ -24,13 +17,9 @@ import {
   updateCurrentUserProfileRequest,
   uploadCurrentUserAvatarRequest,
 } from "../utils/user-api";
+import { getApiHostUrl } from "../utils/api-config";
 
-const defaultHost = Platform.OS === "android" ? "10.0.2.2" : "localhost";
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL ?? `http://${defaultHost}:3000/api`;
-const API_HOST = API_BASE_URL.endsWith("/api")
-  ? API_BASE_URL.slice(0, -4)
-  : API_BASE_URL;
+const API_HOST = getApiHostUrl();
 
 function resolveAvatarUri(avatarUrl: string | null) {
   if (!avatarUrl) {

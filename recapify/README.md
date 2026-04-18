@@ -10,12 +10,20 @@ This app now includes a JWT-based auth workflow backed by `final-apps/backend`.
 - Protected routes: all other routes (including `/`)
 - Session storage: AsyncStorage (token + user)
 
-By default the app calls `http://localhost:3000/api` on web/iOS and
-`http://10.0.2.2:3000/api` on Android emulator. You can override with:
+By default the app resolves the API host dynamically:
+
+- Web: uses the current browser host (falls back to `localhost`)
+- Native (Expo Go/dev): uses the Expo dev server host when available
+- Emulator fallback: `10.0.2.2` on Android, `localhost` on iOS
+
+You can always override with:
 
 ```bash
 EXPO_PUBLIC_API_BASE_URL=http://your-host:3000/api
 ```
+
+For Expo Go on a physical device, set `EXPO_PUBLIC_API_BASE_URL` to your computer's LAN IP
+if auto-resolution does not match your network setup.
 
 ## Get started
 

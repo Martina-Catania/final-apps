@@ -1,4 +1,8 @@
-import { Platform } from "react-native";
+import {
+  fetchWithTimeout,
+  getApiBaseUrl,
+  getApiConnectivityErrorMessage,
+} from "./api-config";
 
 export type ProjectType = "SUMMARY" | "QUIZ" | "DECK";
 
@@ -83,8 +87,7 @@ type ErrorResponse = {
   details?: unknown;
 };
 
-const defaultHost = Platform.OS === "android" ? "10.0.2.2" : "localhost";
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? `http://${defaultHost}:3000/api`;
+const API_BASE_URL = getApiBaseUrl();
 
 async function requestJson<T>(
   path: string,
@@ -98,10 +101,19 @@ async function requestJson<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers,
-  });
+  let response: Response;
+
+  try {
+    response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers,
+    });
+  } catch (error) {
+    throw new QuizApiError(getApiConnectivityErrorMessage(API_BASE_URL, error), 0, {
+      apiBaseUrl: API_BASE_URL,
+      reason: error instanceof Error ? error.message : "Unknown network error",
+    });
+  }
 
   const contentType = response.headers.get("content-type") ?? "";
   const hasJsonBody = contentType.includes("application/json");

@@ -42,6 +42,19 @@ describe("api routes", () => {
     );
   });
 
+  it("returns CORS headers for private LAN frontend origins", async () => {
+    const app = createApp(asAppContext(mockCtx));
+
+    const response = await request(app)
+      .get("/health")
+      .set("Origin", "http://192.168.1.100:8081");
+
+    expect(response.status).toBe(200);
+    expect(response.headers["access-control-allow-origin"]).toBe(
+      "http://192.168.1.100:8081",
+    );
+  });
+
   it("handles CORS preflight requests", async () => {
     const app = createApp(asAppContext(mockCtx));
 
