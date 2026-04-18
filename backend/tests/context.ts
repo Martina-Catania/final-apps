@@ -5,6 +5,7 @@ import type { AppContext } from "../src/context.js";
 export type PrismaMethodMocks = {
   user: {
     findMany: jest.Mock;
+    findUnique: jest.Mock;
     create: jest.Mock;
   };
   project: {
@@ -27,6 +28,7 @@ export function createMockContext(): MockContext {
   const mocks: PrismaMethodMocks = {
     user: {
       findMany: jest.fn(),
+      findUnique: jest.fn(),
       create: jest.fn(),
     },
     project: {
@@ -43,6 +45,7 @@ export function createMockContext(): MockContext {
   const prisma = {
     user: {
       findMany: mocks.user.findMany,
+      findUnique: mocks.user.findUnique,
       create: mocks.user.create,
     },
     project: {
