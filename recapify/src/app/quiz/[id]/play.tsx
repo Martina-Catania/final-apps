@@ -382,14 +382,6 @@ export default function QuizPlayPage() {
                 >
                   {quizTitle}
                 </Text>
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    fontSize: typography.secondary.md,
-                  }}
-                >
-                  Question 1 of {playQuestions.length}
-                </Text>
               </View>
             </View>
 
