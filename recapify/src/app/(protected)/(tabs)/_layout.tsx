@@ -1,5 +1,5 @@
 import { Slot, usePathname, useRouter } from "expo-router";
-import { AppTabLayout, type AppTabKey } from "../../screens/app-tab-layout";
+import { AppTabLayout, type AppTabKey } from "../../../screens/app-tab-layout";
 
 const TAB_TITLES: Record<AppTabKey, string> = {
   home: "Recapify",

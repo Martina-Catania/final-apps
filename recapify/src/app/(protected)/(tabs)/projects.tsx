@@ -1,14 +1,14 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Button, SkeletonCard } from "../../components";
-import { useAuth } from "../../context/auth-context";
-import { useThemeTokens } from "../../hooks";
+import { Button, SkeletonCard } from "../../../components";
+import { useAuth } from "../../../context/auth-context";
+import { useThemeTokens } from "../../../hooks";
 import {
   getQuizApiErrorMessage,
   listQuizzesRequest,
   type Quiz,
-} from "../../utils/quiz-api";
+} from "../../../utils/quiz-api";
 
 export default function ProjectsPage() {
   const router = useRouter();

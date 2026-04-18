@@ -6,14 +6,14 @@ import {
   Button,
   Carousel,
   SkeletonCard,
-} from "../../components";
-import { useAuth } from "../../context/auth-context";
-import { useThemeTokens } from "../../hooks";
+} from "../../../components";
+import { useAuth } from "../../../context/auth-context";
+import { useThemeTokens } from "../../../hooks";
 import {
   getQuizApiErrorMessage,
   listQuizzesRequest,
   type Quiz,
-} from "../../utils/quiz-api";
+} from "../../../utils/quiz-api";
 
 type HomeCarouselItem = {
   id: string;

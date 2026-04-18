@@ -8,17 +8,17 @@ import {
   Text,
   View,
 } from "react-native";
-import { Button } from "../../components";
-import { AppTextInput } from "../../components/TextInput";
-import { useAuth } from "../../context/auth-context";
-import { useThemeTokens } from "../../hooks";
-import { SafeAreaPage } from "../../screens/safe-area-page";
+import { Button } from "../../../components";
+import { AppTextInput } from "../../../components/TextInput";
+import { useAuth } from "../../../context/auth-context";
+import { useThemeTokens } from "../../../hooks";
+import { SafeAreaPage } from "../../../screens/safe-area-page";
 import {
   createQuizProjectRequest,
   createQuizQuestionRequest,
   createQuizRequest,
   getQuizApiErrorMessage,
-} from "../../utils/quiz-api";
+} from "../../../utils/quiz-api";
 
 type QuestionDraft = {
   key: string;

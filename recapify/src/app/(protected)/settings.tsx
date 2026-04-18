@@ -8,17 +8,17 @@ import {
   FileUploadField,
   AppTextInput,
   type UploadedFile,
-} from "../components";
-import { useAuth } from "../context/auth-context";
-import { useThemeTokens } from "../hooks";
+} from "../../components";
+import { useAuth } from "../../context/auth-context";
+import { useThemeTokens } from "../../hooks";
 import {
   getUserApiErrorMessage,
   updateCurrentUserPasswordRequest,
   updateCurrentUserProfileRequest,
   uploadCurrentUserAvatarRequest,
-} from "../utils/user-api";
-import { getApiHostUrl } from "../utils/api-config";
-import { SafeAreaPage } from "../screens/safe-area-page";
+} from "../../utils/user-api";
+import { getApiHostUrl } from "../../utils/api-config";
+import { SafeAreaPage } from "../../screens/safe-area-page";
 
 const API_HOST = getApiHostUrl();
 

@@ -7,15 +7,15 @@ import {
   Text,
   View,
 } from "react-native";
-import { Button } from "../../../components";
-import { useAuth } from "../../../context/auth-context";
-import { useThemeTokens } from "../../../hooks";
-import { SafeAreaPage } from "../../../screens/safe-area-page";
+import { Button } from "../../../../components";
+import { useAuth } from "../../../../context/auth-context";
+import { useThemeTokens } from "../../../../hooks";
+import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import {
   getQuizApiErrorMessage,
   getQuizByIdRequest,
   type Quiz,
-} from "../../../utils/quiz-api";
+} from "../../../../utils/quiz-api";
 
 function parseQuizId(value: string | string[] | undefined): number | null {
   const firstValue = Array.isArray(value) ? value[0] : value;

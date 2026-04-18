@@ -8,9 +8,9 @@ import {
   Text,
   View,
 } from "react-native";
-import { Button, ProfileCard } from "../../components";
-import { useAuth } from "../../context/auth-context";
-import { useThemeTokens } from "../../hooks";
+import { Button, ProfileCard } from "../../../components";
+import { useAuth } from "../../../context/auth-context";
+import { useThemeTokens } from "../../../hooks";
 import {
   followUserRequest,
   getUserApiErrorMessage,
@@ -18,9 +18,9 @@ import {
   type ProfileProject,
   unfollowUserRequest,
   type UserProfileSummary,
-} from "../../utils/user-api";
-import { getApiHostUrl } from "../../utils/api-config";
-import { SafeAreaPage } from "../../screens/safe-area-page";
+} from "../../../utils/user-api";
+import { getApiHostUrl } from "../../../utils/api-config";
+import { SafeAreaPage } from "../../../screens/safe-area-page";
 
 function parseUserId(value: string | string[] | undefined): number | null {
   const firstValue = Array.isArray(value) ? value[0] : value;

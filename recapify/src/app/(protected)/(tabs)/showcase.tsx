@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import {
   PRIMARY_TEXT_SIZES,
   SECONDARY_TEXT_SIZES,
-} from "../../constants";
+} from "../../../constants";
 import {
   Accordion,
   AppActionSheet,
@@ -24,9 +24,9 @@ import {
   SkeletonBlock,
   SkeletonCard,
   type UploadedFile,
-} from "../../components";
-import { useAuth } from "../../context/auth-context";
-import { useThemeTokens } from "../../hooks";
+} from "../../../components";
+import { useAuth } from "../../../context/auth-context";
+import { useThemeTokens } from "../../../hooks";
 
 type ShowcaseSectionProps = {
   title: string;
