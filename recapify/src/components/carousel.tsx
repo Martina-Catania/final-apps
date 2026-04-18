@@ -72,7 +72,6 @@ export const Carousel = ({ items }: CarouselProps) => {
         horizontal
         keyExtractor={(item) => item.id}
         onMomentumScrollEnd={updateActiveIndex}
-        pagingEnabled
         ref={listRef}
         renderItem={({ item }) => (
           <View style={{ width: screenWidth }}>
@@ -83,7 +82,7 @@ export const Carousel = ({ items }: CarouselProps) => {
                   backgroundColor: colors.surface,
                   borderColor: colors.border,
                   gap: spacing.sm,
-                  marginHorizontal: spacing.lg,
+                  marginHorizontal: spacing.lg + spacing.sm,
                   padding: spacing.lg,
                 },
               ]}
