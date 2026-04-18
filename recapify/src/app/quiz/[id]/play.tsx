@@ -527,12 +527,6 @@ export default function QuizPlayPage() {
           ]}
         >
           <View style={[styles.rowBetween, { gap: spacing.sm }]}>
-            <Button
-              iconName="arrow-back-outline"
-              label="Back"
-              onPress={goBackOnStack}
-              variant="icon"
-            />
             <Text
               style={{
                 color: colors.textSecondary,
