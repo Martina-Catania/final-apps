@@ -28,7 +28,7 @@ import {
 } from "../components";
 import { useAuth } from "../context/auth-context";
 import { useThemeTokens } from "../hooks";
-import { PageShell, type ShellTabKey } from "../screens/page-shell";
+import { AppTabLayout, type AppTabKey } from "../screens/app-tab-layout";
 
 type ShowcaseSectionProps = {
   title: string;
@@ -334,7 +334,7 @@ export default function Index() {
     }
   };
 
-  const handleTabPress = (key: ShellTabKey) => {
+  const handleTabPress = (key: AppTabKey) => {
     if (key === "showcase") {
       return;
     }
@@ -348,7 +348,7 @@ export default function Index() {
   };
 
   return (
-    <PageShell
+    <AppTabLayout
       activeTab="showcase"
       onMenuPress={drawer.open}
       onTabPress={handleTabPress}
@@ -742,7 +742,7 @@ export default function Index() {
         </Text>
       </AppModal>
       </>
-    </PageShell>
+    </AppTabLayout>
   );
 }
 

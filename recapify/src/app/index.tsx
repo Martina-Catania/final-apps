@@ -12,7 +12,7 @@ import {
 import { useAuth } from "../context/auth-context";
 import { useThemePreference } from "../context/theme-context";
 import { useThemeTokens } from "../hooks";
-import { PageShell, type ShellTabKey } from "../screens/page-shell";
+import { AppTabLayout, type AppTabKey } from "../screens/app-tab-layout";
 import {
   getQuizApiErrorMessage,
   listQuizzesRequest,
@@ -103,7 +103,7 @@ export default function Index() {
     }
   };
 
-  const handleTabPress = (key: ShellTabKey) => {
+  const handleTabPress = (key: AppTabKey) => {
     if (key === "home") {
       return;
     }
@@ -117,7 +117,7 @@ export default function Index() {
   };
 
   return (
-    <PageShell
+    <AppTabLayout
       activeTab="home"
       onMenuPress={() => setIsDrawerOpen(true)}
       onTabPress={handleTabPress}
@@ -347,7 +347,7 @@ export default function Index() {
           </View>
         </DrawerPanel>
       </>
-    </PageShell>
+    </AppTabLayout>
   );
 }
 

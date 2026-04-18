@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button, DrawerPanel, SkeletonCard } from "../components";
 import { useAuth } from "../context/auth-context";
 import { useThemeTokens } from "../hooks";
-import { PageShell, type ShellTabKey } from "../screens/page-shell";
+import { AppTabLayout, type AppTabKey } from "../screens/app-tab-layout";
 import {
   getQuizApiErrorMessage,
   listQuizzesRequest,
@@ -57,7 +57,7 @@ export default function ProjectsPage() {
     };
   }, [token]);
 
-  const handleTabPress = (key: ShellTabKey) => {
+  const handleTabPress = (key: AppTabKey) => {
     if (key === "projects") {
       return;
     }
@@ -71,7 +71,7 @@ export default function ProjectsPage() {
   };
 
   return (
-    <PageShell
+    <AppTabLayout
       activeTab="projects"
       onMenuPress={() => setIsDrawerOpen(true)}
       onTabPress={handleTabPress}
@@ -252,7 +252,7 @@ export default function ProjectsPage() {
           </View>
         </DrawerPanel>
       </>
-    </PageShell>
+    </AppTabLayout>
   );
 }
 
