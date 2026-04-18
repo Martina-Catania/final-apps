@@ -45,6 +45,9 @@ export default function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
   const [avatarMessage, setAvatarMessage] = useState<string | null>(null);
@@ -162,6 +165,9 @@ export default function SettingsPage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
       setPasswordMessage("Password updated");
     } catch (error) {
       setErrorMessage(getUserApiErrorMessage(error, "Unable to update password"));
@@ -316,21 +322,33 @@ export default function SettingsPage() {
         <Accordion title="Password">
           <View style={{ gap: spacing.md }}>
             <AppTextInput
+              autoCapitalize="none"
+              autoComplete="password"
               label="Current password"
               onChangeText={setCurrentPassword}
-              secureTextEntry
+              onRightIconPress={() => setShowCurrentPassword((current) => !current)}
+              rightIcon={showCurrentPassword ? "eye-off-outline" : "eye-outline"}
+              secureTextEntry={!showCurrentPassword}
               value={currentPassword}
             />
             <AppTextInput
+              autoCapitalize="none"
+              autoComplete="password"
               label="New password"
               onChangeText={setNewPassword}
-              secureTextEntry
+              onRightIconPress={() => setShowNewPassword((current) => !current)}
+              rightIcon={showNewPassword ? "eye-off-outline" : "eye-outline"}
+              secureTextEntry={!showNewPassword}
               value={newPassword}
             />
             <AppTextInput
+              autoCapitalize="none"
+              autoComplete="password"
               label="Confirm new password"
               onChangeText={setConfirmPassword}
-              secureTextEntry
+              onRightIconPress={() => setShowConfirmPassword((current) => !current)}
+              rightIcon={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+              secureTextEntry={!showConfirmPassword}
               value={confirmPassword}
             />
             <Button
