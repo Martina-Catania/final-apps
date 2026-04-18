@@ -122,7 +122,7 @@ export default function QuizPlayPage() {
       return;
     }
 
-    router.replace("/");
+    router.replace("../../..");
   }, [router]);
 
   const loadQuiz = useCallback(async () => {
@@ -273,7 +273,7 @@ export default function QuizPlayPage() {
               fullWidth
               iconName="home-outline"
               label="Back to home"
-              onPress={() => router.replace("/")}
+              onPress={() => router.replace("../../..")}
               variant="default"
             />
           </View>
@@ -327,7 +327,7 @@ export default function QuizPlayPage() {
               fullWidth
               iconName="home-outline"
               label="Back to home"
-              onPress={() => router.replace("/")}
+              onPress={() => router.replace("../../..")}
               variant="default"
             />
           </View>
@@ -487,7 +487,7 @@ export default function QuizPlayPage() {
               fullWidth
               iconName="home-outline"
               label="Go home"
-              onPress={() => router.replace("/")}
+              onPress={() => router.replace("../../..")}
               variant="default"
             />
           </View>

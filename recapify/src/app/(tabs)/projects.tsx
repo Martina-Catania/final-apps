@@ -1,15 +1,14 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Button, SkeletonCard } from "../components";
-import { useAuth } from "../context/auth-context";
-import { useThemeTokens } from "../hooks";
-import { AppTabLayout, type AppTabKey } from "../screens/app-tab-layout";
+import { Button, SkeletonCard } from "../../components";
+import { useAuth } from "../../context/auth-context";
+import { useThemeTokens } from "../../hooks";
 import {
   getQuizApiErrorMessage,
   listQuizzesRequest,
   type Quiz,
-} from "../utils/quiz-api";
+} from "../../utils/quiz-api";
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -56,27 +55,8 @@ export default function ProjectsPage() {
     };
   }, [token]);
 
-  const handleTabPress = (key: AppTabKey) => {
-    if (key === "projects") {
-      return;
-    }
-
-    if (key === "home") {
-      router.replace("/");
-      return;
-    }
-
-    router.push("../showcase");
-  };
-
   return (
-    <AppTabLayout
-      activeTab="projects"
-      onTabPress={handleTabPress}
-      title="Project Showcase"
-    >
-      <>
-      <ScrollView
+    <ScrollView
         contentContainerStyle={{
           gap: spacing.md,
           padding: spacing.lg,
@@ -124,7 +104,7 @@ export default function ProjectsPage() {
             <Button
               iconName="add-circle-outline"
               label="Create quiz"
-              onPress={() => router.push("../quiz/create")}
+              onPress={() => router.push("/quiz/create")}
               variant="primary"
             />
           </View>
@@ -174,7 +154,7 @@ export default function ProjectsPage() {
                   <Pressable
                     onPress={() => {
                       router.push({
-                        pathname: "./profile/[id]",
+                        pathname: "/profile/[id]",
                         params: { id: String(quiz.project.userId) },
                       });
                     }}
@@ -196,7 +176,7 @@ export default function ProjectsPage() {
                     label="Open project"
                     onPress={() => {
                       router.push({
-                        pathname: "../quiz/[id]",
+                        pathname: "/quiz/[id]",
                         params: { id: String(quiz.id) },
                       });
                     }}
@@ -206,10 +186,7 @@ export default function ProjectsPage() {
               );
             })
           : null}
-      </ScrollView>
-
-      </>
-    </AppTabLayout>
+    </ScrollView>
   );
 }
 

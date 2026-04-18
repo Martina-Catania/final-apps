@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import {
   PRIMARY_TEXT_SIZES,
   SECONDARY_TEXT_SIZES,
-} from "../constants";
+} from "../../constants";
 import {
   Accordion,
   AppActionSheet,
@@ -24,10 +24,9 @@ import {
   SkeletonBlock,
   SkeletonCard,
   type UploadedFile,
-} from "../components";
-import { useAuth } from "../context/auth-context";
-import { useThemeTokens } from "../hooks";
-import { AppTabLayout, type AppTabKey } from "../screens/app-tab-layout";
+} from "../../components";
+import { useAuth } from "../../context/auth-context";
+import { useThemeTokens } from "../../hooks";
 
 type ShowcaseSectionProps = {
   title: string;
@@ -332,26 +331,8 @@ export default function Index() {
     }
   };
 
-  const handleTabPress = (key: AppTabKey) => {
-    if (key === "showcase") {
-      return;
-    }
-
-    if (key === "home") {
-      router.replace("/");
-      return;
-    }
-
-    router.push("../projects");
-  };
-
   return (
-    <AppTabLayout
-      activeTab="showcase"
-      onTabPress={handleTabPress}
-      title="Component Showcase"
-    >
-      <>
+    <>
       <RefreshableScroll
         contentContainerStyle={{
           gap: spacing.lg,
@@ -403,7 +384,7 @@ export default function Index() {
               <Button
                 iconName="add-circle-outline"
                 label="Create quiz"
-                onPress={() => router.push("../quiz/create")}
+                onPress={() => router.push("/quiz/create")}
                 variant="primary"
               />
               <Button
@@ -703,8 +684,7 @@ export default function Index() {
           Reusable modals let you keep overlay behavior and action layouts consistent.
         </Text>
       </AppModal>
-      </>
-    </AppTabLayout>
+    </>
   );
 }
 

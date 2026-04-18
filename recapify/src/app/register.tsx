@@ -103,7 +103,7 @@ export default function RegisterPage() {
         password,
       });
 
-      router.replace("/");
+      router.replace("./");
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     } finally {

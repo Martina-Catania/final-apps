@@ -137,7 +137,7 @@ export default function QuizDetailPage() {
               fullWidth
               iconName="home-outline"
               label="Back to home"
-              onPress={() => router.replace("/")}
+              onPress={() => router.replace("../..")}
               variant="default"
             />
           </View>

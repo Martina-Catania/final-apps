@@ -32,7 +32,7 @@ export default function LoginPage() {
 
     try {
       await login(email.trim(), password);
-      router.replace("/");
+      router.replace("./");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to sign in");
     } finally {

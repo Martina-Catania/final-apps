@@ -21,12 +21,12 @@ function AppNavigator() {
     const isAuthRoute = firstSegment === "login" || firstSegment === "register";
 
     if (!token && !isAuthRoute) {
-      router.replace("./login");
+      router.replace("/login");
       return;
     }
 
     if (token && isAuthRoute) {
-      router.replace("/");
+      router.replace("./");
     }
   }, [isLoading, router, segments, token]);
 

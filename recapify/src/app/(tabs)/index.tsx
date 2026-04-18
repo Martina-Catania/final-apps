@@ -6,15 +6,14 @@ import {
   Button,
   Carousel,
   SkeletonCard,
-} from "../components";
-import { useAuth } from "../context/auth-context";
-import { useThemeTokens } from "../hooks";
-import { AppTabLayout, type AppTabKey } from "../screens/app-tab-layout";
+} from "../../components";
+import { useAuth } from "../../context/auth-context";
+import { useThemeTokens } from "../../hooks";
 import {
   getQuizApiErrorMessage,
   listQuizzesRequest,
   type Quiz,
-} from "../utils/quiz-api";
+} from "../../utils/quiz-api";
 
 type HomeCarouselItem = {
   id: string;
@@ -87,32 +86,13 @@ export default function Index() {
     });
   }, [colors.primary, quizzes]);
 
-  const handleTabPress = (key: AppTabKey) => {
-    if (key === "home") {
-      return;
-    }
-
-    if (key === "projects") {
-      router.push("./projects");
-      return;
-    }
-
-    router.push("./showcase");
-  };
-
   return (
-    <AppTabLayout
-      activeTab="home"
-      onTabPress={handleTabPress}
-      title="Recapify"
+    <ScrollView
+      contentContainerStyle={{
+        gap: spacing.lg,
+        padding: spacing.lg,
+      }}
     >
-      <>
-        <ScrollView
-          contentContainerStyle={{
-            gap: spacing.lg,
-            padding: spacing.lg,
-          }}
-        >
           <View
             style={[
               styles.heroCard,
@@ -170,7 +150,7 @@ export default function Index() {
               <Button
                 iconName="arrow-forward-outline"
                 label="See more"
-                onPress={() => router.push("./projects")}
+                onPress={() => router.push("/projects")}
                 variant="secondary"
               />
             </View>
@@ -214,7 +194,7 @@ export default function Index() {
                 <Button
                   iconName="add-circle-outline"
                   label="Create quiz"
-                  onPress={() => router.push("./quiz/create")}
+                  onPress={() => router.push("/quiz/create")}
                   variant="primary"
                 />
               </View>
@@ -233,17 +213,14 @@ export default function Index() {
                   }
 
                   router.push({
-                    pathname: "./quiz/[id]/play",
+                    pathname: "/quiz/[id]/play",
                     params: { id: String(selectedQuiz.quizId) },
                   });
                 }}
               />
             ) : null}
           </View>
-        </ScrollView>
-
-      </>
-    </AppTabLayout>
+    </ScrollView>
   );
 }
 
