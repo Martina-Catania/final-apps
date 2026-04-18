@@ -8,7 +8,7 @@ const authUserSelect = {
   id: true,
   email: true,
   username: true,
-  name: true,
+  avatarUrl: true,
   timetable: true,
 } as const;
 
@@ -16,7 +16,7 @@ type AuthUser = {
   id: number;
   email: string;
   username: string;
-  name: string;
+  avatarUrl: string | null;
   timetable: string | null;
 };
 
@@ -29,13 +29,21 @@ type RegisterInput = {
   email: string;
   username: string;
   password: string;
-  name?: string;
   timetable?: string;
 };
 
 type LoginInput = {
   email: string;
   password: string;
+};
+
+type UpdateProfileInput = {
+  username?: string;
+};
+
+type ChangePasswordInput = {
+  currentPassword: string;
+  newPassword: string;
 };
 
 export async function registerUser(input: RegisterInput, ctx: AppContext): Promise<AuthPayload> {
@@ -71,7 +79,6 @@ export async function registerUser(input: RegisterInput, ctx: AppContext): Promi
       email,
       username,
       hashedPassword,
-      name: input.name ?? "",
       timetable: input.timetable,
     },
     select: authUserSelect,
@@ -122,4 +129,91 @@ export async function getCurrentAuthUser(userId: number, ctx: AppContext): Promi
   }
 
   return user;
+}
+
+export async function updateCurrentAuthUserProfile(
+  userId: number,
+  input: UpdateProfileInput,
+  ctx: AppContext,
+): Promise<AuthUser> {
+  const data: {
+    username?: string;
+  } = {};
+
+  if (input.username !== undefined) {
+    const existingByUsername = await ctx.prisma.user.findUnique({
+      where: { username: input.username },
+      select: { id: true },
+    });
+
+    if (existingByUsername && existingByUsername.id !== userId) {
+      throw new ApiError(409, "Username is already in use");
+    }
+
+    data.username = input.username;
+  }
+
+  if (Object.keys(data).length === 0) {
+    throw new ApiError(400, "At least one profile field is required");
+  }
+
+  return ctx.prisma.user.update({
+    where: { id: userId },
+    data,
+    select: authUserSelect,
+  });
+}
+
+export async function changeCurrentAuthUserPassword(
+  userId: number,
+  input: ChangePasswordInput,
+  ctx: AppContext,
+): Promise<void> {
+  const user = await ctx.prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      hashedPassword: true,
+    },
+  });
+
+  if (!user) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  const isCurrentPasswordValid = await verifyPassword(
+    input.currentPassword,
+    user.hashedPassword,
+  );
+
+  if (!isCurrentPasswordValid) {
+    throw new ApiError(401, "Current password is incorrect");
+  }
+
+  const passwordValidation = await validatePasswordWithBreachCheck(input.newPassword);
+  if (!passwordValidation.isValid) {
+    throw new ApiError(400, "Password does not meet security requirements", {
+      errors: passwordValidation.errors,
+    });
+  }
+
+  const hashedPassword = await hashPassword(input.newPassword);
+  await ctx.prisma.user.update({
+    where: { id: userId },
+    data: { hashedPassword },
+  });
+}
+
+export async function updateCurrentAuthUserAvatar(
+  userId: number,
+  avatarUrl: string,
+  ctx: AppContext,
+): Promise<AuthUser> {
+  return ctx.prisma.user.update({
+    where: { id: userId },
+    data: {
+      avatarUrl,
+    },
+    select: authUserSelect,
+  });
 }

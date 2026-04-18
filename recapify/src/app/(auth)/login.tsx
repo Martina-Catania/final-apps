@@ -1,118 +1,45 @@
-import { Link, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { Link } from "expo-router";
+import { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { AppButton } from "../components";
-import { AppTextInput } from "../components/TextInput";
-import { useAuth } from "../context/auth-context";
-import { useThemeTokens } from "../hooks";
-import { AuthApiError } from "../utils/auth-api";
-import { validatePasswordWithBreachCheck } from "../utils/password-validation";
+import { Button } from "../../components";
+import { AppTextInput } from "../../components/TextInput";
+import { useAuth } from "../../context/auth-context";
+import { useThemeTokens } from "../../hooks";
+import { SafeAreaPage } from "../../screens/safe-area-page";
 
-function getErrorMessage(error: unknown): string {
-  if (error instanceof AuthApiError) {
-    if (
-      error.details &&
-      typeof error.details === "object" &&
-      "errors" in error.details &&
-      Array.isArray(error.details.errors)
-    ) {
-      const message = error.details.errors
-        .filter((item): item is string => typeof item === "string")
-        .join(". ");
-
-      if (message) {
-        return message;
-      }
-    }
-
-    return error.message;
-  }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return "Unable to register";
-}
-
-export default function RegisterPage() {
+export default function LoginPage() {
   const { colors, spacing, typography, radius } = useThemeTokens();
-  const { register } = useAuth();
-  const router = useRouter();
+  const { login } = useAuth();
 
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [repeatPassword, setRepeatPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showRepeatPassword, setShowRepeatPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const passwordChecks = useMemo(
-    () => [
-      {
-        label: "At least 6 characters",
-        passes: password.length >= 6,
-      },
-      {
-        label: "Contains at least one number",
-        passes: /\d/.test(password),
-      },
-      {
-        label: "Contains at least one letter",
-        passes: /[a-zA-Z]/.test(password),
-      },
-      {
-        label: "Contains at least one uppercase letter",
-        passes: /[A-Z]/.test(password),
-      },
-    ],
-    [password],
-  );
-
-  const handleRegister = async () => {
+  const handleLogin = async () => {
+    setIsLoading(true);
     setErrorMessage(null);
 
-    if (password !== repeatPassword) {
-      setErrorMessage("Passwords do not match");
-      return;
-    }
-
-    setIsLoading(true);
-
     try {
-      const passwordValidation = await validatePasswordWithBreachCheck(password);
-      if (!passwordValidation.isValid) {
-        setErrorMessage(passwordValidation.errors.join(". "));
-        return;
-      }
-
-      await register({
-        email: email.trim(),
-        username: username.trim(),
-        password,
-      });
-
-      router.replace("/");
+      await login(email.trim(), password);
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      setErrorMessage(error instanceof Error ? error.message : "Unable to sign in");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+    <SafeAreaPage backgroundColor={colors.background}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardAvoiding}
@@ -146,7 +73,7 @@ export default function RegisterPage() {
                   fontWeight: typography.weights.bold,
                 }}
               >
-                Create Account
+                Sign In
               </Text>
               <Text
                 style={{
@@ -154,19 +81,11 @@ export default function RegisterPage() {
                   fontSize: typography.secondary.md,
                 }}
               >
-                Register to unlock protected pages.
+                Enter your email and password to access protected pages.
               </Text>
             </View>
 
             <View style={{ gap: spacing.md }}>
-              <AppTextInput
-                autoCapitalize="none"
-                label="Username"
-                onChangeText={setUsername}
-                placeholder="Choose a username"
-                value={username}
-              />
-
               <AppTextInput
                 autoCapitalize="none"
                 autoComplete="email"
@@ -183,36 +102,10 @@ export default function RegisterPage() {
                 label="Password"
                 onChangeText={setPassword}
                 onRightIconPress={() => setShowPassword((current) => !current)}
-                placeholder="Create a password"
+                placeholder="Enter your password"
                 rightIcon={showPassword ? "eye-off-outline" : "eye-outline"}
                 secureTextEntry={!showPassword}
                 value={password}
-              />
-
-              <View style={{ gap: spacing.xs }}>
-                {passwordChecks.map((check) => (
-                  <Text
-                    key={check.label}
-                    style={{
-                      color: check.passes ? colors.success : colors.textSecondary,
-                      fontSize: typography.secondary.sm,
-                    }}
-                  >
-                    • {check.label}
-                  </Text>
-                ))}
-              </View>
-
-              <AppTextInput
-                autoCapitalize="none"
-                autoComplete="password"
-                label="Repeat Password"
-                onChangeText={setRepeatPassword}
-                onRightIconPress={() => setShowRepeatPassword((current) => !current)}
-                placeholder="Re-enter your password"
-                rightIcon={showRepeatPassword ? "eye-off-outline" : "eye-outline"}
-                secureTextEntry={!showRepeatPassword}
-                value={repeatPassword}
               />
 
               {errorMessage ? (
@@ -226,12 +119,12 @@ export default function RegisterPage() {
                 </Text>
               ) : null}
 
-              <AppButton
+              <Button
                 disabled={isLoading}
                 fullWidth
-                label={isLoading ? "Creating account..." : "Register"}
+                label={isLoading ? "Signing in..." : "Sign In"}
                 onPress={() => {
-                  void handleRegister();
+                  void handleLogin();
                 }}
                 variant="primary"
               />
@@ -243,9 +136,9 @@ export default function RegisterPage() {
                     fontSize: typography.secondary.sm,
                   }}
                 >
-                  Already have an account?
+                  Don&apos;t have an account?
                 </Text>
-                <Link asChild href="/login">
+                <Link asChild href="/register">
                   <Pressable>
                     <Text
                       style={{
@@ -254,7 +147,7 @@ export default function RegisterPage() {
                         fontWeight: typography.weights.semibold,
                       }}
                     >
-                      Sign in
+                      Register
                     </Text>
                   </Pressable>
                 </Link>
@@ -263,7 +156,7 @@ export default function RegisterPage() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaPage>
   );
 }
 

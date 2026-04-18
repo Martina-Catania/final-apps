@@ -3,7 +3,7 @@ import { type ReactNode } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useThemeTokens } from "../hooks";
-import { AppButton, type ButtonVariant } from "./Button";
+import { Button, type ButtonVariant } from "./Button";
 
 type ModalAction = {
   label: string;
@@ -92,7 +92,7 @@ export const AppModal = ({
           {actions?.length ? (
             <View style={[styles.actionRow, { gap: spacing.sm }]}>
               {actions.map((action) => (
-                <AppButton
+                <Button
                   iconName={action.iconName}
                   key={action.label}
                   label={action.label}

@@ -47,6 +47,13 @@ export function createFollowRouter(ctx: AppContext) {
       }
 
       const follow = await createFollow({ followerId, followingId }, ctx);
+
+      console.info("[follow] User followed another user", {
+        followerId: follow.followerId,
+        followingId: follow.followingId,
+        ip: req.ip,
+      });
+
       res.status(201).json(follow);
     }),
   );

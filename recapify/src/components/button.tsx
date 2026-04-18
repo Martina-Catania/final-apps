@@ -6,24 +6,26 @@ import { useThemeTokens } from "../hooks";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
-export type ButtonVariant = "primary" | "secondary" | "default" | "disabled";
+export type ButtonVariant = "primary" | "secondary" | "default" | "disabled" | "icon";
 
-type AppButtonProps = Omit<PressableProps, "style"> & {
-  label: string;
+type ButtonProps = Omit<PressableProps, "style"> & {
+  label?: string;
   iconName?: IconName;
   variant?: ButtonVariant;
   fullWidth?: boolean;
 };
 
-export const AppButton = ({
-  label,
+export const Button = ({
+  label = "",
   iconName,
   variant = "default",
   fullWidth = false,
   disabled,
+  accessibilityLabel,
   ...rest
-}: AppButtonProps) => {
+}: ButtonProps) => {
   const { colors, typography, spacing, radius, iconSizes } = useThemeTokens();
+  const isIconOnly = variant === "icon";
 
   const isDisabled = disabled || variant === "disabled";
 
@@ -68,9 +70,12 @@ export const AppButton = ({
   };
 
   const textColor = getTextColor();
+  const resolvedAccessibilityLabel =
+    accessibilityLabel ?? (label || (isIconOnly ? "Icon button" : "Button"));
 
   return (
     <Pressable
+      accessibilityLabel={resolvedAccessibilityLabel}
       accessibilityRole="button"
       disabled={isDisabled}
       hitSlop={6}
@@ -80,27 +85,30 @@ export const AppButton = ({
         {
           ...getContainerColors(),
           borderRadius: radius.md,
-          paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.md,
+          paddingHorizontal: isIconOnly ? spacing.sm : spacing.lg,
+          paddingVertical: isIconOnly ? spacing.sm : spacing.md,
           opacity: pressed ? 0.85 : 1,
         },
+        isIconOnly && styles.iconOnly,
         fullWidth && styles.fullWidth,
       ]}
       {...rest}
     >
-      <View style={[styles.content, { gap: spacing.sm }]}>
+      <View style={[styles.content, { gap: isIconOnly ? 0 : spacing.sm }]}>
         {iconName ? (
           <Ionicons color={textColor} name={iconName} size={iconSizes.md} />
         ) : null}
-        <Text
-          style={{
-            color: textColor,
-            fontSize: typography.secondary.lg,
-            fontWeight: typography.weights.semibold,
-          }}
-        >
-          {label}
-        </Text>
+        {!isIconOnly && label ? (
+          <Text
+            style={{
+              color: textColor,
+              fontSize: typography.secondary.lg,
+              fontWeight: typography.weights.semibold,
+            }}
+          >
+            {label}
+          </Text>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -118,5 +126,9 @@ const styles = StyleSheet.create({
   },
   fullWidth: {
     alignSelf: "stretch",
+  },
+  iconOnly: {
+    minHeight: 40,
+    minWidth: 40,
   },
 });

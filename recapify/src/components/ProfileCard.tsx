@@ -1,24 +1,30 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { useThemeTokens } from "../hooks";
-import { AppButton } from "./Button";
+import { Button } from "./Button";
 import { Avatar } from "./Avatar";
 
 type ProfileCardProps = {
-  name: string;
+  username: string;
   avatarUri?: string;
   followers?: number;
   following?: number;
   projects?: number;
+  showFollowButton?: boolean;
+  followButtonLabel?: string;
+  followButtonDisabled?: boolean;
   onFollowPress?: () => void;
 };
 
 export const ProfileCard = ({
-  name,
+  username,
   avatarUri,
   followers = 0,
   following = 0,
   projects: projects = 0,
+  showFollowButton = true,
+  followButtonLabel = "Follow",
+  followButtonDisabled = false,
   onFollowPress,
 }: ProfileCardProps) => {
   const { colors, spacing, typography } = useThemeTokens();
@@ -35,7 +41,18 @@ export const ProfileCard = ({
         },
       ]}
     >
-      <Avatar avatarUri={avatarUri} name={name} />
+      <View style={{ gap: spacing.xxs }}>
+        <Avatar avatarUri={avatarUri} name={username} />
+        <Text
+          style={{
+            color: colors.textSecondary,
+            fontSize: typography.secondary.md,
+            marginLeft: 84,
+          }}
+        >
+          @{username}
+        </Text>
+      </View>
 
       <View style={[styles.stats, { gap: spacing.md }]}>
         <View style={styles.statItem}>
@@ -82,13 +99,16 @@ export const ProfileCard = ({
         </View>
       </View>
 
-      <AppButton
-        fullWidth
-        iconName="person-add-outline"
-        label="Follow"
-        onPress={onFollowPress}
-        variant="primary"
-      />
+      {showFollowButton ? (
+        <Button
+          disabled={followButtonDisabled}
+          fullWidth
+          iconName="person-add-outline"
+          label={followButtonLabel}
+          onPress={onFollowPress}
+          variant="primary"
+        />
+      ) : null}
     </View>
   );
 };

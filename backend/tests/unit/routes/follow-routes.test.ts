@@ -1,4 +1,5 @@
 import request from "supertest";
+import { jest } from "@jest/globals";
 import { createFollowRouter } from "../../../src/routes/follow-routes.js";
 import { createRouteApp, createRouteMockContext } from "./helpers.js";
 
@@ -6,6 +7,7 @@ describe("follow-routes", () => {
   it("lists follows and handles get-not-found/create/delete", async () => {
     const { ctx, mocks } = createRouteMockContext();
     const app = createRouteApp("/follows", createFollowRouter(ctx));
+    const infoSpy = jest.spyOn(console, "info").mockImplementation(() => undefined);
 
     mocks.follow.findMany.mockResolvedValue([] as never);
     mocks.follow.findUnique.mockResolvedValue(null as never);
@@ -16,6 +18,18 @@ describe("follow-routes", () => {
     expect((await request(app).get("/follows/1/2")).status).toBe(404);
     expect((await request(app).post("/follows").send({ followerId: 1, followingId: 2 })).status).toBe(201);
     expect((await request(app).delete("/follows/1/2")).status).toBe(200);
+
+    expect(infoSpy).toHaveBeenCalledTimes(1);
+    expect(infoSpy).toHaveBeenCalledWith(
+      "[follow] User followed another user",
+      expect.objectContaining({
+        followerId: 1,
+        followingId: 2,
+        ip: expect.any(String),
+      }),
+    );
+
+    infoSpy.mockRestore();
   });
 
   it("rejects self-follow", async () => {
