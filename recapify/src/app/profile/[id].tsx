@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,6 +20,7 @@ import {
   type UserProfileSummary,
 } from "../../utils/user-api";
 import { getApiHostUrl } from "../../utils/api-config";
+import { SafeAreaPage } from "../../screens/safe-area-page";
 
 function parseUserId(value: string | string[] | undefined): number | null {
   const firstValue = Array.isArray(value) ? value[0] : value;
@@ -138,17 +138,17 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
   if (errorMessage || !profile) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View
           style={[
             styles.card,
@@ -198,12 +198,12 @@ export default function ProfilePage() {
             />
           </View>
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+    <SafeAreaPage backgroundColor={colors.background}>
       <ScrollView
         contentContainerStyle={{
           gap: spacing.lg,
@@ -353,7 +353,7 @@ export default function ProfilePage() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaPage>
   );
 }
 

@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +13,7 @@ import { Button } from "../../../components";
 import { AppTextInput } from "../../../components/TextInput";
 import { useAuth } from "../../../context/auth-context";
 import { useThemeTokens } from "../../../hooks";
+import { SafeAreaPage } from "../../../screens/safe-area-page";
 import {
   createQuizQuestionRequest,
   deleteQuizQuestionRequest,
@@ -292,17 +292,17 @@ export default function QuizEditPage() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
   if (loadError) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View
           style={[
             styles.errorCard,
@@ -352,12 +352,12 @@ export default function QuizEditPage() {
             />
           </View>
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+    <SafeAreaPage backgroundColor={colors.background}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardAvoiding}
@@ -566,7 +566,7 @@ export default function QuizEditPage() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaPage>
   );
 }
 

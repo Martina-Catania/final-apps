@@ -4,7 +4,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +13,7 @@ import { Button } from "../components";
 import { AppTextInput } from "../components/TextInput";
 import { useAuth } from "../context/auth-context";
 import { useThemeTokens } from "../hooks";
+import { SafeAreaPage } from "../screens/safe-area-page";
 
 export default function LoginPage() {
   const { colors, spacing, typography, radius } = useThemeTokens();
@@ -41,7 +41,7 @@ export default function LoginPage() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+    <SafeAreaPage backgroundColor={colors.background}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardAvoiding}
@@ -158,7 +158,7 @@ export default function LoginPage() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaPage>
   );
 }
 

@@ -2,7 +2,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import {
 import { Button } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
 import { useThemeTokens } from "../../../hooks";
+import { SafeAreaPage } from "../../../screens/safe-area-page";
 import {
   getQuizApiErrorMessage,
   getQuizByIdRequest,
@@ -75,17 +75,17 @@ export default function QuizDetailPage() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
   if (errorMessage || !quiz) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View
           style={[
             styles.errorCard,
@@ -142,12 +142,12 @@ export default function QuizDetailPage() {
             />
           </View>
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+    <SafeAreaPage backgroundColor={colors.background}>
       <ScrollView
         contentContainerStyle={{
           gap: spacing.lg,
@@ -314,7 +314,7 @@ export default function QuizDetailPage() {
           ))}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaPage>
   );
 }
 

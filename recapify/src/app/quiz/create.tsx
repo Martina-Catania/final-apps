@@ -3,7 +3,6 @@ import { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import { Button } from "../../components";
 import { AppTextInput } from "../../components/TextInput";
 import { useAuth } from "../../context/auth-context";
 import { useThemeTokens } from "../../hooks";
+import { SafeAreaPage } from "../../screens/safe-area-page";
 import {
   createQuizProjectRequest,
   createQuizQuestionRequest,
@@ -207,7 +207,7 @@ export default function QuizCreatePage() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+    <SafeAreaPage backgroundColor={colors.background}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardAvoiding}
@@ -407,7 +407,7 @@ export default function QuizCreatePage() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaPage>
   );
 }
 

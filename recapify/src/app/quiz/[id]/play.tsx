@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +11,7 @@ import {
 import { Button } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
 import { useThemeTokens } from "../../../hooks";
+import { SafeAreaPage } from "../../../screens/safe-area-page";
 import {
   getQuizApiErrorMessage,
   getQuizByIdRequest,
@@ -214,17 +214,17 @@ export default function QuizPlayPage() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
   if (errorMessage) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View
           style={[
             styles.card,
@@ -281,13 +281,13 @@ export default function QuizPlayPage() {
             />
           </View>
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
   if (playQuestions.length === 0) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View
           style={[
             styles.card,
@@ -335,7 +335,7 @@ export default function QuizPlayPage() {
             />
           </View>
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
@@ -344,7 +344,7 @@ export default function QuizPlayPage() {
     const questionLabel = totalQuestions === 1 ? "question" : "questions";
 
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View
           style={[
             styles.introScreen,
@@ -433,7 +433,7 @@ export default function QuizPlayPage() {
             />
           </View>
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
@@ -442,7 +442,7 @@ export default function QuizPlayPage() {
     const percentage = Math.round((correctAnswersCount / totalQuestions) * 100);
 
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <SafeAreaPage backgroundColor={colors.background}>
         <View
           style={[
             styles.card,
@@ -500,7 +500,7 @@ export default function QuizPlayPage() {
             />
           </View>
         </View>
-      </SafeAreaView>
+      </SafeAreaPage>
     );
   }
 
@@ -508,7 +508,7 @@ export default function QuizPlayPage() {
   const isLastQuestion = currentQuestionIndex === playQuestions.length - 1;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+    <SafeAreaPage backgroundColor={colors.background}>
       <ScrollView
         contentContainerStyle={{
           gap: spacing.lg,
@@ -644,7 +644,7 @@ export default function QuizPlayPage() {
           ) : null}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaPage>
   );
 }
 

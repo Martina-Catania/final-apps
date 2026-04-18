@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 
 type SafeAreaPageProps = {
   children: ReactNode;
@@ -21,12 +21,18 @@ export function SafeAreaPage({
 }: SafeAreaPageProps) {
   const resolvedTopBackground = topBackgroundColor ?? backgroundColor;
   const resolvedBottomBackground = bottomBackgroundColor ?? backgroundColor;
+  const rootEdges: Edge[] = ["left", "right"];
+
+  if (!topContent) {
+    rootEdges.push("top");
+  }
+
+  if (!bottomContent) {
+    rootEdges.push("bottom");
+  }
 
   return (
-    <SafeAreaView
-      edges={["left", "right"]}
-      style={[styles.safeArea, { backgroundColor }]}
-    >
+    <SafeAreaView edges={rootEdges} style={[styles.safeArea, { backgroundColor }]}> 
       <View style={styles.screen}>
         {topContent ? (
           <SafeAreaView edges={["top"]} style={{ backgroundColor: resolvedTopBackground }}>

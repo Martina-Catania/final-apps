@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   Accordion,
   Avatar,
@@ -18,6 +18,7 @@ import {
   uploadCurrentUserAvatarRequest,
 } from "../utils/user-api";
 import { getApiHostUrl } from "../utils/api-config";
+import { SafeAreaPage } from "../screens/safe-area-page";
 
 const API_HOST = getApiHostUrl();
 
@@ -173,7 +174,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+    <SafeAreaPage backgroundColor={colors.background}>
       <ScrollView
         contentContainerStyle={{
           gap: spacing.lg,
@@ -354,7 +355,7 @@ export default function SettingsPage() {
           </View>
         </Accordion>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaPage>
   );
 }
 
