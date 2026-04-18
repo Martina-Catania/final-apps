@@ -5,8 +5,7 @@ import { Button } from "./Button";
 import { Avatar } from "./Avatar";
 
 type ProfileCardProps = {
-  name: string;
-  username?: string;
+  username: string;
   avatarUri?: string;
   followers?: number;
   following?: number;
@@ -18,7 +17,6 @@ type ProfileCardProps = {
 };
 
 export const ProfileCard = ({
-  name,
   username,
   avatarUri,
   followers = 0,
@@ -44,18 +42,16 @@ export const ProfileCard = ({
       ]}
     >
       <View style={{ gap: spacing.xxs }}>
-        <Avatar avatarUri={avatarUri} name={name} />
-        {username ? (
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: typography.secondary.md,
-              marginLeft: 84,
-            }}
-          >
-            @{username}
-          </Text>
-        ) : null}
+        <Avatar avatarUri={avatarUri} name={username} />
+        <Text
+          style={{
+            color: colors.textSecondary,
+            fontSize: typography.secondary.md,
+            marginLeft: 84,
+          }}
+        >
+          @{username}
+        </Text>
       </View>
 
       <View style={[styles.stats, { gap: spacing.md }]}>

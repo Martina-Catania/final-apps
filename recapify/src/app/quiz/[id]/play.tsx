@@ -137,14 +137,12 @@ export default function QuizPlayPage() {
 
     try {
       const payload = await getQuizByIdRequest(quizId, token ?? undefined);
-      const ownName = user?.name?.trim();
       const ownUsername = user?.username?.trim();
-      const creatorName = payload.project.user?.name?.trim();
       const creatorUsername = payload.project.user?.username?.trim();
       const nextCreatorLabel =
         payload.project.userId === user?.id
-          ? ownName || (ownUsername ? `@${ownUsername}` : `User #${payload.project.userId}`)
-          : (creatorUsername ? `@${creatorUsername}` : creatorName || `User #${payload.project.userId}`);
+          ? (ownUsername ? `@${ownUsername}` : `User #${payload.project.userId}`)
+          : (creatorUsername ? `@${creatorUsername}` : `User #${payload.project.userId}`);
 
       setQuizTitle(payload.project.title);
       setCreatorLabel(nextCreatorLabel);

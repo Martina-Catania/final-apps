@@ -657,9 +657,9 @@ export default function Index() {
           <ProfileCard
             followers={followCount}
             following={88}
-            name="Alex Morgan"
             onFollowPress={() => setFollowCount((current) => current + 1)}
             projects={124}
+            username="alex_morgan"
           />
         </ShowcaseSection>
       </RefreshableScroll>

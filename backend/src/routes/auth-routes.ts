@@ -28,7 +28,6 @@ export function createAuthRouter(ctx: AppContext) {
       const email = requireString(req.body.email, "email");
       const username = requireString(req.body.username, "username");
       const password = requireString(req.body.password, "password");
-      const name = optionalString(req.body.name, "name");
       const timetable = optionalString(req.body.timetable, "timetable");
 
       const result = await registerUser(
@@ -36,7 +35,6 @@ export function createAuthRouter(ctx: AppContext) {
           email,
           username,
           password,
-          name,
           timetable,
         },
         ctx,
@@ -92,13 +90,11 @@ export function createAuthRouter(ctx: AppContext) {
     requireAuth,
     asyncHandler(async (req, res) => {
       const userId = getAuthUserId(res);
-      const name = optionalString(req.body.name, "name");
       const username = optionalString(req.body.username, "username");
 
       const user = await updateCurrentAuthUserProfile(
         userId,
         {
-          name,
           username,
         },
         ctx,

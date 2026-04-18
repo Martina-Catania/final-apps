@@ -65,7 +65,6 @@ describe("auth-lib", () => {
       id: 17,
       email: "new@example.com",
       username: "new_user",
-      name: "New User",
       avatarUrl: null,
       timetable: null,
     } as never);
@@ -75,7 +74,6 @@ describe("auth-lib", () => {
         email: "NEW@EXAMPLE.COM",
         username: "new_user",
         password: "StrongPass1",
-        name: "New User",
       },
       ctx,
     );
@@ -93,7 +91,6 @@ describe("auth-lib", () => {
         data: expect.objectContaining({
           email: "new@example.com",
           username: "new_user",
-          name: "New User",
           timetable: undefined,
         }),
       }),
@@ -103,7 +100,6 @@ describe("auth-lib", () => {
       id: 17,
       email: "new@example.com",
       username: "new_user",
-      name: "New User",
       avatarUrl: null,
       timetable: null,
     });
@@ -184,7 +180,6 @@ describe("auth-lib", () => {
       id: 42,
       email: "demo@example.com",
       username: "demo_user",
-      name: "Demo",
       avatarUrl: null,
       timetable: null,
       hashedPassword,
@@ -207,7 +202,6 @@ describe("auth-lib", () => {
       id: 42,
       email: "demo@example.com",
       username: "demo_user",
-      name: "Demo",
       avatarUrl: null,
       timetable: null,
     });
@@ -240,7 +234,6 @@ describe("auth-lib", () => {
       id: 42,
       email: "demo@example.com",
       username: "demo_user",
-      name: "Demo",
       avatarUrl: null,
       timetable: null,
       hashedPassword,
@@ -266,7 +259,6 @@ describe("auth-lib", () => {
       id: 7,
       email: "auth@example.com",
       username: "auth_user",
-      name: "Auth",
       avatarUrl: null,
       timetable: null,
     } as never);
@@ -279,7 +271,6 @@ describe("auth-lib", () => {
         id: true,
         email: true,
         username: true,
-        name: true,
         avatarUrl: true,
         timetable: true,
       },
@@ -288,7 +279,6 @@ describe("auth-lib", () => {
       id: 7,
       email: "auth@example.com",
       username: "auth_user",
-      name: "Auth",
       avatarUrl: null,
       timetable: null,
     });
@@ -312,7 +302,6 @@ describe("auth-lib", () => {
       id: 7,
       email: "auth@example.com",
       username: "renamed_user",
-      name: "Renamed",
       avatarUrl: null,
       timetable: null,
     } as never);
@@ -320,7 +309,6 @@ describe("auth-lib", () => {
     const result = await updateCurrentAuthUserProfile(
       7,
       {
-        name: "Renamed",
         username: "renamed_user",
       },
       ctx,
@@ -333,14 +321,12 @@ describe("auth-lib", () => {
     expect(user.update).toHaveBeenCalledWith({
       where: { id: 7 },
       data: {
-        name: "Renamed",
         username: "renamed_user",
       },
       select: {
         id: true,
         email: true,
         username: true,
-        name: true,
         avatarUrl: true,
         timetable: true,
       },
@@ -349,7 +335,6 @@ describe("auth-lib", () => {
       id: 7,
       email: "auth@example.com",
       username: "renamed_user",
-      name: "Renamed",
       avatarUrl: null,
       timetable: null,
     });
@@ -440,7 +425,6 @@ describe("auth-lib", () => {
       id: 7,
       email: "auth@example.com",
       username: "auth_user",
-      name: "Auth",
       avatarUrl: "/uploads/avatars/avatar-1.jpg",
       timetable: null,
     } as never);
@@ -460,7 +444,6 @@ describe("auth-lib", () => {
         id: true,
         email: true,
         username: true,
-        name: true,
         avatarUrl: true,
         timetable: true,
       },

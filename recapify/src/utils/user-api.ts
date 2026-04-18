@@ -10,7 +10,6 @@ import type { ProjectType } from "./quiz-api";
 export type ProfileUser = {
   id: number;
   username: string;
-  name: string;
   avatarUrl: string | null;
 };
 
@@ -36,7 +35,6 @@ export type UserProfileSummary = {
 };
 
 export type UpdateCurrentUserProfileInput = {
-  name?: string;
   username?: string;
 };
 

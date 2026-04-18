@@ -85,7 +85,6 @@ describe("user-lib", () => {
     user.findUnique.mockResolvedValue({
       id: 9,
       username: "profile_user",
-      name: "Profile User",
       avatarUrl: "/uploads/avatars/avatar.jpg",
     } as never);
     follow.count.mockResolvedValueOnce(4 as never).mockResolvedValueOnce(7 as never);
@@ -109,7 +108,6 @@ describe("user-lib", () => {
       user: {
         id: 9,
         username: "profile_user",
-        name: "Profile User",
         avatarUrl: "/uploads/avatars/avatar.jpg",
       },
       stats: {

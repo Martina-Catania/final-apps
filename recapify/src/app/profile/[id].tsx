@@ -241,13 +241,12 @@ export default function ProfilePage() {
                 ? "Unfollow"
                 : "Follow"
           }
-          name={profile.user.name || "Unnamed user"}
           onFollowPress={() => {
             void handleFollowToggle();
           }}
           projects={profile.stats.projectCount}
           showFollowButton={!isOwnProfile}
-          username={profile.user.username}
+          username={profile.user.username || "unknown"}
         />
 
         {errorMessage ? (

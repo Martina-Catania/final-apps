@@ -95,7 +95,6 @@ describe("api routes", () => {
       email: "gamma@example.com",
       username: "gamma_user",
       hashedPassword: "gamma_hash",
-      name: "Gamma",
       timetable: null,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -105,7 +104,6 @@ describe("api routes", () => {
       email: "gamma@example.com",
       username: "gamma_user",
       hashedPassword: "gamma_hash",
-      name: "Gamma",
     });
 
     expect(response.status).toBe(201);
@@ -169,7 +167,6 @@ describe("api routes", () => {
       id: 11,
       email: "new@example.com",
       username: "new_user",
-      name: "New",
       timetable: null,
     } as never);
 
@@ -177,7 +174,6 @@ describe("api routes", () => {
       email: "NEW@EXAMPLE.COM",
       username: "new_user",
       password: "StrongPass1",
-      name: "New",
     });
 
     expect(response.status).toBe(201);
@@ -209,7 +205,6 @@ describe("api routes", () => {
       id: 5,
       email: "demo@example.com",
       username: "demo",
-      name: "Demo",
       timetable: null,
       hashedPassword,
     } as never);
@@ -245,7 +240,6 @@ describe("api routes", () => {
       id: 7,
       email: "auth@example.com",
       username: "auth_user",
-      name: "Auth",
       timetable: null,
     } as never);
 
@@ -275,7 +269,6 @@ describe("api routes", () => {
       id: 7,
       email: "auth@example.com",
       username: "updated_user",
-      name: "Updated Name",
       avatarUrl: null,
       timetable: null,
     } as never);
@@ -284,13 +277,11 @@ describe("api routes", () => {
       .patch("/api/auth/me/profile")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        name: "Updated Name",
         username: "updated_user",
       });
 
     expect(response.status).toBe(200);
     expect(response.body.user.username).toBe("updated_user");
-    expect(response.body.user.name).toBe("Updated Name");
   });
 
   it("changes current user password", async () => {

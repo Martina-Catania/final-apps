@@ -8,7 +8,6 @@ export type AuthUser = {
   id: number;
   email: string;
   username: string;
-  name: string;
   avatarUrl: string | null;
   timetable: string | null;
 };
@@ -22,7 +21,6 @@ export type RegisterInput = {
   email: string;
   username: string;
   password: string;
-  name?: string;
   timetable?: string;
 };
 

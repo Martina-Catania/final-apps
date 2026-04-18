@@ -9,7 +9,6 @@ export type ProjectType = "SUMMARY" | "QUIZ" | "DECK";
 export type ProjectCreator = {
   id: number;
   username: string;
-  name: string;
   avatarUrl: string | null;
 };
 

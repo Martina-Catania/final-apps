@@ -39,7 +39,6 @@ export default function SettingsPage() {
   const { token, user, refreshUser } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
-  const [name, setName] = useState(user?.name ?? "");
   const [username, setUsername] = useState(user?.username ?? "");
   const [selectedAvatar, setSelectedAvatar] = useState<UploadedFile | null>(null);
 
@@ -57,9 +56,8 @@ export default function SettingsPage() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
-    setName(user?.name ?? "");
     setUsername(user?.username ?? "");
-  }, [user?.name, user?.username]);
+  }, [user?.username]);
 
   const previewAvatarUri = useMemo(() => {
     if (selectedAvatar?.uri) {
@@ -82,7 +80,6 @@ export default function SettingsPage() {
     try {
       await updateCurrentUserProfileRequest(
         {
-          name: name.trim(),
           username: username.trim(),
         },
         token,
@@ -224,7 +221,7 @@ export default function SettingsPage() {
             },
           ]}
         >
-          <Avatar avatarUri={previewAvatarUri} name={name || user?.name || "Current user"} />
+          <Avatar avatarUri={previewAvatarUri} name={username || user?.username || "Current user"} />
 
           {errorMessage ? (
             <Text
@@ -273,12 +270,6 @@ export default function SettingsPage() {
 
         <Accordion defaultExpanded title="Profile details">
           <View style={{ gap: spacing.md }}>
-            <AppTextInput
-              label="Name"
-              onChangeText={setName}
-              placeholder="Your name"
-              value={name}
-            />
             <AppTextInput
               autoCapitalize="none"
               label="Username"

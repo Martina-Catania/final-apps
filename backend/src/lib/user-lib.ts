@@ -15,7 +15,6 @@ export type UserProfileSummary = {
   user: {
     id: number;
     username: string;
-    name: string;
     avatarUrl: string | null;
   };
   stats: {
@@ -57,7 +56,6 @@ export async function getUserProfileSummary(
     select: {
       id: true,
       username: true,
-      name: true,
       avatarUrl: true,
     },
   });

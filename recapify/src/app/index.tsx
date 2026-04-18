@@ -149,7 +149,7 @@ export default function Index() {
                 fontWeight: typography.weights.bold,
               }}
             >
-              Welcome back{user?.name ? `, ${user.name}` : ""}
+              Welcome back{user?.username ? `, ${user.username}` : ""}
             </Text>
             <Text
               style={{
@@ -294,14 +294,6 @@ export default function Index() {
                   color: colors.textPrimary,
                   fontSize: typography.secondary.lg,
                   fontWeight: typography.weights.bold,
-                }}
-              >
-                {user?.name ?? "Current user"}
-              </Text>
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: typography.secondary.sm,
                 }}
               >
                 @{user?.username ?? "unknown"}

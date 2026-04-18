@@ -44,10 +44,10 @@ describe("user-routes", () => {
       (
         await request(app)
           .post("/users")
-          .send({ email: "a@example.com", username: "alpha", hashedPassword: "hash", name: "Alpha" })
+          .send({ email: "a@example.com", username: "alpha", hashedPassword: "hash" })
       ).status,
     ).toBe(201);
-    expect((await request(app).patch("/users/11").send({ name: "Beta" })).status).toBe(200);
+    expect((await request(app).patch("/users/11").send({ username: "beta" })).status).toBe(200);
     expect((await request(app).delete("/users/11")).status).toBe(200);
   });
 
@@ -87,7 +87,6 @@ describe("user-routes", () => {
     mocks.user.findUnique.mockResolvedValue({
       id: 11,
       username: "alpha",
-      name: "Alpha",
       avatarUrl: null,
     } as never);
     mocks.follow.count.mockResolvedValueOnce(3 as never).mockResolvedValueOnce(4 as never);

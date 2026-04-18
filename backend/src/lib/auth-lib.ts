@@ -8,7 +8,6 @@ const authUserSelect = {
   id: true,
   email: true,
   username: true,
-  name: true,
   avatarUrl: true,
   timetable: true,
 } as const;
@@ -17,7 +16,6 @@ type AuthUser = {
   id: number;
   email: string;
   username: string;
-  name: string;
   avatarUrl: string | null;
   timetable: string | null;
 };
@@ -31,7 +29,6 @@ type RegisterInput = {
   email: string;
   username: string;
   password: string;
-  name?: string;
   timetable?: string;
 };
 
@@ -41,7 +38,6 @@ type LoginInput = {
 };
 
 type UpdateProfileInput = {
-  name?: string;
   username?: string;
 };
 
@@ -83,7 +79,6 @@ export async function registerUser(input: RegisterInput, ctx: AppContext): Promi
       email,
       username,
       hashedPassword,
-      name: input.name ?? "",
       timetable: input.timetable,
     },
     select: authUserSelect,
@@ -142,13 +137,8 @@ export async function updateCurrentAuthUserProfile(
   ctx: AppContext,
 ): Promise<AuthUser> {
   const data: {
-    name?: string;
     username?: string;
   } = {};
-
-  if (input.name !== undefined) {
-    data.name = input.name;
-  }
 
   if (input.username !== undefined) {
     const existingByUsername = await ctx.prisma.user.findUnique({

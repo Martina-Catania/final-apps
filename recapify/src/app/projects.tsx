@@ -138,7 +138,6 @@ export default function ProjectsPage() {
               const questionLabel = questionCount === 1 ? "question" : "questions";
               const creatorLabel =
                 (quiz.project.user?.username ? `@${quiz.project.user.username}` : undefined) ||
-                quiz.project.user?.name?.trim() ||
                 `User #${quiz.project.userId}`;
 
               return (

@@ -141,7 +141,6 @@ export function createUserRouter(ctx: AppContext) {
       const email = requireString(req.body.email, "email");
       const username = requireString(req.body.username, "username");
       const hashedPassword = requireString(req.body.hashedPassword, "hashedPassword");
-      const name = optionalString(req.body.name, "name") ?? "";
       const timetable = optionalString(req.body.timetable, "timetable");
 
       const user = await createUser(
@@ -149,7 +148,6 @@ export function createUserRouter(ctx: AppContext) {
           email,
           username,
           hashedPassword,
-          name,
           timetable,
         },
         ctx,
@@ -170,7 +168,6 @@ export function createUserRouter(ctx: AppContext) {
           email: optionalString(req.body.email, "email"),
           username: optionalString(req.body.username, "username"),
           hashedPassword: optionalString(req.body.hashedPassword, "hashedPassword"),
-          name: optionalString(req.body.name, "name"),
           timetable: optionalString(req.body.timetable, "timetable"),
         },
         ctx,

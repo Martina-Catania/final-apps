@@ -23,7 +23,6 @@ describe("quiz-lib", () => {
           select: {
             id: true,
             username: true,
-            name: true,
             avatarUrl: true,
           },
         },
