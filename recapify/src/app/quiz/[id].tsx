@@ -44,6 +44,10 @@ export default function QuizDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const handleBackPress = useCallback(() => {
+    router.back();
+  }, [router]);
+
   const loadQuiz = useCallback(async () => {
     if (!quizId) {
       setErrorMessage("Invalid quiz id");
@@ -115,6 +119,13 @@ export default function QuizDetailPage() {
           <View style={{ gap: spacing.sm }}>
             <Button
               fullWidth
+              iconName="arrow-back-outline"
+              label="Back"
+              onPress={handleBackPress}
+              variant="default"
+            />
+            <Button
+              fullWidth
               iconName="refresh-outline"
               label="Try again"
               onPress={() => {
@@ -155,23 +166,35 @@ export default function QuizDetailPage() {
             },
           ]}
         >
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: typography.primary.lg,
-              fontWeight: typography.weights.bold,
-            }}
-          >
-            {quiz.project.title}
-          </Text>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: typography.secondary.md,
-            }}
-          >
-            Quiz #{quiz.id} · {quiz.questions.length} question{quiz.questions.length === 1 ? "" : "s"}
-          </Text>
+          <View style={[styles.headerInfoRow, { gap: spacing.sm }]}>
+            <Button
+              iconName="arrow-back-outline"
+              label="Back"
+              onPress={handleBackPress}
+              variant="icon"
+            />
+
+            <View style={[styles.headerInfoText, { gap: spacing.xxs }]}>
+              <Text
+                style={{
+                  color: colors.textPrimary,
+                  fontSize: typography.primary.lg,
+                  fontWeight: typography.weights.bold,
+                }}
+              >
+                {quiz.project.title}
+              </Text>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: typography.secondary.md,
+                }}
+              >
+                Quiz #{quiz.id} · {quiz.questions.length} question{quiz.questions.length === 1 ? "" : "s"}
+              </Text>
+            </View>
+          </View>
+
           <View style={{ gap: spacing.sm }}>
             <Button
               fullWidth
@@ -285,6 +308,13 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     borderWidth: 1,
+  },
+  headerInfoRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+  },
+  headerInfoText: {
+    flex: 1,
   },
   questionCard: {
     borderWidth: 1,
