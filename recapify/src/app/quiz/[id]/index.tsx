@@ -198,6 +198,18 @@ export default function QuizDetailPage() {
           <View style={{ gap: spacing.sm }}>
             <Button
               fullWidth
+              iconName="play-outline"
+              label="Play quiz"
+              onPress={() =>
+                router.push({
+                  pathname: "/quiz/[id]/play",
+                  params: { id: String(quiz.id) },
+                })
+              }
+              variant="secondary"
+            />
+            <Button
+              fullWidth
               iconName="create-outline"
               label="Edit quiz"
               onPress={() =>
@@ -206,7 +218,7 @@ export default function QuizDetailPage() {
                   params: { id: String(quiz.id) },
                 })
               }
-              variant="secondary"
+              variant="primary"
             />
             <Button
               fullWidth

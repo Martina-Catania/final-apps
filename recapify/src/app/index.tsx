@@ -250,7 +250,7 @@ export default function Index() {
                   }
 
                   router.push({
-                    pathname: "./quiz/[id]",
+                    pathname: "./quiz/[id]/play",
                     params: { id: String(selectedQuiz.quizId) },
                   });
                 }}
