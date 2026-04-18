@@ -114,17 +114,16 @@ export default function QuizPlayPage() {
 
   const isFinished = playQuestions.length > 0 && currentQuestionIndex >= playQuestions.length;
 
-  const goToQuizDetail = useCallback(() => {
-    if (!quizId) {
-      router.replace("/");
+  const goBackOnStack = useCallback(() => {
+    const maybeRouter = router as typeof router & { canGoBack?: () => boolean };
+
+    if (typeof maybeRouter.canGoBack === "function" && maybeRouter.canGoBack()) {
+      router.back();
       return;
     }
 
-    router.replace({
-      pathname: "/quiz/[id]",
-      params: { id: String(quizId) },
-    });
-  }, [quizId, router]);
+    router.replace("/");
+  }, [router]);
 
   const loadQuiz = useCallback(async () => {
     if (!quizId) {
@@ -268,8 +267,8 @@ export default function QuizPlayPage() {
             <Button
               fullWidth
               iconName="arrow-back-outline"
-              label="Back to quiz"
-              onPress={goToQuizDetail}
+              label="Back"
+              onPress={goBackOnStack}
               variant="default"
             />
             <Button
@@ -322,8 +321,8 @@ export default function QuizPlayPage() {
             <Button
               fullWidth
               iconName="arrow-back-outline"
-              label="Back to quiz"
-              onPress={goToQuizDetail}
+              label="Back"
+              onPress={goBackOnStack}
               variant="default"
             />
             <Button
@@ -369,7 +368,7 @@ export default function QuizPlayPage() {
               <Button
                 iconName="arrow-back-outline"
                 label="Back"
-                onPress={goToQuizDetail}
+                onPress={goBackOnStack}
                 variant="icon"
               />
               <Text
@@ -531,7 +530,7 @@ export default function QuizPlayPage() {
             <Button
               iconName="arrow-back-outline"
               label="Back"
-              onPress={goToQuizDetail}
+              onPress={goBackOnStack}
               variant="icon"
             />
             <Text
