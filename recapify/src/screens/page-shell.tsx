@@ -71,9 +71,9 @@ export function PageShell({
           <View style={[styles.headerActionContainer, { left: spacing.md }]}>
             <Button
               iconName="menu-outline"
-              label=""
+              label="Menu"
               onPress={onMenuPress}
-              variant="default"
+              variant="icon"
             />
           </View>
         </View>
