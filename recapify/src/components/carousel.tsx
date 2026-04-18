@@ -25,6 +25,7 @@ export type CarouselItem = {
 
 type CarouselProps = {
   items: CarouselItem[];
+  onItemPress?: (item: CarouselItem) => void;
 };
 
 const useCarousel = <T,>(itemCount: number) => {
@@ -60,7 +61,7 @@ const useCarousel = <T,>(itemCount: number) => {
   };
 };
 
-export const Carousel = ({ items }: CarouselProps) => {
+export const Carousel = ({ items, onItemPress }: CarouselProps) => {
   const { activeIndex, listRef, screenWidth, snapTo, updateActiveIndex } =
     useCarousel<CarouselItem>(items.length);
   const { colors, iconSizes, spacing, typography } = useThemeTokens();
@@ -75,46 +76,55 @@ export const Carousel = ({ items }: CarouselProps) => {
         ref={listRef}
         renderItem={({ item }) => (
           <View style={{ width: screenWidth }}>
-            <View
-              style={[
-                styles.card,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  gap: spacing.sm,
-                  marginHorizontal: spacing.lg + spacing.sm,
-                  padding: spacing.lg,
-                },
-              ]}
+            <Pressable
+              accessibilityRole={onItemPress ? "button" : undefined}
+              disabled={!onItemPress}
+              onPress={() => onItemPress?.(item)}
+              style={({ pressed }) => ({
+                opacity: onItemPress && pressed ? 0.82 : 1,
+              })}
             >
-              <View style={[styles.titleRow, { gap: spacing.sm }]}>
-                {item.iconName ? (
-                  <Ionicons
-                    color={item.accentColor ?? colors.primary}
-                    name={item.iconName}
-                    size={iconSizes.md}
-                  />
-                ) : null}
+              <View
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    gap: spacing.sm,
+                    marginHorizontal: spacing.lg + spacing.sm,
+                    padding: spacing.lg,
+                  },
+                ]}
+              >
+                <View style={[styles.titleRow, { gap: spacing.sm }]}>
+                  {item.iconName ? (
+                    <Ionicons
+                      color={item.accentColor ?? colors.primary}
+                      name={item.iconName}
+                      size={iconSizes.md}
+                    />
+                  ) : null}
+                  <Text
+                    style={{
+                      color: colors.textPrimary,
+                      flex: 1,
+                      fontSize: typography.primary.sm,
+                      fontWeight: typography.weights.bold,
+                    }}
+                  >
+                    {item.title}
+                  </Text>
+                </View>
                 <Text
                   style={{
-                    color: colors.textPrimary,
-                    flex: 1,
-                    fontSize: typography.primary.sm,
-                    fontWeight: typography.weights.bold,
+                    color: colors.textSecondary,
+                    fontSize: typography.secondary.md,
                   }}
                 >
-                  {item.title}
+                  {item.description}
                 </Text>
               </View>
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: typography.secondary.md,
-                }}
-              >
-                {item.description}
-              </Text>
-            </View>
+            </Pressable>
           </View>
         )}
         showsHorizontalScrollIndicator={false}

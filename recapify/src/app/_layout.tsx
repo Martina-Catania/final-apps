@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider, useAuth } from "../context/auth-context";
+import { ThemeProvider } from "../context/theme-context";
 import { useThemeTokens } from "../hooks";
 
 function AppNavigator() {
@@ -43,9 +44,11 @@ function AppNavigator() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <AppNavigator />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppNavigator />
+        </AuthProvider>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }

@@ -1,10 +1,8 @@
-import { useColorScheme } from "react-native";
-
-import { ThemeMode, getThemeByMode } from "../constants";
+import { getThemeByMode } from "../constants";
+import { useThemePreference } from "../context/theme-context";
 
 export const useThemeTokens = () => {
-  const scheme = useColorScheme();
-  const mode: ThemeMode = scheme === "dark" ? "dark" : "light";
+  const { mode } = useThemePreference();
   const currentTheme = getThemeByMode(mode);
 
   return currentTheme;

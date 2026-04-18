@@ -1,238 +1,34 @@
 import { useRouter } from "expo-router";
-import { type ReactNode, useCallback, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import {
-  PRIMARY_TEXT_SIZES,
-  SECONDARY_TEXT_SIZES,
-} from "../constants";
-import {
-  Accordion,
-  AppActionSheet,
   AppButton,
-  AppCheckbox,
-  AppModal,
-  AppTextInput,
   AppToggle,
   BottomNavBar,
   Carousel,
-  DateTimeField,
   DrawerPanel,
-  FileUploadField,
-  Pagination,
-  ProfileCard,
-  RefreshableScroll,
-  SkeletonBlock,
   SkeletonCard,
-  type UploadedFile,
 } from "../components";
 import { useAuth } from "../context/auth-context";
+import { useThemePreference } from "../context/theme-context";
 import { useThemeTokens } from "../hooks";
+import {
+  getQuizApiErrorMessage,
+  listQuizzesRequest,
+  type Quiz,
+} from "../utils/quiz-api";
 
-type ShowcaseSectionProps = {
+type HomeCarouselItem = {
+  id: string;
+  quizId: number;
   title: string;
-  subtitle?: string;
-  children: ReactNode;
+  description: string;
+  iconName: "help-circle-outline";
+  accentColor: string;
 };
 
-type UseDisclosureOptions = {
-  defaultOpen?: boolean;
-};
-
-const useDisclosure = (options?: UseDisclosureOptions) => {
-  const [isOpen, setIsOpen] = useState(options?.defaultOpen ?? false);
-
-  const open = useCallback(() => {
-    setIsOpen(true);
-  }, []);
-
-  const close = useCallback(() => {
-    setIsOpen(false);
-  }, []);
-
-  const toggle = useCallback(() => {
-    setIsOpen((current) => !current);
-  }, []);
-
-  return {
-    isOpen,
-    setIsOpen,
-    open,
-    close,
-    toggle,
-  };
-};
-
-type UsePaginationOptions = {
-  initialPage?: number;
-  pageSize?: number;
-};
-
-const usePagination = (
-  totalItems: number,
-  options?: UsePaginationOptions,
-) => {
-  const pageSize = options?.pageSize ?? 5;
-  const [currentPage, setCurrentPage] = useState(options?.initialPage ?? 1);
-
-  const totalPages = useMemo(() => {
-    if (totalItems <= 0) {
-      return 1;
-    }
-
-    return Math.max(1, Math.ceil(totalItems / pageSize));
-  }, [pageSize, totalItems]);
-
-  const safeCurrentPage = useMemo(() => {
-    return Math.min(Math.max(currentPage, 1), totalPages);
-  }, [currentPage, totalPages]);
-
-  const canGoBack = safeCurrentPage > 1;
-  const canGoForward = safeCurrentPage < totalPages;
-
-  const goToPage = (nextPage: number) => {
-    setCurrentPage(Math.min(Math.max(nextPage, 1), totalPages));
-  };
-
-  const nextPage = () => {
-    goToPage(safeCurrentPage + 1);
-  };
-
-  const previousPage = () => {
-    goToPage(safeCurrentPage - 1);
-  };
-
-  return {
-    currentPage: safeCurrentPage,
-    pageSize,
-    totalPages,
-    canGoBack,
-    canGoForward,
-    goToPage,
-    nextPage,
-    previousPage,
-  };
-};
-
-type RefreshFn = () => Promise<void> | void;
-
-const useRefreshControl = (refreshFn?: RefreshFn) => {
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-
-    try {
-      await Promise.resolve(refreshFn?.());
-    } finally {
-      setRefreshing(false);
-    }
-  }, [refreshFn]);
-
-  return {
-    refreshing,
-    onRefresh,
-    setRefreshing,
-  };
-};
-
-const useActionSheet = <TValue extends string = string>() => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedValue, setSelectedValue] = useState<TValue | null>(null);
-
-  const openSheet = () => {
-    setIsOpen(true);
-  };
-
-  const closeSheet = () => {
-    setIsOpen(false);
-  };
-
-  const selectValue = (value: TValue) => {
-    setSelectedValue(value);
-    setIsOpen(false);
-  };
-
-  return {
-    isOpen,
-    selectedValue,
-    setSelectedValue,
-    openSheet,
-    closeSheet,
-    selectValue,
-  };
-};
-
-const ShowcaseSection = ({
-  title,
-  subtitle,
-  children,
-}: ShowcaseSectionProps) => {
-  const { colors, spacing, typography } = useThemeTokens();
-
-  return (
-    <View
-      style={[
-        styles.section,
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-          gap: spacing.md,
-          padding: spacing.lg,
-        },
-      ]}
-    >
-      <View style={{ gap: spacing.xxs }}>
-        <Text
-          style={{
-            color: colors.textPrimary,
-            fontSize: typography.primary.sm,
-            fontWeight: typography.weights.bold,
-          }}
-        >
-          {title}
-        </Text>
-        {subtitle ? (
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: typography.secondary.sm,
-            }}
-          >
-            {subtitle}
-          </Text>
-        ) : null}
-      </View>
-      {children}
-    </View>
-  );
-};
-
-const CAROUSEL_ITEMS = [
-  {
-    id: "deck",
-    title: "Deck Insights",
-    description: "Track recall strength across your active decks.",
-    iconName: "library-outline" as const,
-    accentColor: "#0F5FBF",
-  },
-  {
-    id: "quiz",
-    title: "Quiz Flow",
-    description: "Create timed quizzes and revisit missed questions quickly.",
-    iconName: "help-circle-outline" as const,
-    accentColor: "#0B8AB8",
-  },
-  {
-    id: "summary",
-    title: "Summary Studio",
-    description: "Bundle highlights, notes, and source links in one place.",
-    iconName: "document-text-outline" as const,
-    accentColor: "#1C8C5E",
-  },
-];
-
-const BOTTOM_TABS = [
+const HOME_NAV_ITEMS = [
   {
     key: "home",
     label: "Home",
@@ -240,88 +36,77 @@ const BOTTOM_TABS = [
     activeIconName: "home" as const,
   },
   {
-    key: "projects",
-    label: "Projects",
-    iconName: "folder-open-outline" as const,
-    activeIconName: "folder-open" as const,
-  },
-  {
-    key: "profile",
-    label: "Profile",
-    iconName: "person-outline" as const,
-    activeIconName: "person" as const,
+    key: "showcase",
+    label: "Showcase",
+    iconName: "grid-outline" as const,
+    activeIconName: "grid" as const,
   },
 ];
 
-const ACTION_ITEMS = [
-  {
-    label: "Share project",
-    value: "share",
-    iconName: "share-social-outline" as const,
-  },
-  {
-    label: "Archive project",
-    value: "archive",
-    iconName: "archive-outline" as const,
-  },
-  {
-    label: "Delete project",
-    value: "delete",
-    iconName: "trash-outline" as const,
-    destructive: true,
-  },
-] as const;
-
-const TOTAL_SUMMARIES = 24;
-const SUMMARY_PAGE_SIZE = 5;
-
-const wait = (ms: number) => {
-  return new Promise<void>((resolve) => {
-    setTimeout(() => resolve(), ms);
-  });
-};
-
 export default function Index() {
   const router = useRouter();
-  const { colors, spacing, typography, mode } = useThemeTokens();
-  const { logout, user } = useAuth();
-  const [activeTab, setActiveTab] = useState("home");
-  const [searchText, setSearchText] = useState("");
-  const [secretTextVisible, setSecretTextVisible] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
-  const [isToggleEnabled, setIsToggleEnabled] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
-  const [refreshCount, setRefreshCount] = useState(0);
-  const [selectedAction, setSelectedAction] = useState("none");
-  const [followCount, setFollowCount] = useState(320);
+  const { token, user, logout } = useAuth();
+  const { mode, setMode } = useThemePreference();
+  const { colors, spacing, typography, radius } = useThemeTokens();
+
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(true);
+  const [quizError, setQuizError] = useState<string | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
 
-  const modal = useDisclosure();
-  const drawer = useDisclosure();
-  const actionSheet = useActionSheet<"share" | "archive" | "delete">();
+  useEffect(() => {
+    let isMounted = true;
 
-  const pagination = usePagination(TOTAL_SUMMARIES, {
-    initialPage: 1,
-    pageSize: SUMMARY_PAGE_SIZE,
-  });
+    const loadQuizzes = async () => {
+      setIsLoadingQuizzes(true);
+      setQuizError(null);
 
-  const refresh = useRefreshControl(async () => {
-    await wait(800);
-    setRefreshCount((current) => current + 1);
-  });
+      try {
+        const payload = await listQuizzesRequest(token ?? undefined);
 
-  const currentSummaryItems = useMemo(() => {
-    const items = Array.from(
-      { length: TOTAL_SUMMARIES },
-      (_, index) => `Summary item ${index + 1}`,
-    );
+        if (!isMounted) {
+          return;
+        }
 
-    const start = (pagination.currentPage - 1) * SUMMARY_PAGE_SIZE;
-    const end = start + SUMMARY_PAGE_SIZE;
+        setQuizzes(payload);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
 
-    return items.slice(start, end);
-  }, [pagination.currentPage]);
+        setQuizError(getQuizApiErrorMessage(error, "Unable to load quizzes"));
+        setQuizzes([]);
+      } finally {
+        if (isMounted) {
+          setIsLoadingQuizzes(false);
+        }
+      }
+    };
+
+    void loadQuizzes();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [reloadTick, token]);
+
+  const quizCarouselItems = useMemo<HomeCarouselItem[]>(() => {
+    return quizzes.map((quiz) => {
+      const questionCount = quiz.questions.length;
+      const questionLabel = questionCount === 1 ? "question" : "questions";
+
+      return {
+        id: String(quiz.id),
+        quizId: quiz.id,
+        title: quiz.project.title,
+        description: `${questionCount} ${questionLabel} ready to practice`,
+        iconName: "help-circle-outline",
+        accentColor: colors.primary,
+      };
+    });
+  }, [colors.primary, quizzes]);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -334,25 +119,16 @@ export default function Index() {
   };
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      <RefreshableScroll
-        contentContainerStyle={{
-          gap: spacing.lg,
-          paddingBottom: spacing.xxl,
-          paddingHorizontal: spacing.md,
-          paddingTop: spacing.xxl,
-        }}
-        onRefresh={refresh.onRefresh}
-        refreshing={refresh.refreshing}
-      >
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <View style={styles.screen}>
         <View
           style={[
-            styles.hero,
+            styles.header,
             {
-              backgroundColor: colors.primaryMuted,
-              borderColor: colors.primary,
-              gap: spacing.sm,
-              padding: spacing.lg,
+              backgroundColor: colors.surface,
+              borderBottomColor: colors.border,
+              paddingHorizontal: spacing.md,
+              paddingVertical: spacing.sm,
             },
           ]}
         >
@@ -363,400 +139,275 @@ export default function Index() {
               fontWeight: typography.weights.bold,
             }}
           >
-            Reusable Component Showcase
+            Recapify
           </Text>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: typography.secondary.md,
-            }}
-          >
-            Theme mode: {mode}. Pull down to test refresh. Refresh count: {refreshCount}.
-          </Text>
-          <View style={[styles.heroFooter, { gap: spacing.sm }]}>
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontSize: typography.secondary.sm,
-              }}
-            >
-              Signed in as {user?.username ?? user?.email ?? "current user"}
-            </Text>
-            <View style={[styles.heroActions, { gap: spacing.sm }]}>
-              <AppButton
-                iconName="add-circle-outline"
-                label="Create quiz"
-                onPress={() => router.push("./quiz/create")}
-                variant="primary"
-              />
-              <AppButton
-                disabled={isSigningOut}
-                label={isSigningOut ? "Signing out..." : "Sign out"}
-                onPress={() => {
-                  void handleSignOut();
-                }}
-                variant="default"
-              />
-            </View>
-          </View>
+
+          <AppButton
+            iconName="menu-outline"
+            label="Menu"
+            onPress={() => setIsDrawerOpen(true)}
+            variant="default"
+          />
         </View>
 
-        <ShowcaseSection
-          subtitle="Primary and secondary scales from constants are available globally."
-          title="Theme Constants"
+        <ScrollView
+          contentContainerStyle={{
+            gap: spacing.lg,
+            padding: spacing.lg,
+          }}
         >
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: PRIMARY_TEXT_SIZES.md,
-              fontWeight: typography.weights.semibold,
-            }}
+          <View
+            style={[
+              styles.heroCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderRadius: radius.md,
+                gap: spacing.xs,
+                padding: spacing.lg,
+              },
+            ]}
           >
-            Primary md: {PRIMARY_TEXT_SIZES.md}px
-          </Text>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: SECONDARY_TEXT_SIZES.lg,
-            }}
-          >
-            Secondary lg: {SECONDARY_TEXT_SIZES.lg}px
-          </Text>
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="Primary, secondary, default, and disabled variants with Pressable states."
-          title="Buttons / Pressables"
-        >
-          <View style={[styles.rowWrap, { gap: spacing.sm }]}>
-            <AppButton iconName="rocket-outline" label="Primary" variant="primary" />
-            <AppButton iconName="sparkles-outline" label="Secondary" variant="secondary" />
-            <AppButton iconName="add-circle-outline" label="Default" variant="default" />
-            <AppButton iconName="ban-outline" label="Disabled" variant="disabled" />
-          </View>
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="Text input with icons, helper text, and secure toggle behavior."
-          title="Text Input"
-        >
-          <AppTextInput
-            helperText="Try typing to test controlled input."
-            label="Search"
-            leftIcon="search-outline"
-            onChangeText={setSearchText}
-            placeholder="Search recaps"
-            rightIcon={secretTextVisible ? "eye-off-outline" : "eye-outline"}
-            onRightIconPress={() => setSecretTextVisible((current) => !current)}
-            value={searchText}
-          />
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="Controlled boolean inputs with reusable APIs."
-          title="Checkbox and Toggle"
-        >
-          <AppCheckbox
-            checked={isChecked}
-            label="I want reminder notifications"
-            onValueChange={setIsChecked}
-          />
-          <AppToggle
-            description="Switch between compact and detailed cards."
-            label="Detailed mode"
-            onValueChange={setIsToggleEnabled}
-            value={isToggleEnabled}
-          />
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="Expandable section pattern for FAQs and grouped details."
-          title="Accordion"
-        >
-          <Accordion defaultExpanded title="How do I create reusable recap cards?">
+            <Text
+              style={{
+                color: colors.textPrimary,
+                fontSize: typography.primary.md,
+                fontWeight: typography.weights.bold,
+              }}
+            >
+              Welcome back{user?.name ? `, ${user.name}` : ""}
+            </Text>
             <Text
               style={{
                 color: colors.textSecondary,
                 fontSize: typography.secondary.md,
               }}
             >
-              Build cards in the components folder, keep all token usage centralized,
-              and pass data through typed props.
+              Jump into your latest quizzes or browse all projects.
             </Text>
-          </Accordion>
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="Bottom tab component for reuse in custom layouts and screens."
-          title="Bottom Navigation Bar"
-        >
-          <BottomNavBar
-            activeKey={activeTab}
-            items={BOTTOM_TABS}
-            onTabPress={setActiveTab}
-          />
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: typography.secondary.sm,
-            }}
-          >
-            Active tab: {activeTab}
-          </Text>
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="FlatList paging carousel built on core React Native APIs."
-          title="Carousel"
-        >
-          <Carousel items={CAROUSEL_ITEMS} />
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="Date and time input built with package picker wrapper."
-          title="Date / Time Picker"
-        >
-          <DateTimeField onValueChange={setSelectedDate} value={selectedDate} />
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: typography.secondary.sm,
-            }}
-          >
-            Selected: {selectedDate.toLocaleString()}
-          </Text>
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="Document picker wrapper with metadata preview."
-          title="File Upload"
-        >
-          <FileUploadField onFileSelected={setUploadedFile} />
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: typography.secondary.sm,
-            }}
-          >
-            Selected file: {uploadedFile ? uploadedFile.name : "none"}
-          </Text>
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="Action sheet based on react-native-actions-sheet package wrapper."
-          title="Action Sheet"
-        >
-          <AppButton
-            iconName="ellipsis-horizontal-circle-outline"
-            label="Open action sheet"
-            onPress={actionSheet.openSheet}
-            variant="secondary"
-          />
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: typography.secondary.sm,
-            }}
-          >
-            Last selected action: {selectedAction}
-          </Text>
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="Reusable side drawer built on core modal and animated panel patterns."
-          title="Drawer"
-        >
-          <AppButton
-            iconName="menu-outline"
-            label="Open drawer"
-            onPress={drawer.open}
-            variant="default"
-          />
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="Reusable modal wrapper with title, description, and actions."
-          title="Modal"
-        >
-          <AppButton
-            iconName="alert-circle-outline"
-            label="Open modal"
-            onPress={modal.open}
-            variant="primary"
-          />
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="Page controls with previous, next, and direct page jumps."
-          title="Pagination"
-        >
-          <View style={{ gap: spacing.xs }}>
-            {currentSummaryItems.map((item) => (
-              <View
-                key={item}
-                style={[
-                  styles.listRow,
-                  {
-                    backgroundColor: colors.surfaceMuted,
-                    borderColor: colors.border,
-                    padding: spacing.sm,
-                  },
-                ]}
-              >
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.secondary.md,
-                  }}
-                >
-                  {item}
-                </Text>
-              </View>
-            ))}
           </View>
 
-          <Pagination
-            currentPage={pagination.currentPage}
-            onPageChange={pagination.goToPage}
-            totalPages={pagination.totalPages}
-          />
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="Placeholder loading states with pulse animation."
-          title="Skeleton"
-        >
-          <SkeletonCard />
-          <SkeletonBlock height={14} width="70%" />
-        </ShowcaseSection>
-
-        <ShowcaseSection
-          subtitle="A profile card component with stats and action button."
-          title="Profile"
-        >
-          <ProfileCard
-            followers={followCount}
-            following={88}
-            name="Alex Morgan"
-            onFollowPress={() => setFollowCount((current) => current + 1)}
-            projects={124}
-          />
-        </ShowcaseSection>
-      </RefreshableScroll>
-
-      <AppActionSheet
-        isOpen={actionSheet.isOpen}
-        items={ACTION_ITEMS}
-        onClose={actionSheet.closeSheet}
-        onSelect={(value) => {
-          actionSheet.selectValue(value);
-          setSelectedAction(value);
-        }}
-        title="Project actions"
-      />
-
-      <DrawerPanel onClose={drawer.close} title="Quick navigation" visible={drawer.isOpen}>
-        <View style={{ gap: spacing.sm }}>
-          {BOTTOM_TABS.map((item) => {
-            const isActive = item.key === activeTab;
-
-            return (
-              <Pressable
-                key={item.key}
-                onPress={() => {
-                  setActiveTab(item.key);
-                  drawer.close();
+          <View
+            style={[
+              styles.section,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderRadius: radius.md,
+                gap: spacing.md,
+                padding: spacing.lg,
+              },
+            ]}
+          >
+            <View style={[styles.sectionHeader, { gap: spacing.sm }]}>
+              <Text
+                style={{
+                  color: colors.textPrimary,
+                  fontSize: typography.primary.sm,
+                  fontWeight: typography.weights.bold,
                 }}
-                style={({ pressed }) => [
-                  styles.drawerItem,
-                  {
-                    backgroundColor: isActive ? colors.primaryMuted : colors.surface,
-                    borderColor: colors.border,
-                    opacity: pressed ? 0.78 : 1,
-                    padding: spacing.sm,
-                  },
-                ]}
               >
+                Quiz Showcase
+              </Text>
+
+              <AppButton
+                iconName="arrow-forward-outline"
+                label="See more"
+                onPress={() => router.push("./projects")}
+                variant="secondary"
+              />
+            </View>
+
+            {isLoadingQuizzes ? (
+              <View style={{ gap: spacing.sm }}>
+                <SkeletonCard />
+                <SkeletonCard />
+              </View>
+            ) : null}
+
+            {!isLoadingQuizzes && quizError ? (
+              <View style={{ gap: spacing.sm }}>
                 <Text
                   style={{
-                    color: colors.textPrimary,
+                    color: colors.danger,
                     fontSize: typography.secondary.md,
-                    fontWeight: typography.weights.medium,
                   }}
                 >
-                  {item.label}
+                  {quizError}
                 </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </DrawerPanel>
+                <AppButton
+                  iconName="refresh-outline"
+                  label="Try again"
+                  onPress={() => setReloadTick((current) => current + 1)}
+                  variant="default"
+                />
+              </View>
+            ) : null}
 
-      <AppModal
-        actions={[
-          {
-            label: "Approve",
-            onPress: modal.close,
-            variant: "primary",
-            iconName: "checkmark-outline",
-          },
-          {
-            label: "Cancel",
-            onPress: modal.close,
-            variant: "default",
-            iconName: "close-outline",
-          },
-        ]}
-        description="This demonstrates reusable modal actions and close behavior."
-        onClose={modal.close}
-        title="Modal Example"
-        visible={modal.isOpen}
-      >
-        <Text
+            {!isLoadingQuizzes && !quizError && quizCarouselItems.length === 0 ? (
+              <View style={{ gap: spacing.sm }}>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: typography.secondary.md,
+                  }}
+                >
+                  No quizzes yet. Create your first quiz to get started.
+                </Text>
+                <AppButton
+                  iconName="add-circle-outline"
+                  label="Create quiz"
+                  onPress={() => router.push("./quiz/create")}
+                  variant="primary"
+                />
+              </View>
+            ) : null}
+
+            {!isLoadingQuizzes && !quizError && quizCarouselItems.length > 0 ? (
+              <Carousel
+                items={quizCarouselItems}
+                onItemPress={(item) => {
+                  const selectedQuiz = quizCarouselItems.find(
+                    (candidate) => candidate.id === item.id,
+                  );
+
+                  if (!selectedQuiz) {
+                    return;
+                  }
+
+                  router.push({
+                    pathname: "./quiz/[id]",
+                    params: { id: String(selectedQuiz.quizId) },
+                  });
+                }}
+              />
+            ) : null}
+          </View>
+        </ScrollView>
+
+        <View
           style={{
-            color: colors.textSecondary,
-            fontSize: typography.secondary.md,
+            backgroundColor: colors.background,
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.sm,
           }}
         >
-          Reusable modals let you keep overlay behavior and action layouts consistent.
-        </Text>
-      </AppModal>
-    </View>
+          <BottomNavBar
+            activeKey="home"
+            items={HOME_NAV_ITEMS}
+            onTabPress={(key) => {
+              if (key === "showcase") {
+                router.push("./showcase");
+              }
+            }}
+          />
+        </View>
+
+        <DrawerPanel
+          onClose={() => setIsDrawerOpen(false)}
+          title="Profile"
+          visible={isDrawerOpen}
+        >
+          <View style={{ gap: spacing.md }}>
+            <View
+              style={[
+                styles.profileCard,
+                {
+                  backgroundColor: colors.surfaceMuted,
+                  borderColor: colors.border,
+                  borderRadius: radius.sm,
+                  gap: spacing.xxs,
+                  padding: spacing.md,
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  color: colors.textPrimary,
+                  fontSize: typography.secondary.lg,
+                  fontWeight: typography.weights.bold,
+                }}
+              >
+                {user?.name ?? "Current user"}
+              </Text>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: typography.secondary.sm,
+                }}
+              >
+                @{user?.username ?? "unknown"}
+              </Text>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: typography.secondary.sm,
+                }}
+              >
+                {user?.email ?? "No email available"}
+              </Text>
+            </View>
+
+            <AppToggle
+              description={`Current mode: ${mode}`}
+              label="Dark theme"
+              onValueChange={(nextValue) => setMode(nextValue ? "dark" : "light")}
+              value={mode === "dark"}
+            />
+
+            <AppButton
+              fullWidth
+              iconName="grid-outline"
+              label="Open component showcase"
+              onPress={() => {
+                setIsDrawerOpen(false);
+                router.push("./showcase");
+              }}
+              variant="secondary"
+            />
+
+            <AppButton
+              disabled={isSigningOut}
+              fullWidth
+              iconName="log-out-outline"
+              label={isSigningOut ? "Signing out..." : "Log out"}
+              onPress={() => {
+                void handleSignOut();
+              }}
+              variant="default"
+            />
+          </View>
+        </DrawerPanel>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   screen: {
     flex: 1,
   },
-  hero: {
-    borderRadius: 18,
-    borderWidth: 1,
-  },
-  heroFooter: {
+  header: {
     alignItems: "center",
+    borderBottomWidth: 1,
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
   },
-  heroActions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  heroCard: {
+    borderWidth: 1,
   },
   section: {
-    borderRadius: 18,
     borderWidth: 1,
   },
-  rowWrap: {
+  sectionHeader: {
+    alignItems: "center",
     flexDirection: "row",
-    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
-  listRow: {
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  drawerItem: {
-    borderRadius: 10,
+  profileCard: {
     borderWidth: 1,
   },
 });

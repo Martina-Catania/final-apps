@@ -121,6 +121,16 @@ export function createQuizRequest(projectId: number, token?: string) {
   );
 }
 
+export function listQuizzesRequest(token?: string) {
+  return requestJson<Quiz[]>(
+    "/quizzes",
+    {
+      method: "GET",
+    },
+    token,
+  );
+}
+
 export function createQuizQuestionRequest(
   input: CreateQuizQuestionInput,
   token?: string,
