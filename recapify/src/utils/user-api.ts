@@ -44,6 +44,7 @@ export type UploadAvatarInput = {
   uri: string;
   name: string;
   mimeType?: string;
+  webFile?: Blob;
 };
 
 type ErrorResponse = {
@@ -157,15 +158,38 @@ export function updateCurrentUserPasswordRequest(
   );
 }
 
-export function uploadCurrentUserAvatarRequest(input: UploadAvatarInput, token: string) {
+async function buildAvatarFormData(input: UploadAvatarInput): Promise<FormData> {
   const formData = new FormData();
-  const filePart = {
+
+  if (Platform.OS === "web") {
+    let webFile = input.webFile;
+
+    if (!webFile) {
+      const response = await fetch(input.uri);
+      webFile = await response.blob();
+    }
+
+    const mimeType = input.mimeType ?? webFile.type ?? "image/jpeg";
+    const normalizedWebFile = webFile.type === mimeType
+      ? webFile
+      : webFile.slice(0, webFile.size, mimeType);
+
+    formData.append("avatar", normalizedWebFile, input.name);
+    return formData;
+  }
+
+  const nativeFilePart = {
     uri: input.uri,
     name: input.name,
     type: input.mimeType ?? "image/jpeg",
   } as unknown as Blob;
 
-  formData.append("avatar", filePart);
+  formData.append("avatar", nativeFilePart);
+  return formData;
+}
+
+export async function uploadCurrentUserAvatarRequest(input: UploadAvatarInput, token: string) {
+  const formData = await buildAvatarFormData(input);
 
   return requestJson<{ user: AuthUser }>(
     "/auth/me/avatar",

@@ -128,6 +128,7 @@ export default function SettingsPage() {
           uri: selectedAvatar.uri,
           name: selectedAvatar.name,
           mimeType: selectedAvatar.mimeType,
+          webFile: selectedAvatar.webFile,
         },
         token,
       );

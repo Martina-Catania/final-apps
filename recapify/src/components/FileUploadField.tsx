@@ -11,6 +11,7 @@ export type UploadedFile = {
   uri: string;
   mimeType?: string;
   size?: number;
+  webFile?: Blob;
 };
 
 const useFileUpload = () => {
@@ -33,11 +34,16 @@ const useFileUpload = () => {
       }
 
       const selected = result.assets[0];
+      const selectedWithOptionalFile = selected as typeof selected & {
+        file?: Blob;
+      };
+
       setFile({
         name: selected.name,
         uri: selected.uri,
         mimeType: selected.mimeType,
         size: selected.size,
+        webFile: selectedWithOptionalFile.file,
       });
     } catch {
       setError("Could not pick a file. Please try again.");
