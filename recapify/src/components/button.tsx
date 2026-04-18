@@ -8,21 +8,21 @@ type IconName = ComponentProps<typeof Ionicons>["name"];
 
 export type ButtonVariant = "primary" | "secondary" | "default" | "disabled";
 
-type AppButtonProps = Omit<PressableProps, "style"> & {
+type ButtonProps = Omit<PressableProps, "style"> & {
   label: string;
   iconName?: IconName;
   variant?: ButtonVariant;
   fullWidth?: boolean;
 };
 
-export const AppButton = ({
+export const Button = ({
   label,
   iconName,
   variant = "default",
   fullWidth = false,
   disabled,
   ...rest
-}: AppButtonProps) => {
+}: ButtonProps) => {
   const { colors, typography, spacing, radius, iconSizes } = useThemeTokens();
 
   const isDisabled = disabled || variant === "disabled";

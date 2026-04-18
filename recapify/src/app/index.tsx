@@ -1,11 +1,10 @@
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import {
-  AppButton,
+  Button,
   AppToggle,
-  BottomNavBar,
   Carousel,
   DrawerPanel,
   SkeletonCard,
@@ -13,6 +12,7 @@ import {
 import { useAuth } from "../context/auth-context";
 import { useThemePreference } from "../context/theme-context";
 import { useThemeTokens } from "../hooks";
+import { PageShell, type ShellTabKey } from "../screens/page-shell";
 import {
   getQuizApiErrorMessage,
   listQuizzesRequest,
@@ -27,21 +27,6 @@ type HomeCarouselItem = {
   iconName: "help-circle-outline";
   accentColor: string;
 };
-
-const HOME_NAV_ITEMS = [
-  {
-    key: "home",
-    label: "Home",
-    iconName: "home-outline" as const,
-    activeIconName: "home" as const,
-  },
-  {
-    key: "showcase",
-    label: "Showcase",
-    iconName: "grid-outline" as const,
-    activeIconName: "grid" as const,
-  },
-];
 
 export default function Index() {
   const router = useRouter();
@@ -118,38 +103,27 @@ export default function Index() {
     }
   };
 
+  const handleTabPress = (key: ShellTabKey) => {
+    if (key === "home") {
+      return;
+    }
+
+    if (key === "projects") {
+      router.push("./projects");
+      return;
+    }
+
+    router.push("./showcase");
+  };
+
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={styles.screen}>
-        <View
-          style={[
-            styles.header,
-            {
-              backgroundColor: colors.surface,
-              borderBottomColor: colors.border,
-              paddingHorizontal: spacing.md,
-              paddingVertical: spacing.sm,
-            },
-          ]}
-        >
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: typography.primary.lg,
-              fontWeight: typography.weights.bold,
-            }}
-          >
-            Recapify
-          </Text>
-
-          <AppButton
-            iconName="menu-outline"
-            label="Menu"
-            onPress={() => setIsDrawerOpen(true)}
-            variant="default"
-          />
-        </View>
-
+    <PageShell
+      activeTab="home"
+      onMenuPress={() => setIsDrawerOpen(true)}
+      onTabPress={handleTabPress}
+      title="Recapify"
+    >
+      <>
         <ScrollView
           contentContainerStyle={{
             gap: spacing.lg,
@@ -210,7 +184,7 @@ export default function Index() {
                 Quiz Showcase
               </Text>
 
-              <AppButton
+              <Button
                 iconName="arrow-forward-outline"
                 label="See more"
                 onPress={() => router.push("./projects")}
@@ -235,7 +209,7 @@ export default function Index() {
                 >
                   {quizError}
                 </Text>
-                <AppButton
+                <Button
                   iconName="refresh-outline"
                   label="Try again"
                   onPress={() => setReloadTick((current) => current + 1)}
@@ -254,7 +228,7 @@ export default function Index() {
                 >
                   No quizzes yet. Create your first quiz to get started.
                 </Text>
-                <AppButton
+                <Button
                   iconName="add-circle-outline"
                   label="Create quiz"
                   onPress={() => router.push("./quiz/create")}
@@ -284,24 +258,6 @@ export default function Index() {
             ) : null}
           </View>
         </ScrollView>
-
-        <View
-          style={{
-            backgroundColor: colors.background,
-            paddingHorizontal: spacing.md,
-            paddingVertical: spacing.sm,
-          }}
-        >
-          <BottomNavBar
-            activeKey="home"
-            items={HOME_NAV_ITEMS}
-            onTabPress={(key) => {
-              if (key === "showcase") {
-                router.push("./showcase");
-              }
-            }}
-          />
-        </View>
 
         <DrawerPanel
           onClose={() => setIsDrawerOpen(false)}
@@ -355,7 +311,7 @@ export default function Index() {
               value={mode === "dark"}
             />
 
-            <AppButton
+            <Button
               fullWidth
               iconName="grid-outline"
               label="Open component showcase"
@@ -366,7 +322,7 @@ export default function Index() {
               variant="secondary"
             />
 
-            <AppButton
+            <Button
               disabled={isSigningOut}
               fullWidth
               iconName="log-out-outline"
@@ -378,24 +334,12 @@ export default function Index() {
             />
           </View>
         </DrawerPanel>
-      </View>
-    </SafeAreaView>
+      </>
+    </PageShell>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  screen: {
-    flex: 1,
-  },
-  header: {
-    alignItems: "center",
-    borderBottomWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
   heroCard: {
     borderWidth: 1,
   },

@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { AppButton } from "../../components";
+import { Button } from "../../components";
 import { useAuth } from "../../context/auth-context";
 import { useThemeTokens } from "../../hooks";
 import {
@@ -113,7 +113,7 @@ export default function QuizDetailPage() {
             {errorMessage ?? "Unexpected error"}
           </Text>
           <View style={{ gap: spacing.sm }}>
-            <AppButton
+            <Button
               fullWidth
               iconName="refresh-outline"
               label="Try again"
@@ -122,7 +122,7 @@ export default function QuizDetailPage() {
               }}
               variant="primary"
             />
-            <AppButton
+            <Button
               fullWidth
               iconName="home-outline"
               label="Back to home"
@@ -173,14 +173,14 @@ export default function QuizDetailPage() {
             Quiz #{quiz.id} · {quiz.questions.length} question{quiz.questions.length === 1 ? "" : "s"}
           </Text>
           <View style={{ gap: spacing.sm }}>
-            <AppButton
+            <Button
               fullWidth
               iconName="add-circle-outline"
               label="Create another quiz"
               onPress={() => router.replace("../create")}
               variant="primary"
             />
-            <AppButton
+            <Button
               fullWidth
               iconName="home-outline"
               label="Back to home"

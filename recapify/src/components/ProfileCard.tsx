@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { useThemeTokens } from "../hooks";
-import { AppButton } from "./Button";
+import { Button } from "./Button";
 import { Avatar } from "./Avatar";
 
 type ProfileCardProps = {
@@ -82,7 +82,7 @@ export const ProfileCard = ({
         </View>
       </View>
 
-      <AppButton
+      <Button
         fullWidth
         iconName="person-add-outline"
         label="Follow"

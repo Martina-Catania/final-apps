@@ -9,7 +9,7 @@ import {
 import {
   Accordion,
   AppActionSheet,
-  AppButton,
+  Button,
   AppCheckbox,
   AppModal,
   AppTextInput,
@@ -28,6 +28,7 @@ import {
 } from "../components";
 import { useAuth } from "../context/auth-context";
 import { useThemeTokens } from "../hooks";
+import { PageShell, type ShellTabKey } from "../screens/page-shell";
 
 type ShowcaseSectionProps = {
   title: string;
@@ -333,8 +334,27 @@ export default function Index() {
     }
   };
 
+  const handleTabPress = (key: ShellTabKey) => {
+    if (key === "showcase") {
+      return;
+    }
+
+    if (key === "home") {
+      router.replace("/");
+      return;
+    }
+
+    router.push("../projects");
+  };
+
   return (
-    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+    <PageShell
+      activeTab="showcase"
+      onMenuPress={drawer.open}
+      onTabPress={handleTabPress}
+      title="Component Showcase"
+    >
+      <>
       <RefreshableScroll
         contentContainerStyle={{
           gap: spacing.lg,
@@ -383,13 +403,13 @@ export default function Index() {
               Signed in as {user?.username ?? user?.email ?? "current user"}
             </Text>
             <View style={[styles.heroActions, { gap: spacing.sm }]}>
-              <AppButton
+              <Button
                 iconName="add-circle-outline"
                 label="Create quiz"
                 onPress={() => router.push("../quiz/create")}
                 variant="primary"
               />
-              <AppButton
+              <Button
                 disabled={isSigningOut}
                 label={isSigningOut ? "Signing out..." : "Sign out"}
                 onPress={() => {
@@ -429,10 +449,10 @@ export default function Index() {
           title="Buttons / Pressables"
         >
           <View style={[styles.rowWrap, { gap: spacing.sm }]}>
-            <AppButton iconName="rocket-outline" label="Primary" variant="primary" />
-            <AppButton iconName="sparkles-outline" label="Secondary" variant="secondary" />
-            <AppButton iconName="add-circle-outline" label="Default" variant="default" />
-            <AppButton iconName="ban-outline" label="Disabled" variant="disabled" />
+            <Button iconName="rocket-outline" label="Primary" variant="primary" />
+            <Button iconName="sparkles-outline" label="Secondary" variant="secondary" />
+            <Button iconName="add-circle-outline" label="Default" variant="default" />
+            <Button iconName="ban-outline" label="Disabled" variant="disabled" />
           </View>
         </ShowcaseSection>
 
@@ -546,7 +566,7 @@ export default function Index() {
           subtitle="Action sheet based on react-native-actions-sheet package wrapper."
           title="Action Sheet"
         >
-          <AppButton
+          <Button
             iconName="ellipsis-horizontal-circle-outline"
             label="Open action sheet"
             onPress={actionSheet.openSheet}
@@ -566,7 +586,7 @@ export default function Index() {
           subtitle="Reusable side drawer built on core modal and animated panel patterns."
           title="Drawer"
         >
-          <AppButton
+          <Button
             iconName="menu-outline"
             label="Open drawer"
             onPress={drawer.open}
@@ -578,7 +598,7 @@ export default function Index() {
           subtitle="Reusable modal wrapper with title, description, and actions."
           title="Modal"
         >
-          <AppButton
+          <Button
             iconName="alert-circle-outline"
             label="Open modal"
             onPress={modal.open}
@@ -721,14 +741,12 @@ export default function Index() {
           Reusable modals let you keep overlay behavior and action layouts consistent.
         </Text>
       </AppModal>
-    </View>
+      </>
+    </PageShell>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
   hero: {
     borderRadius: 18,
     borderWidth: 1,

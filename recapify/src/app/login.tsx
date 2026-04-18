@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { AppButton } from "../components";
+import { Button } from "../components";
 import { AppTextInput } from "../components/TextInput";
 import { useAuth } from "../context/auth-context";
 import { useThemeTokens } from "../hooks";
@@ -121,7 +121,7 @@ export default function LoginPage() {
                 </Text>
               ) : null}
 
-              <AppButton
+              <Button
                 disabled={isLoading}
                 fullWidth
                 label={isLoading ? "Signing in..." : "Sign In"}

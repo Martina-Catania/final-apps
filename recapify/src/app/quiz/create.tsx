@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { AppButton } from "../../components";
+import { Button } from "../../components";
 import { AppTextInput } from "../../components/TextInput";
 import { useAuth } from "../../context/auth-context";
 import { useThemeTokens } from "../../hooks";
@@ -273,7 +273,7 @@ export default function QuizCreatePage() {
                 >
                   Questions
                 </Text>
-                <AppButton
+                <Button
                   iconName="add-circle-outline"
                   label="Add question"
                   onPress={addQuestion}
@@ -320,7 +320,7 @@ export default function QuizCreatePage() {
                           Question {index + 1}
                         </Text>
                         {questions.length > 1 ? (
-                          <AppButton
+                          <Button
                             iconName="trash-outline"
                             label="Remove"
                             onPress={() => removeQuestion(item.key)}
@@ -386,7 +386,7 @@ export default function QuizCreatePage() {
             ) : null}
 
             <View style={[styles.rowWrap, { gap: spacing.sm }]}>
-              <AppButton
+              <Button
                 disabled={isSubmitting}
                 fullWidth
                 iconName="save-outline"
@@ -396,7 +396,7 @@ export default function QuizCreatePage() {
                 }}
                 variant="primary"
               />
-              <AppButton
+              <Button
                 fullWidth
                 iconName="home-outline"
                 label="Back to home"

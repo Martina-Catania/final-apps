@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { useThemeTokens } from "../hooks";
-import { AppButton } from "./Button";
+import { Button } from "./Button";
 
 export type UploadedFile = {
   name: string;
@@ -127,13 +127,13 @@ export const FileUploadField = ({
       </Text>
 
       <View style={[styles.buttonRow, { gap: spacing.sm }]}>
-        <AppButton
+        <Button
           iconName="cloud-upload-outline"
           label={isPicking ? "Picking..." : "Pick file"}
           onPress={handlePick}
           variant="primary"
         />
-        <AppButton label="Clear" onPress={clearFile} variant="default" />
+        <Button label="Clear" onPress={clearFile} variant="default" />
       </View>
 
       {file ? (

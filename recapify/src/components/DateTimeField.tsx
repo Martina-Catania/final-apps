@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 
 import { useThemeTokens } from "../hooks";
-import { AppButton } from "./Button";
+import { Button } from "./Button";
 
 type PickerMode = "date" | "time";
 
@@ -137,8 +137,8 @@ export const DateTimeField = ({
       </View>
 
       <View style={[styles.actions, { gap: spacing.sm }]}>
-        <AppButton label="Pick date" onPress={picker.openDatePicker} variant="secondary" />
-        <AppButton label="Pick time" onPress={picker.openTimePicker} variant="default" />
+        <Button label="Pick date" onPress={picker.openDatePicker} variant="secondary" />
+        <Button label="Pick time" onPress={picker.openTimePicker} variant="default" />
       </View>
 
       {picker.isVisible ? (
@@ -150,7 +150,7 @@ export const DateTimeField = ({
               onChange={handleChange}
               value={value ?? picker.value}
             />
-            <AppButton label="Done" onPress={picker.closePicker} variant="primary" />
+            <Button label="Done" onPress={picker.closePicker} variant="primary" />
           </View>
         ) : (
           <DateTimePicker
