@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -281,6 +282,7 @@ const wait = (ms: number) => {
 };
 
 export default function Index() {
+  const router = useRouter();
   const { colors, spacing, typography, mode } = useThemeTokens();
   const { logout, user } = useAuth();
   const [activeTab, setActiveTab] = useState("home");
@@ -380,14 +382,22 @@ export default function Index() {
             >
               Signed in as {user?.username ?? user?.email ?? "current user"}
             </Text>
-            <AppButton
-              disabled={isSigningOut}
-              label={isSigningOut ? "Signing out..." : "Sign out"}
-              onPress={() => {
-                void handleSignOut();
-              }}
-              variant="default"
-            />
+            <View style={[styles.heroActions, { gap: spacing.sm }]}>
+              <AppButton
+                iconName="add-circle-outline"
+                label="Create quiz"
+                onPress={() => router.push("./quiz/create")}
+                variant="primary"
+              />
+              <AppButton
+                disabled={isSigningOut}
+                label={isSigningOut ? "Signing out..." : "Sign out"}
+                onPress={() => {
+                  void handleSignOut();
+                }}
+                variant="default"
+              />
+            </View>
           </View>
         </View>
 
@@ -728,6 +738,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+  },
+  heroActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   section: {
     borderRadius: 18,
