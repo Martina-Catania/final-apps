@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
-import { SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, BottomNavBar } from "../components";
 import { useThemeTokens } from "../hooks";
 
@@ -44,55 +45,63 @@ export function PageShell({
   const { colors, spacing, typography } = useThemeTokens();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      edges={["left", "right"]}
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
+    >
       <View style={styles.screen}>
-        <View
-          style={[
-            styles.header,
-            {
-              backgroundColor: colors.surface,
-              borderBottomColor: colors.border,
-              paddingHorizontal: spacing.md,
-              paddingVertical: spacing.sm,
-            },
-          ]}
-        >
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: typography.primary.lg,
-              fontWeight: typography.weights.bold,
-              textAlign: "center",
-            }}
+        <SafeAreaView edges={["top"]} style={{ backgroundColor: colors.surface }}>
+          <View
+            style={[
+              styles.header,
+              {
+                backgroundColor: colors.surface,
+                borderBottomColor: colors.border,
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.sm,
+              },
+            ]}
           >
-            {title}
-          </Text>
+            <Text
+              style={{
+                color: colors.textPrimary,
+                fontSize: typography.primary.lg,
+                fontWeight: typography.weights.bold,
+                textAlign: "center",
+              }}
+            >
+              {title}
+            </Text>
 
-          <View style={[styles.headerActionContainer, { left: spacing.md }]}>
-            <Button
-              iconName="menu-outline"
-              label="Menu"
-              onPress={onMenuPress}
-              variant="icon"
-            />
+            <View style={[styles.headerActionContainer, { left: spacing.md }]}>
+              <Button
+                iconName="menu-outline"
+                label="Menu"
+                onPress={onMenuPress}
+                variant="icon"
+              />
+            </View>
           </View>
-        </View>
+        </SafeAreaView>
 
         <View style={styles.content}>{children}</View>
 
-        <View
-          style={{
-            backgroundColor: colors.background,
-            paddingHorizontal: spacing.md,
-            paddingVertical: spacing.sm,
-          }}
-        >
-          <BottomNavBar
-            activeKey={activeTab}
-            items={SHELL_NAV_ITEMS}
-            onTabPress={(key) => onTabPress(key as ShellTabKey)}
-          />
-        </View>
+        <SafeAreaView edges={["bottom"]} style={{ backgroundColor: colors.background }}>
+          <View
+            style={{
+              backgroundColor: colors.background,
+              paddingHorizontal: spacing.md,
+              paddingTop: spacing.sm,
+              paddingBottom: spacing.sm,
+            }}
+          >
+            <BottomNavBar
+              activeKey={activeTab}
+              items={SHELL_NAV_ITEMS}
+              onTabPress={(key) => onTabPress(key as ShellTabKey)}
+            />
+          </View>
+        </SafeAreaView>
       </View>
     </SafeAreaView>
   );

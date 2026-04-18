@@ -365,6 +365,23 @@ export default function QuizPlayPage() {
               },
             ]}
           >
+            <View style={[styles.rowBetween, { gap: spacing.sm }]}>
+              <Button
+                iconName="arrow-back-outline"
+                label="Back"
+                onPress={goToQuizDetail}
+                variant="icon"
+              />
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: typography.secondary.md,
+                }}
+              >
+                Question 1 of {playQuestions.length}
+              </Text>
+            </View>
+
             <Text
               style={{
                 color: colors.textPrimary,
