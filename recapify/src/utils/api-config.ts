@@ -121,8 +121,24 @@ export class ApiRequestTimeoutError extends Error {
   }
 }
 
-export async function fetchWithTimeout(input: string, init: RequestInit): Promise<Response> {
-  const timeoutMs = readApiTimeoutMs();
+type FetchWithTimeoutOptions = {
+  timeoutMs?: number;
+};
+
+function resolveTimeoutMs(overrideTimeoutMs?: number): number {
+  if (!Number.isInteger(overrideTimeoutMs) || (overrideTimeoutMs ?? 0) < 1000) {
+    return readApiTimeoutMs();
+  }
+
+  return overrideTimeoutMs as number;
+}
+
+export async function fetchWithTimeout(
+  input: string,
+  init: RequestInit,
+  options?: FetchWithTimeoutOptions,
+): Promise<Response> {
+  const timeoutMs = resolveTimeoutMs(options?.timeoutMs);
   const controller = new AbortController();
   const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
 

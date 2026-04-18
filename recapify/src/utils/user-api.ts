@@ -55,6 +55,14 @@ type ErrorResponse = {
   details?: unknown;
 };
 
+type RequestJsonOptions = {
+  timeoutMs?: number;
+};
+
+const AVATAR_UPLOAD_TIMEOUT_MS = 30_000;
+const AVATAR_UPLOAD_MAX_ATTEMPTS = 2;
+const AVATAR_UPLOAD_RETRY_DELAY_MS = 350;
+
 export class UserApiError extends Error {
   statusCode: number;
   details?: unknown;
@@ -74,6 +82,7 @@ async function requestJson<T>(
   init: RequestInit,
   token?: string,
   includeJsonContentType = true,
+  options?: RequestJsonOptions,
 ): Promise<T> {
   const headers = new Headers(init.headers ?? undefined);
 
@@ -91,6 +100,8 @@ async function requestJson<T>(
     response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
       ...init,
       headers,
+    }, {
+      timeoutMs: options?.timeoutMs,
     });
   } catch (error) {
     throw new UserApiError(getApiConnectivityErrorMessage(API_BASE_URL, error), 0, {
@@ -200,17 +211,37 @@ async function buildAvatarFormData(input: UploadAvatarInput): Promise<FormData> 
 }
 
 export async function uploadCurrentUserAvatarRequest(input: UploadAvatarInput, token: string) {
-  const formData = await buildAvatarFormData(input);
+  for (let attempt = 1; attempt <= AVATAR_UPLOAD_MAX_ATTEMPTS; attempt += 1) {
+    const formData = await buildAvatarFormData(input);
 
-  return requestJson<{ user: AuthUser }>(
-    "/auth/me/avatar",
-    {
-      method: "POST",
-      body: formData,
-    },
-    token,
-    false,
-  );
+    try {
+      return await requestJson<{ user: AuthUser }>(
+        "/auth/me/avatar",
+        {
+          method: "POST",
+          body: formData,
+        },
+        token,
+        false,
+        {
+          timeoutMs: AVATAR_UPLOAD_TIMEOUT_MS,
+        },
+      );
+    } catch (error) {
+      const isTransientConnectivityFailure =
+        error instanceof UserApiError && error.statusCode === 0;
+
+      if (!isTransientConnectivityFailure || attempt >= AVATAR_UPLOAD_MAX_ATTEMPTS) {
+        throw error;
+      }
+
+      await new Promise((resolve) => {
+        setTimeout(resolve, AVATAR_UPLOAD_RETRY_DELAY_MS);
+      });
+    }
+  }
+
+  throw new UserApiError("Unable to upload avatar", 0);
 }
 
 export function getUserApiErrorMessage(error: unknown, fallback: string): string {
