@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,6 +17,18 @@ import { useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
 import { updateProjectRequest } from "../../../../utils/project-api";
+import {
+  addTagToProjectRequest,
+  createTagRequest,
+  listTagsRequest,
+  removeTagFromProjectRequest,
+  type Tag,
+} from "../../../../utils/tag-api";
+import {
+  findTagByNameCaseInsensitive,
+  normalizeTagName,
+  uniqueFlatTags,
+} from "../../../../utils/tag-utils";
 import {
   createQuizQuestionRequest,
   deleteQuizQuestionRequest,
@@ -77,7 +90,13 @@ export default function QuizEditPage() {
   const [quizTitle, setQuizTitle] = useState("");
   const [questions, setQuestions] = useState<QuestionDraft[]>([]);
   const [initialQuestionIds, setInitialQuestionIds] = useState<number[]>([]);
+  const [initialTagIds, setInitialTagIds] = useState<number[]>([]);
   const [nextQuestionIndex, setNextQuestionIndex] = useState(1);
+  const [tagInput, setTagInput] = useState("");
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [tagsError, setTagsError] = useState<string | null>(null);
+  const [isLoadingTags, setIsLoadingTags] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,6 +105,138 @@ export default function QuizEditPage() {
   const [questionsError, setQuestionsError] = useState<string | null>(null);
   const [questionErrors, setQuestionErrors] = useState<Record<string, QuestionFieldErrors>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const selectedTagIds = useMemo(() => new Set(selectedTags.map((tag) => tag.id)), [selectedTags]);
+
+  const suggestedTags = useMemo(() => {
+    const normalizedInput = normalizeTagName(tagInput);
+
+    if (!normalizedInput) {
+      return [];
+    }
+
+    return availableTags
+      .filter(
+        (tag) => tag.name.includes(normalizedInput) && !selectedTagIds.has(tag.id),
+      )
+      .slice(0, 8);
+  }, [availableTags, selectedTagIds, tagInput]);
+
+  const loadTags = useCallback(async () => {
+    if (!token) {
+      setAvailableTags([]);
+      return;
+    }
+
+    setIsLoadingTags(true);
+
+    try {
+      const payload = await listTagsRequest(token);
+      setAvailableTags(uniqueFlatTags(payload.map((tag) => ({ id: tag.id, name: tag.name }))));
+    } catch {
+      setAvailableTags([]);
+    } finally {
+      setIsLoadingTags(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    void loadTags();
+  }, [loadTags]);
+
+  const addSelectedTag = useCallback((tag: Tag) => {
+    setSelectedTags((current) => {
+      const alreadySelected = current.some(
+        (item) => normalizeTagName(item.name) === normalizeTagName(tag.name),
+      );
+
+      if (alreadySelected) {
+        return current;
+      }
+
+      return [...current, tag];
+    });
+  }, []);
+
+  const handleAddTag = useCallback(async () => {
+    if (!token) {
+      setTagsError("You must be signed in to add tags");
+      return;
+    }
+
+    const normalizedName = normalizeTagName(tagInput);
+
+    if (!normalizedName) {
+      setTagsError("Tag name cannot be empty");
+      return;
+    }
+
+    setTagsError(null);
+
+    const existingSelectedTag = findTagByNameCaseInsensitive(selectedTags, normalizedName);
+    if (existingSelectedTag) {
+      setTagsError("Tag already selected");
+      return;
+    }
+
+    const existingTag = findTagByNameCaseInsensitive(availableTags, normalizedName);
+    if (existingTag) {
+      addSelectedTag(existingTag);
+      setTagInput("");
+      return;
+    }
+
+    try {
+      const createdTag = await createTagRequest(normalizedName, token);
+      setAvailableTags((current) => uniqueFlatTags([...current, createdTag]));
+      addSelectedTag(createdTag);
+      setTagInput("");
+      return;
+    } catch (error) {
+      try {
+        const refreshed = await listTagsRequest(token);
+        const refreshedTags = uniqueFlatTags(
+          refreshed.map((tag) => ({ id: tag.id, name: tag.name })),
+        );
+        setAvailableTags(refreshedTags);
+
+        const recoveredTag = findTagByNameCaseInsensitive(refreshedTags, normalizedName);
+        if (recoveredTag) {
+          addSelectedTag(recoveredTag);
+          setTagInput("");
+          return;
+        }
+      } catch {
+        // Keep the original error message below when refresh also fails.
+      }
+
+      setTagsError(getApiErrorMessage(error, "Unable to create tag"));
+    }
+  }, [addSelectedTag, availableTags, selectedTags, tagInput, token]);
+
+  const removeSelectedTag = (tagId: number) => {
+    setSelectedTags((current) => current.filter((tag) => tag.id !== tagId));
+  };
+
+  const syncProjectTags = useCallback(
+    async (nextProjectId: number) => {
+      if (!token) {
+        return;
+      }
+
+      const initialIds = new Set(initialTagIds);
+      const nextIds = new Set(selectedTags.map((tag) => tag.id));
+
+      const tagIdsToAdd = [...nextIds].filter((tagId) => !initialIds.has(tagId));
+      const tagIdsToRemove = [...initialIds].filter((tagId) => !nextIds.has(tagId));
+
+      await Promise.all([
+        ...tagIdsToAdd.map((tagId) => addTagToProjectRequest(nextProjectId, tagId, token)),
+        ...tagIdsToRemove.map((tagId) => removeTagFromProjectRequest(nextProjectId, tagId, token)),
+      ]);
+    },
+    [initialTagIds, selectedTags, token],
+  );
 
   const addQuestion = () => {
     setQuestions((current) => [...current, createQuestionDraft(nextQuestionIndex)]);
@@ -206,7 +357,11 @@ export default function QuizEditPage() {
         setProjectId(null);
         setQuizTitle("");
         setInitialQuestionIds([]);
+        setInitialTagIds([]);
         setQuestions([]);
+        setSelectedTags([]);
+        setTagInput("");
+        setTagsError(null);
         setNextQuestionIndex(1);
         return;
       }
@@ -215,6 +370,11 @@ export default function QuizEditPage() {
       setCreatorUserId(payload.project.userId);
       setQuizTitle(payload.project.title);
       setInitialQuestionIds(payload.questions.map((item) => item.id));
+      const projectTags = uniqueFlatTags(payload.project.tags.map((projectTag) => projectTag.tag));
+      setInitialTagIds(projectTags.map((tag) => tag.id));
+      setSelectedTags(projectTags);
+      setTagInput("");
+      setTagsError(null);
 
       const mappedQuestions: QuestionDraft[] = payload.questions.map((item, index) => ({
         key: `existing-${item.id}-${index + 1}`,
@@ -237,6 +397,10 @@ export default function QuizEditPage() {
       setLoadError(getApiErrorMessage(error, "Unable to load quiz"));
       setCreatorUserId(null);
       setQuestions([]);
+      setInitialTagIds([]);
+      setSelectedTags([]);
+      setTagInput("");
+      setTagsError(null);
     } finally {
       setIsLoading(false);
     }
@@ -248,6 +412,7 @@ export default function QuizEditPage() {
 
   const handleSaveQuiz = async () => {
     setSubmitError(null);
+    setTagsError(null);
 
     if (!token || !user) {
       setSubmitError("You must be signed in to edit quizzes");
@@ -278,6 +443,8 @@ export default function QuizEditPage() {
         },
         token,
       );
+
+      await syncProjectTags(projectId);
 
       const remainingQuestionIds = new Set(initialQuestionIds);
 
@@ -446,6 +613,110 @@ export default function QuizEditPage() {
               errorText={titleError ?? undefined}
               helperText="Rename your quiz."
             />
+
+            <View style={{ gap: spacing.sm }}>
+              <AppTextInput
+                label="Project tags"
+                onChangeText={(value) => {
+                  setTagInput(value);
+                  setTagsError(null);
+                }}
+                placeholder="Type a tag name"
+                value={tagInput}
+                errorText={tagsError ?? undefined}
+                helperText="Add existing tags or create new ones. Matching is case-insensitive."
+              />
+
+              <View style={[styles.rowWrap, { gap: spacing.xs }]}>
+                <Button
+                  disabled={isSubmitting || !tagInput.trim()}
+                  iconName="pricetag-outline"
+                  label={isLoadingTags ? "Loading tags..." : "Add tag"}
+                  onPress={() => {
+                    void handleAddTag();
+                  }}
+                  variant="secondary"
+                />
+              </View>
+
+              {suggestedTags.length > 0 ? (
+                <View style={[styles.rowWrap, { gap: spacing.xs }]}>
+                  {suggestedTags.map((tag) => (
+                    <Pressable
+                      accessibilityRole="button"
+                      key={`quiz-edit-suggested-tag-${tag.id}`}
+                      onPress={() => {
+                        addSelectedTag(tag);
+                        setTagInput("");
+                      }}
+                      style={({ pressed }) => [
+                        styles.tagPill,
+                        {
+                          backgroundColor: colors.surfaceMuted,
+                          borderColor: colors.border,
+                          borderRadius: radius.pill,
+                          opacity: pressed ? 0.8 : 1,
+                          paddingHorizontal: spacing.sm,
+                          paddingVertical: spacing.xs,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: colors.textSecondary,
+                          fontSize: typography.secondary.sm,
+                          fontWeight: typography.weights.medium,
+                        }}
+                      >
+                        {tag.name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
+
+              {selectedTags.length > 0 ? (
+                <View style={[styles.rowWrap, { gap: spacing.xs }]}>
+                  {selectedTags.map((tag) => (
+                    <Pressable
+                      accessibilityRole="button"
+                      key={`quiz-edit-selected-tag-${tag.id}`}
+                      onPress={() => removeSelectedTag(tag.id)}
+                      style={({ pressed }) => [
+                        styles.tagPill,
+                        {
+                          backgroundColor: colors.secondaryMuted,
+                          borderColor: colors.secondary,
+                          borderRadius: radius.pill,
+                          opacity: pressed ? 0.8 : 1,
+                          paddingHorizontal: spacing.sm,
+                          paddingVertical: spacing.xs,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: colors.textPrimary,
+                          fontSize: typography.secondary.sm,
+                          fontWeight: typography.weights.semibold,
+                        }}
+                      >
+                        {tag.name}  x
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: typography.secondary.sm,
+                  }}
+                >
+                  No tags selected yet.
+                </Text>
+              )}
+            </View>
 
             <View style={{ gap: spacing.sm }}>
               <View style={[styles.rowBetween, { gap: spacing.sm }]}>
@@ -622,5 +893,8 @@ const styles = StyleSheet.create({
   rowWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
+  },
+  tagPill: {
+    borderWidth: 1,
   },
 });

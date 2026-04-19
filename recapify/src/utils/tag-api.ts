@@ -46,3 +46,13 @@ export function listProjectTagsRequest(projectId: number, token?: string) {
     token,
   );
 }
+
+export function removeTagFromProjectRequest(projectId: number, tagId: number, token?: string) {
+  return requestJson<ProjectTag>(
+    `/projects/${projectId}/tags/${tagId}`,
+    {
+      method: "DELETE",
+    },
+    token,
+  );
+}
