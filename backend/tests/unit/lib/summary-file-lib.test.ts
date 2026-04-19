@@ -44,7 +44,7 @@ describe("summary-file-lib", () => {
 
   it("creates summary file", () => {
     const { ctx, summaryFile } = createCtx();
-    const data = { summaryId: 2, fileName: "notes.pdf", fileUrl: "https://example.test/file.pdf" };
+    const data = { summaryId: 2, filename: "notes.pdf" };
     createSummaryFile(data as never, ctx);
 
     expect(summaryFile.create).toHaveBeenCalledWith({
@@ -55,7 +55,7 @@ describe("summary-file-lib", () => {
 
   it("updates summary file", () => {
     const { ctx, summaryFile } = createCtx();
-    const data = { fileName: "updated.pdf" };
+    const data = { filename: "updated.pdf" };
     updateSummaryFile(8, data as never, ctx);
 
     expect(summaryFile.update).toHaveBeenCalledWith({

@@ -10,7 +10,7 @@ import {
 } from "../lib/summary-lib.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
-import { optionalString, parseIntParam, requireInt, requireString } from "../utils/http.js";
+import { optionalString, parseIntParam, requireInt } from "../utils/http.js";
 
 export function createSummaryRouter(ctx: AppContext) {
   const summaryRouter = Router();
@@ -41,7 +41,12 @@ export function createSummaryRouter(ctx: AppContext) {
     "/",
     asyncHandler(async (req, res) => {
       const projectId = requireInt(req.body.projectId, "projectId");
-      const content = requireString(req.body.content, "content");
+
+      if (typeof req.body.content !== "string") {
+        throw new ApiError(400, "content must be a string");
+      }
+
+      const content = req.body.content.trim();
 
       const project = await ctx.prisma.project.findUnique({
         where: { id: projectId },

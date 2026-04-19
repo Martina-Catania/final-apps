@@ -56,6 +56,28 @@ describe("summary-routes", () => {
     expect(mocks.summary.create).not.toHaveBeenCalled();
   });
 
+  it("allows create with empty trimmed content", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/summaries", createSummaryRouter(ctx));
+
+    mocks.project.findUnique.mockResolvedValue({ type: ProjectType.SUMMARY } as never);
+    mocks.summary.create.mockResolvedValue({ id: 12, projectId: 2, content: "" } as never);
+
+    const response = await request(app)
+      .post("/summaries")
+      .send({ projectId: 2, content: "   " });
+
+    expect(response.status).toBe(201);
+    expect(mocks.summary.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          projectId: 2,
+          content: "",
+        },
+      }),
+    );
+  });
+
   it("returns summary by id when found", async () => {
     const { ctx, mocks } = createRouteMockContext();
     const app = createRouteApp("/summaries", createSummaryRouter(ctx));

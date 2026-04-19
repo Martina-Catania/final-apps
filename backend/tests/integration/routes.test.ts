@@ -125,6 +125,31 @@ describe("api routes", () => {
     expect(mockCtx.mocks.summary.create).not.toHaveBeenCalled();
   });
 
+  it("allows summary creation with empty content", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    mockCtx.mocks.project.findUnique.mockResolvedValue({ type: "SUMMARY" } as never);
+    mockCtx.mocks.summary.create.mockResolvedValue({
+      id: 21,
+      projectId: 10,
+      content: "",
+    } as never);
+
+    const response = await request(app).post("/api/summaries").send({
+      projectId: 10,
+      content: "   ",
+    });
+
+    expect(response.status).toBe(201);
+    expect(mockCtx.mocks.summary.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          projectId: 10,
+          content: "",
+        },
+      }),
+    );
+  });
+
   it("creates project tag relation through injected context", async () => {
     const app = createApp(asAppContext(mockCtx));
     mockCtx.mocks.projectTag.create.mockResolvedValue({

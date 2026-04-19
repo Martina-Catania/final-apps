@@ -51,9 +51,32 @@ function parseSummaryId(value: string | string[] | undefined): number | null {
   return parsed;
 }
 
+function parseOptionalParam(value: string | string[] | undefined): string | null {
+  const firstValue = Array.isArray(value) ? value[0] : value;
+
+  if (!firstValue) {
+    return null;
+  }
+
+  let decoded = firstValue;
+
+  try {
+    decoded = decodeURIComponent(firstValue);
+  } catch {
+    decoded = firstValue;
+  }
+
+  const trimmed = decoded.trim();
+  return trimmed ? trimmed : null;
+}
+
 export default function SummaryDetailPage() {
-  const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+  const { id, uploadError } = useLocalSearchParams<{
+    id?: string | string[];
+    uploadError?: string | string[];
+  }>();
   const summaryId = useMemo(() => parseSummaryId(id), [id]);
+  const uploadErrorMessage = useMemo(() => parseOptionalParam(uploadError), [uploadError]);
   const router = useRouter();
   const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
@@ -291,6 +314,39 @@ export default function SummaryDetailPage() {
             padding: spacing.lg,
           }}
         >
+          {uploadErrorMessage ? (
+            <View
+              style={[
+                styles.uploadNotice,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.warning,
+                  borderRadius: radius.md,
+                  gap: spacing.xs,
+                  padding: spacing.md,
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  color: colors.warning,
+                  fontSize: typography.secondary.md,
+                  fontWeight: typography.weights.semibold,
+                }}
+              >
+                Summary saved, but document upload failed
+              </Text>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: typography.secondary.sm,
+                }}
+              >
+                {uploadErrorMessage}
+              </Text>
+            </View>
+          ) : null}
+
           <View
             style={[
               styles.headerCard,
@@ -445,5 +501,8 @@ const styles = StyleSheet.create({
   },
   headerInfoText: {
     flex: 1,
+  },
+  uploadNotice: {
+    borderWidth: 1,
   },
 });

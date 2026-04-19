@@ -1,6 +1,13 @@
+import { unlink } from "node:fs/promises";
+import path from "node:path";
 import request from "supertest";
 import { createSummaryFileRouter } from "../../../src/routes/summary-file-routes.js";
 import { createRouteApp, createRouteMockContext } from "./helpers.js";
+
+async function cleanupUploadedFile(filename: string) {
+  const absolutePath = path.resolve(process.cwd(), "uploads", "summary-files", filename);
+  await unlink(absolutePath).catch(() => undefined);
+}
 
 describe("summary-file-routes", () => {
   it("lists summary files and handles get-not-found/update/delete", async () => {
@@ -18,7 +25,7 @@ describe("summary-file-routes", () => {
     expect((await request(app).delete("/summary-files/4")).status).toBe(200);
   });
 
-  it("creates a summary file", async () => {
+  it("creates a summary file from json payload", async () => {
     const { ctx, mocks } = createRouteMockContext();
     const app = createRouteApp("/summary-files", createSummaryFileRouter(ctx));
 
@@ -33,6 +40,65 @@ describe("summary-file-routes", () => {
       data: { summaryId: 1, filename: "notes.pdf" },
       include: { summary: true },
     });
+  });
+
+  it("creates a summary file from multipart upload", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/summary-files", createSummaryFileRouter(ctx));
+
+    mocks.summaryFile.create.mockResolvedValue({ id: 2, summaryId: 1, filename: "stored.pdf" } as never);
+
+    const response = await request(app)
+      .post("/summary-files")
+      .field("summaryId", "1")
+      .attach("file", Buffer.from("%PDF-1.7 test"), {
+        filename: "notes.pdf",
+        contentType: "application/pdf",
+      });
+
+    expect(response.status).toBe(201);
+    expect(mocks.summaryFile.create).toHaveBeenCalledTimes(1);
+
+    const createArgs = mocks.summaryFile.create.mock.calls[0]?.[0] as {
+      data: {
+        summaryId: number;
+        filename: string;
+      };
+    };
+
+    expect(createArgs.data.summaryId).toBe(1);
+    expect(createArgs.data.filename).toMatch(/\.pdf$/);
+
+    await cleanupUploadedFile(createArgs.data.filename);
+  });
+
+  it("rejects multipart upload when file type is unsupported", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/summary-files", createSummaryFileRouter(ctx));
+
+    const response = await request(app)
+      .post("/summary-files")
+      .field("summaryId", "1")
+      .attach("file", Buffer.from("plain-text"), {
+        filename: "notes.txt",
+        contentType: "text/plain",
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("Summary file must be a PDF, DOC, or DOCX document");
+    expect(mocks.summaryFile.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects multipart upload when file is missing", async () => {
+    const { ctx } = createRouteMockContext();
+    const app = createRouteApp("/summary-files", createSummaryFileRouter(ctx));
+
+    const response = await request(app)
+      .post("/summary-files")
+      .field("summaryId", "1");
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("Summary document file is required");
   });
 
   it("returns summary file by id when found", async () => {

@@ -19,6 +19,11 @@ export function errorHandler(
 
   if (error instanceof MulterError) {
     if (error.code === "LIMIT_FILE_SIZE") {
+      if (error.field === "file") {
+        res.status(400).json({ error: "Summary file must be 10MB or smaller" });
+        return;
+      }
+
       res.status(400).json({ error: "Avatar image must be 5MB or smaller" });
       return;
     }

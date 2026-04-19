@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { Button, SummaryEditor } from "../../../components";
+import { Button, FileUploadField, SummaryEditor, type UploadedFile } from "../../../components";
 import { AppTextInput } from "../../../components/TextInput";
 import { useAuth } from "../../../context/auth-context";
 import { useProjectTagEditor, useSafeNavigation, useThemeTokens } from "../../../hooks";
@@ -17,7 +17,7 @@ import { SafeAreaPage } from "../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../utils/api-request";
 import { createProjectRequest } from "../../../utils/project-api";
 import { isRichTextEmpty } from "../../../utils/rich-text";
-import { createSummaryRequest } from "../../../utils/summary-api";
+import { createSummaryRequest, uploadSummaryFileRequest } from "../../../utils/summary-api";
 
 function wait(ms: number) {
   return new Promise<void>((resolve) => {
@@ -37,6 +37,8 @@ export default function SummaryCreatePage() {
   const [contentError, setContentError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingSourceFile, setIsUploadingSourceFile] = useState(false);
+  const [selectedSourceFile, setSelectedSourceFile] = useState<UploadedFile | null>(null);
 
   const {
     tagInput,
@@ -53,6 +55,8 @@ export default function SummaryCreatePage() {
 
   const validate = () => {
     let isValid = true;
+    const hasSummaryContent = !isRichTextEmpty(summaryContent);
+    const hasSourceFile = selectedSourceFile !== null;
 
     if (!projectTitle.trim()) {
       setTitleError("Project title is required");
@@ -61,8 +65,8 @@ export default function SummaryCreatePage() {
       setTitleError(null);
     }
 
-    if (isRichTextEmpty(summaryContent)) {
-      setContentError("Summary content is required");
+    if (!hasSummaryContent && !hasSourceFile) {
+      setContentError("Add summary content or upload a source document");
       isValid = false;
     } else {
       setContentError(null);
@@ -106,12 +110,40 @@ export default function SummaryCreatePage() {
         token,
       );
 
+      if (selectedSourceFile) {
+        setIsUploadingSourceFile(true);
+
+        try {
+          await uploadSummaryFileRequest(
+            {
+              summaryId: summary.id,
+              uri: selectedSourceFile.uri,
+              name: selectedSourceFile.name,
+              mimeType: selectedSourceFile.mimeType,
+              webFile: selectedSourceFile.webFile,
+            },
+            token,
+          );
+        } catch (error) {
+          const uploadError = getApiErrorMessage(
+            error,
+            "Summary was created, but the document could not be uploaded",
+          );
+
+          router.replace(`./${summary.id}?uploadError=${encodeURIComponent(uploadError)}`);
+          return;
+        } finally {
+          setIsUploadingSourceFile(false);
+        }
+      }
+
       await wait(1000);
       router.replace(`./${summary.id}`);
     } catch (error) {
       setSubmitError(getApiErrorMessage(error, "Unable to create summary"));
     } finally {
       setIsSubmitting(false);
+      setIsUploadingSourceFile(false);
     }
   };
 
@@ -166,7 +198,7 @@ export default function SummaryCreatePage() {
                     fontSize: typography.secondary.md,
                   }}
                 >
-                  Add a title and content to save your summary project.
+                  Add a title plus either summary content or a source file.
                 </Text>
               </View>
             </View>
@@ -278,8 +310,8 @@ export default function SummaryCreatePage() {
               errorText={contentError ?? undefined}
               helperText={
                 Platform.OS === "web"
-                  ? "Using plain text fallback on web."
-                  : "Use the formatting controls for richer summary notes."
+                  ? "Optional if you upload a file. Using plain text fallback on web."
+                  : "Optional if you upload a file. Use formatting controls for richer notes."
               }
               label="Summary content"
               onChangeValue={(value) => {
@@ -290,6 +322,29 @@ export default function SummaryCreatePage() {
               }}
               placeholder="Write your summary content..."
               value={summaryContent}
+            />
+
+            <FileUploadField
+              allowedTypes={[
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              ]}
+              clearButtonLabel="Clear document"
+              helperText="Optional: attach one PDF, DOC, or DOCX file (max 10MB)."
+              label="Attach source document"
+              onFileSelected={(file) => {
+                setSelectedSourceFile(file);
+
+                if (file && contentError) {
+                  setContentError(null);
+                }
+
+                if (submitError) {
+                  setSubmitError(null);
+                }
+              }}
+              pickButtonLabel="Pick document"
             />
 
             {submitError ? (
@@ -304,10 +359,10 @@ export default function SummaryCreatePage() {
             ) : null}
 
             <Button
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploadingSourceFile}
               fullWidth
-              iconName={isSubmitting ? "hourglass-outline" : "save-outline"}
-              label={isSubmitting ? "Saving summary..." : "Save summary"}
+              iconName={isSubmitting || isUploadingSourceFile ? "hourglass-outline" : "save-outline"}
+              label={isUploadingSourceFile ? "Uploading file..." : isSubmitting ? "Saving summary..." : "Save summary"}
               onPress={() => {
                 void handleSaveSummary();
               }}

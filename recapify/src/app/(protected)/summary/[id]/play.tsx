@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,8 +16,12 @@ import { useAuth } from "../../../../context/auth-context";
 import { useSafeNavigation, useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
+import { getApiHostUrl } from "../../../../utils/api-config";
 import { incrementProjectTimesPlayedRequest } from "../../../../utils/project-api";
+import { isRichTextEmpty } from "../../../../utils/rich-text";
 import { getSummaryByIdRequest, type Summary } from "../../../../utils/summary-api";
+
+const API_HOST = getApiHostUrl();
 
 function parseSummaryId(value: string | string[] | undefined): number | null {
   const firstValue = Array.isArray(value) ? value[0] : value;
@@ -34,6 +39,32 @@ function parseSummaryId(value: string | string[] | undefined): number | null {
   return parsed;
 }
 
+function getSummaryFileDisplayName(filename: string) {
+  const normalized = filename.trim().replace(/\\/g, "/");
+
+  if (!normalized) {
+    return "Unnamed file";
+  }
+
+  const segments = normalized.split("/").filter(Boolean);
+  return segments.length > 0 ? segments[segments.length - 1] : normalized;
+}
+
+function resolveSummaryFileUrl(filename: string) {
+  const trimmed = filename.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+
+  const displayName = getSummaryFileDisplayName(trimmed);
+  return `${API_HOST}/uploads/summary-files/${encodeURIComponent(displayName)}`;
+}
+
 export default function SummaryPlayPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const summaryId = useMemo(() => parseSummaryId(id), [id]);
@@ -45,6 +76,7 @@ export default function SummaryPlayPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fileActionError, setFileActionError] = useState<string | null>(null);
 
   const goBackOnStack = useCallback(() => {
     goBack();
@@ -59,6 +91,7 @@ export default function SummaryPlayPage() {
 
     setIsLoading(true);
     setErrorMessage(null);
+    setFileActionError(null);
 
     try {
       const payload = await getSummaryByIdRequest(summaryId, token ?? undefined);
@@ -78,6 +111,23 @@ export default function SummaryPlayPage() {
   useEffect(() => {
     void loadSummary();
   }, [loadSummary]);
+
+  const handleOpenFile = useCallback(async (filename: string) => {
+    setFileActionError(null);
+
+    const url = resolveSummaryFileUrl(filename);
+
+    if (!url) {
+      setFileActionError("This file link is not available");
+      return;
+    }
+
+    try {
+      await Linking.openURL(url);
+    } catch {
+      setFileActionError("Unable to open this file on your device");
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -152,6 +202,8 @@ export default function SummaryPlayPage() {
     );
   }
 
+  const hasSummaryContent = !isRichTextEmpty(summary.content);
+
   return (
     <SafeAreaPage backgroundColor={colors.background}>
       <ScrollView
@@ -222,12 +274,106 @@ export default function SummaryPlayPage() {
             },
           ]}
         >
-          <SummaryMarkdownView
-            fontSize={typography.secondary.md}
-            linkColor={colors.primary}
-            markdown={summary.content}
-            textColor={colors.textPrimary}
-          />
+          {hasSummaryContent ? (
+            <SummaryMarkdownView
+              fontSize={typography.secondary.md}
+              linkColor={colors.primary}
+              markdown={summary.content}
+              textColor={colors.textPrimary}
+            />
+          ) : (
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: typography.secondary.md,
+              }}
+            >
+              No summary text was provided for this entry.
+            </Text>
+          )}
+        </View>
+
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderRadius: radius.md,
+              gap: spacing.md,
+              padding: spacing.lg,
+            },
+          ]}
+        >
+          <Text
+            style={{
+              color: colors.textPrimary,
+              fontSize: typography.primary.md,
+              fontWeight: typography.weights.bold,
+            }}
+          >
+            Attached files
+          </Text>
+
+          {summary.files.length === 0 ? (
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: typography.secondary.md,
+              }}
+            >
+              No files uploaded for this summary.
+            </Text>
+          ) : (
+            <View style={{ gap: spacing.sm }}>
+              {summary.files.map((file) => (
+                <View
+                  key={`summary-file-${file.id}`}
+                  style={[
+                    styles.fileRow,
+                    {
+                      borderColor: colors.border,
+                      borderRadius: radius.sm,
+                      gap: spacing.sm,
+                      padding: spacing.sm,
+                    },
+                  ]}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      color: colors.textPrimary,
+                      flex: 1,
+                      fontSize: typography.secondary.md,
+                      fontWeight: typography.weights.medium,
+                    }}
+                  >
+                    {getSummaryFileDisplayName(file.filename)}
+                  </Text>
+
+                  <Button
+                    iconName="open-outline"
+                    label="Open"
+                    onPress={() => {
+                      void handleOpenFile(file.filename);
+                    }}
+                    variant="default"
+                  />
+                </View>
+              ))}
+            </View>
+          )}
+
+          {fileActionError ? (
+            <Text
+              style={{
+                color: colors.danger,
+                fontSize: typography.secondary.sm,
+              }}
+            >
+              {fileActionError}
+            </Text>
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaPage>
@@ -245,6 +391,11 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     alignItems: "flex-start",
+    flexDirection: "row",
+  },
+  fileRow: {
+    alignItems: "center",
+    borderWidth: 1,
     flexDirection: "row",
   },
 });
