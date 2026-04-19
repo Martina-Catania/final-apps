@@ -37,7 +37,7 @@ export default function QuizDetailPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const quizId = useMemo(() => parseQuizId(id), [id]);
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
@@ -208,18 +208,20 @@ export default function QuizDetailPage() {
               }
               variant="secondary"
             />
-            <Button
-              fullWidth
-              iconName="create-outline"
-              label="Edit quiz"
-              onPress={() =>
-                router.push({
-                  pathname: "/quiz/[id]/edit",
-                  params: { id: String(quiz.id) },
-                })
-              }
-              variant="primary"
-            />
+            {user?.id === quiz.project.userId ? (
+              <Button
+                fullWidth
+                iconName="create-outline"
+                label="Edit quiz"
+                onPress={() =>
+                  router.push({
+                    pathname: "/quiz/[id]/edit",
+                    params: { id: String(quiz.id) },
+                  })
+                }
+                variant="primary"
+              />
+            ) : null}
           </View>
         </View>
 

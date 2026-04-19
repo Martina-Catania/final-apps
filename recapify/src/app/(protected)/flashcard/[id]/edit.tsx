@@ -65,10 +65,11 @@ export default function FlashcardEditPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const deckId = useMemo(() => parseDeckId(id), [id]);
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
   const [projectId, setProjectId] = useState<number | null>(null);
+  const [creatorUserId, setCreatorUserId] = useState<number | null>(null);
   const [deckTitle, setDeckTitle] = useState("");
   const [flashcards, setFlashcards] = useState<FlashcardDraft[]>([]);
   const [initialFlashcardIds, setInitialFlashcardIds] = useState<number[]>([]);
@@ -171,12 +172,31 @@ export default function FlashcardEditPage() {
       return;
     }
 
+    if (!token || !user) {
+      setLoadError("You must be signed in to edit flashcards");
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setLoadError(null);
 
     try {
       const payload = await getDeckByIdRequest(deckId, token ?? undefined);
+
+      if (payload.project.userId !== user.id) {
+        setCreatorUserId(payload.project.userId);
+        setLoadError("You are not allowed to edit this flashcard set");
+        setProjectId(null);
+        setDeckTitle("");
+        setInitialFlashcardIds([]);
+        setFlashcards([]);
+        setNextFlashcardIndex(1);
+        return;
+      }
+
       setProjectId(payload.projectId);
+      setCreatorUserId(payload.project.userId);
       setDeckTitle(payload.project.title);
       setInitialFlashcardIds(payload.flashcards.map((item) => item.id));
 
@@ -196,11 +216,12 @@ export default function FlashcardEditPage() {
       }
     } catch (error) {
       setLoadError(getApiErrorMessage(error, "Unable to load flashcards"));
+      setCreatorUserId(null);
       setFlashcards([]);
     } finally {
       setIsLoading(false);
     }
-  }, [deckId, token]);
+  }, [deckId, token, user]);
 
   useEffect(() => {
     void loadDeck();
@@ -209,8 +230,13 @@ export default function FlashcardEditPage() {
   const handleSaveFlashcards = async () => {
     setSubmitError(null);
 
-    if (!token) {
+    if (!token || !user) {
       setSubmitError("You must be signed in to edit flashcards");
+      return;
+    }
+
+    if (creatorUserId !== user.id) {
+      setSubmitError("You are not allowed to edit this flashcard set");
       return;
     }
 

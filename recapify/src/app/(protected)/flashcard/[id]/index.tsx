@@ -37,7 +37,7 @@ export default function FlashcardDetailPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const deckId = useMemo(() => parseDeckId(id), [id]);
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
   const [deck, setDeck] = useState<Deck | null>(null);
@@ -209,18 +209,20 @@ export default function FlashcardDetailPage() {
               }
               variant="secondary"
             />
-            <Button
-              fullWidth
-              iconName="create-outline"
-              label="Edit flashcards"
-              onPress={() =>
-                router.push({
-                  pathname: "/flashcard/[id]/edit",
-                  params: { id: String(deck.id) },
-                })
-              }
-              variant="primary"
-            />
+            {user?.id === deck.project.userId ? (
+              <Button
+                fullWidth
+                iconName="create-outline"
+                label="Edit flashcards"
+                onPress={() =>
+                  router.push({
+                    pathname: "/flashcard/[id]/edit",
+                    params: { id: String(deck.id) },
+                  })
+                }
+                variant="primary"
+              />
+            ) : null}
           </View>
         </View>
 

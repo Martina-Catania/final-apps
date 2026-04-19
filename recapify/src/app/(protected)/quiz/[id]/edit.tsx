@@ -69,10 +69,11 @@ export default function QuizEditPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const quizId = useMemo(() => parseQuizId(id), [id]);
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
   const [projectId, setProjectId] = useState<number | null>(null);
+  const [creatorUserId, setCreatorUserId] = useState<number | null>(null);
   const [quizTitle, setQuizTitle] = useState("");
   const [questions, setQuestions] = useState<QuestionDraft[]>([]);
   const [initialQuestionIds, setInitialQuestionIds] = useState<number[]>([]);
@@ -187,12 +188,31 @@ export default function QuizEditPage() {
       return;
     }
 
+    if (!token || !user) {
+      setLoadError("You must be signed in to edit quizzes");
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setLoadError(null);
 
     try {
       const payload = await getQuizByIdRequest(quizId, token ?? undefined);
+
+      if (payload.project.userId !== user.id) {
+        setCreatorUserId(payload.project.userId);
+        setLoadError("You are not allowed to edit this quiz");
+        setProjectId(null);
+        setQuizTitle("");
+        setInitialQuestionIds([]);
+        setQuestions([]);
+        setNextQuestionIndex(1);
+        return;
+      }
+
       setProjectId(payload.projectId);
+      setCreatorUserId(payload.project.userId);
       setQuizTitle(payload.project.title);
       setInitialQuestionIds(payload.questions.map((item) => item.id));
 
@@ -215,11 +235,12 @@ export default function QuizEditPage() {
       }
     } catch (error) {
       setLoadError(getApiErrorMessage(error, "Unable to load quiz"));
+      setCreatorUserId(null);
       setQuestions([]);
     } finally {
       setIsLoading(false);
     }
-  }, [quizId, token]);
+  }, [quizId, token, user]);
 
   useEffect(() => {
     void loadQuiz();
@@ -228,8 +249,13 @@ export default function QuizEditPage() {
   const handleSaveQuiz = async () => {
     setSubmitError(null);
 
-    if (!token) {
+    if (!token || !user) {
       setSubmitError("You must be signed in to edit quizzes");
+      return;
+    }
+
+    if (creatorUserId !== user.id) {
+      setSubmitError("You are not allowed to edit this quiz");
       return;
     }
 
