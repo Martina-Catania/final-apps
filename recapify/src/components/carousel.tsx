@@ -12,7 +12,9 @@ import {
 } from "react-native";
 
 import { useThemeTokens } from "../hooks";
+import type { FlatTag } from "../utils/tag-utils";
 import { PressableCard } from "./Card";
+import { ProjectTagPills } from "./ProjectTagPills";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -22,6 +24,7 @@ export type CarouselItem = {
   description: string;
   iconName?: IconName;
   accentColor?: string;
+  tags?: FlatTag[];
 };
 
 type CarouselProps = {
@@ -118,6 +121,8 @@ export const Carousel = ({ items, onItemPress }: CarouselProps) => {
               >
                 {item.description}
               </Text>
+
+              <ProjectTagPills tags={item.tags ?? []} />
             </PressableCard>
           </View>
         )}

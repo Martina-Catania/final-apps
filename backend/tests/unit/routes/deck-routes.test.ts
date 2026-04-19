@@ -14,6 +14,11 @@ describe("deck-routes", () => {
             avatarUrl: true,
           },
         },
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
       },
     },
     flashcards: true,

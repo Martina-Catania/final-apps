@@ -334,7 +334,67 @@ describe("api routes", () => {
       .query({ q: "   " });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe("q cannot be empty");
+    expect(response.body.error).toBe("q or tagIds is required");
+  });
+
+  it("returns project results for tags-only search", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    const token = generateAuthToken(9);
+
+    mockCtx.mocks.project.count.mockResolvedValue(1 as never);
+    mockCtx.mocks.project.findMany.mockResolvedValue([
+      {
+        id: 22,
+        type: "QUIZ",
+        title: "Algorithms Basics",
+        timesPlayed: 47,
+        createdAt: new Date("2026-04-10T10:00:00.000Z"),
+        updatedAt: new Date("2026-04-10T10:00:00.000Z"),
+        user: {
+          id: 5,
+          username: "creator",
+          avatarUrl: null,
+        },
+        quiz: {
+          id: 30,
+        },
+        deck: null,
+        tags: [
+          {
+            tag: {
+              id: 6,
+              name: "math",
+            },
+          },
+        ],
+      },
+    ] as never);
+
+    const response = await request(app)
+      .get("/api/search")
+      .set("Authorization", `Bearer ${token}`)
+      .query({ tagIds: "6" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.query).toBe("");
+    expect(response.body.users).toEqual([]);
+    expect(response.body.projects).toHaveLength(1);
+    expect(response.body.projects[0].tags).toEqual([{ id: 6, name: "math" }]);
+    expect(mockCtx.mocks.user.findMany).not.toHaveBeenCalled();
+
+    expect(mockCtx.mocks.project.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          tags: {
+            some: {
+              tagId: {
+                in: [6],
+              },
+            },
+          },
+        },
+      }),
+    );
   });
 
   it("returns ranked users and paginated projects for search results", async () => {
@@ -392,6 +452,7 @@ describe("api routes", () => {
           id: 30,
         },
         deck: null,
+        tags: [],
       },
     ] as never);
 
@@ -400,6 +461,7 @@ describe("api routes", () => {
       .set("Authorization", `Bearer ${token}`)
       .query({
         q: "ali",
+        tagIds: "3",
         usersPage: "2",
         usersLimit: "1",
         projectsPage: "2",
@@ -450,6 +512,13 @@ describe("api routes", () => {
         where: {
           title: {
             contains: "ali",
+          },
+          tags: {
+            some: {
+              tagId: {
+                in: [3],
+              },
+            },
           },
         },
         orderBy: [

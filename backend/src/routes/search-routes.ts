@@ -12,20 +12,52 @@ const DEFAULT_PROJECTS_LIMIT = 20;
 const MAX_USERS_LIMIT = 50;
 const MAX_PROJECTS_LIMIT = 100;
 
-function parseSearchQuery(value: unknown): string {
+function parseOptionalSearchQuery(value: unknown): string | undefined {
   const rawValue = Array.isArray(value) ? value[0] : value;
 
+  if (rawValue === undefined) {
+    return undefined;
+  }
+
   if (typeof rawValue !== "string") {
-    throw new ApiError(400, "q is required");
+    throw new ApiError(400, "q must be a string");
   }
 
   const query = rawValue.trim();
 
-  if (!query) {
-    throw new ApiError(400, "q cannot be empty");
+  return query.length > 0 ? query : undefined;
+}
+
+function parseTagIdsQuery(value: unknown): number[] {
+  const rawValues = Array.isArray(value) ? value : value === undefined ? [] : [value];
+
+  const tagIds = new Set<number>();
+
+  for (const rawValue of rawValues) {
+    if (typeof rawValue !== "string") {
+      throw new ApiError(400, "tagIds must be a positive integer list");
+    }
+
+    const chunks = rawValue.split(",");
+
+    for (const chunk of chunks) {
+      const trimmed = chunk.trim();
+
+      if (!trimmed) {
+        continue;
+      }
+
+      const parsedValue = Number.parseInt(trimmed, 10);
+
+      if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+        throw new ApiError(400, "tagIds must be a positive integer list");
+      }
+
+      tagIds.add(parsedValue);
+    }
   }
 
-  return query;
+  return [...tagIds];
 }
 
 function parsePositiveIntQuery(
@@ -64,7 +96,13 @@ export function createSearchRouter(ctx: AppContext) {
     "/",
     requireAuth,
     asyncHandler(async (req, res) => {
-      const query = parseSearchQuery(req.query.q);
+      const query = parseOptionalSearchQuery(req.query.q);
+      const tagIds = parseTagIdsQuery(req.query.tagIds);
+
+      if (!query && tagIds.length === 0) {
+        throw new ApiError(400, "q or tagIds is required");
+      }
+
       const usersPage = parsePositiveIntQuery(
         req.query.usersPage,
         "usersPage",
@@ -93,6 +131,7 @@ export function createSearchRouter(ctx: AppContext) {
       const payload = await searchCatalog(
         {
           query,
+          tagIds,
           usersPage,
           usersLimit,
           projectsPage,

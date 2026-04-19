@@ -39,6 +39,11 @@ const followedProjectInclude = {
       id: true,
     },
   },
+  tags: {
+    include: {
+      tag: true,
+    },
+  },
 };
 
 function createCtx() {

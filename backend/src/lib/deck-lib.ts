@@ -11,6 +11,11 @@ const deckInclude = {
           avatarUrl: true,
         },
       },
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
     },
   },
   flashcards: true,

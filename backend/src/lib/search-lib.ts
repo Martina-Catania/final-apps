@@ -1,4 +1,4 @@
-import type { ProjectType } from "../../generated/prisma/index.js";
+import type { Prisma, ProjectType } from "../../generated/prisma/index.js";
 import type { AppContext } from "../context.js";
 
 export type SearchPagination = {
@@ -33,10 +33,15 @@ export type SearchProjectResult = {
   };
   quizId: number | null;
   deckId: number | null;
+  tags: {
+    id: number;
+    name: string;
+  }[];
 };
 
 export type SearchCatalogInput = {
-  query: string;
+  query?: string;
+  tagIds: number[];
   usersPage: number;
   usersLimit: number;
   projectsPage: number;
@@ -129,17 +134,30 @@ async function searchUsers(
 }
 
 async function searchProjects(
-  query: string,
+  query: string | undefined,
+  tagIds: number[],
   page: number,
   limit: number,
   ctx: AppContext,
 ) {
   const offset = (page - 1) * limit;
-  const whereClause = {
-    title: {
+  const whereClause: Prisma.ProjectWhereInput = {};
+
+  if (typeof query === "string" && query.length > 0) {
+    whereClause.title = {
       contains: query,
-    },
-  };
+    };
+  }
+
+  if (tagIds.length > 0) {
+    whereClause.tags = {
+      some: {
+        tagId: {
+          in: tagIds,
+        },
+      },
+    };
+  }
 
   const [total, projects] = await Promise.all([
     ctx.prisma.project.count({ where: whereClause }),
@@ -182,6 +200,16 @@ async function searchProjects(
             id: true,
           },
         },
+        tags: {
+          select: {
+            tag: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     }),
   ]);
@@ -197,6 +225,7 @@ async function searchProjects(
       user: project.user,
       quizId: project.quiz?.id ?? null,
       deckId: project.deck?.id ?? null,
+      tags: project.tags.map((projectTag) => projectTag.tag),
     })),
     total,
   };
@@ -208,6 +237,7 @@ export async function searchCatalog(
 ): Promise<SearchCatalogResult> {
   const {
     query,
+    tagIds,
     usersPage,
     usersLimit,
     projectsPage,
@@ -215,12 +245,14 @@ export async function searchCatalog(
   } = input;
 
   const [userSearchResult, projectSearchResult] = await Promise.all([
-    searchUsers(query, usersPage, usersLimit, ctx),
-    searchProjects(query, projectsPage, projectsLimit, ctx),
+    typeof query === "string" && query.length > 0
+      ? searchUsers(query, usersPage, usersLimit, ctx)
+      : Promise.resolve({ users: [], total: 0 }),
+    searchProjects(query, tagIds, projectsPage, projectsLimit, ctx),
   ]);
 
   return {
-    query,
+    query: query ?? "",
     users: userSearchResult.users,
     projects: projectSearchResult.projects,
     usersPagination: buildPagination(usersPage, usersLimit, userSearchResult.total),

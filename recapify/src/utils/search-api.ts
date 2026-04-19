@@ -33,6 +33,10 @@ export type SearchProject = {
   };
   quizId: number | null;
   deckId: number | null;
+  tags: {
+    id: number;
+    name: string;
+  }[];
 };
 
 export type SearchResponse = {
@@ -44,7 +48,8 @@ export type SearchResponse = {
 };
 
 export type SearchRequestInput = {
-  query: string;
+  query?: string;
+  tagIds?: number[];
   usersPage?: number;
   usersLimit?: number;
   projectsPage?: number;
@@ -57,9 +62,27 @@ function addQueryParam(params: URLSearchParams, key: string, value: number | und
   }
 }
 
+function addListQueryParam(params: URLSearchParams, key: string, values: number[] | undefined) {
+  if (!Array.isArray(values)) {
+    return;
+  }
+
+  const uniqueValues = [...new Set(values.filter((value) => Number.isInteger(value) && value > 0))];
+
+  for (const value of uniqueValues) {
+    params.append(key, String(value));
+  }
+}
+
 export function searchRequest(input: SearchRequestInput, token: string) {
   const params = new URLSearchParams();
-  params.set("q", input.query);
+
+  const trimmedQuery = input.query?.trim();
+  if (trimmedQuery) {
+    params.set("q", trimmedQuery);
+  }
+
+  addListQueryParam(params, "tagIds", input.tagIds);
 
   addQueryParam(params, "usersPage", input.usersPage);
   addQueryParam(params, "usersLimit", input.usersLimit);

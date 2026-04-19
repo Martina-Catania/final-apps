@@ -1,8 +1,9 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,6 +20,17 @@ import {
   createFlashcardRequest,
 } from "../../../utils/deck-api";
 import { createProjectRequest } from "../../../utils/project-api";
+import {
+  addTagToProjectRequest,
+  createTagRequest,
+  listTagsRequest,
+  type Tag,
+} from "../../../utils/tag-api";
+import {
+  findTagByNameCaseInsensitive,
+  normalizeTagName,
+  uniqueFlatTags,
+} from "../../../utils/tag-utils";
 
 type FlashcardDraft = {
   key: string;
@@ -57,6 +69,136 @@ export default function FlashcardCreatePage() {
   const [flashcardErrors, setFlashcardErrors] = useState<Record<string, FlashcardFieldErrors>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [tagsError, setTagsError] = useState<string | null>(null);
+  const [isLoadingTags, setIsLoadingTags] = useState(false);
+
+  const selectedTagIds = useMemo(() => new Set(selectedTags.map((tag) => tag.id)), [selectedTags]);
+
+  const suggestedTags = useMemo(() => {
+    const normalizedInput = normalizeTagName(tagInput);
+
+    if (!normalizedInput) {
+      return [];
+    }
+
+    return availableTags
+      .filter(
+        (tag) => tag.name.includes(normalizedInput) && !selectedTagIds.has(tag.id),
+      )
+      .slice(0, 8);
+  }, [availableTags, selectedTagIds, tagInput]);
+
+  const loadTags = useCallback(async () => {
+    if (!token) {
+      setAvailableTags([]);
+      return;
+    }
+
+    setIsLoadingTags(true);
+
+    try {
+      const payload = await listTagsRequest(token);
+      setAvailableTags(uniqueFlatTags(payload.map((tag) => ({ id: tag.id, name: tag.name }))));
+    } catch {
+      setAvailableTags([]);
+    } finally {
+      setIsLoadingTags(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    void loadTags();
+  }, [loadTags]);
+
+  const addSelectedTag = useCallback((tag: Tag) => {
+    setSelectedTags((current) => {
+      const alreadySelected = current.some(
+        (item) => normalizeTagName(item.name) === normalizeTagName(tag.name),
+      );
+
+      if (alreadySelected) {
+        return current;
+      }
+
+      return [...current, tag];
+    });
+  }, []);
+
+  const handleAddTag = useCallback(async () => {
+    if (!token) {
+      setTagsError("You must be signed in to add tags");
+      return;
+    }
+
+    const normalizedName = normalizeTagName(tagInput);
+
+    if (!normalizedName) {
+      setTagsError("Tag name cannot be empty");
+      return;
+    }
+
+    setTagsError(null);
+
+    const existingSelectedTag = findTagByNameCaseInsensitive(selectedTags, normalizedName);
+    if (existingSelectedTag) {
+      setTagsError("Tag already selected");
+      return;
+    }
+
+    const existingTag = findTagByNameCaseInsensitive(availableTags, normalizedName);
+    if (existingTag) {
+      addSelectedTag(existingTag);
+      setTagInput("");
+      return;
+    }
+
+    try {
+      const createdTag = await createTagRequest(normalizedName, token);
+      setAvailableTags((current) => uniqueFlatTags([...current, createdTag]));
+      addSelectedTag(createdTag);
+      setTagInput("");
+      return;
+    } catch (error) {
+      try {
+        const refreshed = await listTagsRequest(token);
+        const refreshedTags = uniqueFlatTags(
+          refreshed.map((tag) => ({ id: tag.id, name: tag.name })),
+        );
+        setAvailableTags(refreshedTags);
+
+        const recoveredTag = findTagByNameCaseInsensitive(refreshedTags, normalizedName);
+        if (recoveredTag) {
+          addSelectedTag(recoveredTag);
+          setTagInput("");
+          return;
+        }
+      } catch {
+        // Keep the original error message below when refresh also fails.
+      }
+
+      setTagsError(getApiErrorMessage(error, "Unable to create tag"));
+    }
+  }, [addSelectedTag, availableTags, selectedTags, tagInput, token]);
+
+  const removeSelectedTag = (tagId: number) => {
+    setSelectedTags((current) => current.filter((tag) => tag.id !== tagId));
+  };
+
+  const attachTagsToProject = useCallback(
+    async (projectId: number) => {
+      if (!token || selectedTags.length === 0) {
+        return;
+      }
+
+      await Promise.all(
+        selectedTags.map((tag) => addTagToProjectRequest(projectId, tag.id, token)),
+      );
+    },
+    [selectedTags, token],
+  );
 
   const addFlashcard = () => {
     setFlashcards((current) => [...current, createFlashcardDraft(nextFlashcardIndex)]);
@@ -142,6 +284,7 @@ export default function FlashcardCreatePage() {
 
   const handleSaveFlashcards = async () => {
     setSubmitError(null);
+    setTagsError(null);
 
     if (!token || !user?.id) {
       setSubmitError("You must be signed in to create flashcards");
@@ -163,6 +306,8 @@ export default function FlashcardCreatePage() {
         },
         token,
       );
+
+      await attachTagsToProject(project.id);
 
       const deck = await createDeckRequest(project.id, token);
 
@@ -250,6 +395,107 @@ export default function FlashcardCreatePage() {
               errorText={titleError ?? undefined}
               helperText="Name your flashcard set."
             />
+
+            <View style={{ gap: spacing.sm }}>
+              <AppTextInput
+                label="Project tags"
+                onChangeText={(value) => {
+                  setTagInput(value);
+                  setTagsError(null);
+                }}
+                placeholder="Type a tag name"
+                value={tagInput}
+                errorText={tagsError ?? undefined}
+                helperText="Add existing tags or create new ones. Matching is case-insensitive."
+              />
+
+              <View style={[styles.rowWrap, { gap: spacing.xs }]}>
+                <Button
+                  disabled={isSubmitting || !tagInput.trim()}
+                  iconName="pricetag-outline"
+                  label={isLoadingTags ? "Loading tags..." : "Add tag"}
+                  onPress={() => {
+                    void handleAddTag();
+                  }}
+                  variant="secondary"
+                />
+              </View>
+
+              {suggestedTags.length > 0 ? (
+                <View style={[styles.rowWrap, { gap: spacing.xs }]}>
+                  {suggestedTags.map((tag) => (
+                    <Pressable
+                      accessibilityRole="button"
+                      key={`deck-suggested-tag-${tag.id}`}
+                      onPress={() => addSelectedTag(tag)}
+                      style={({ pressed }) => [
+                        styles.tagPill,
+                        {
+                          backgroundColor: colors.surfaceMuted,
+                          borderColor: colors.border,
+                          borderRadius: radius.pill,
+                          opacity: pressed ? 0.8 : 1,
+                          paddingHorizontal: spacing.sm,
+                          paddingVertical: spacing.xs,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: colors.textSecondary,
+                          fontSize: typography.secondary.sm,
+                          fontWeight: typography.weights.medium,
+                        }}
+                      >
+                        {tag.name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
+
+              {selectedTags.length > 0 ? (
+                <View style={[styles.rowWrap, { gap: spacing.xs }]}>
+                  {selectedTags.map((tag) => (
+                    <Pressable
+                      accessibilityRole="button"
+                      key={`deck-selected-tag-${tag.id}`}
+                      onPress={() => removeSelectedTag(tag.id)}
+                      style={({ pressed }) => [
+                        styles.tagPill,
+                        {
+                          backgroundColor: colors.secondaryMuted,
+                          borderColor: colors.secondary,
+                          borderRadius: radius.pill,
+                          opacity: pressed ? 0.8 : 1,
+                          paddingHorizontal: spacing.sm,
+                          paddingVertical: spacing.xs,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: colors.textPrimary,
+                          fontSize: typography.secondary.sm,
+                          fontWeight: typography.weights.semibold,
+                        }}
+                      >
+                        {tag.name}  x
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: typography.secondary.sm,
+                  }}
+                >
+                  No tags selected yet.
+                </Text>
+              )}
+            </View>
 
             <View style={{ gap: spacing.sm }}>
               <View style={[styles.rowBetween, { gap: spacing.sm }]}>
@@ -386,5 +632,8 @@ const styles = StyleSheet.create({
   rowWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
+  },
+  tagPill: {
+    borderWidth: 1,
   },
 });

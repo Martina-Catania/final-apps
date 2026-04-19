@@ -15,6 +15,7 @@ import {
   Card,
   Pagination,
   ProfileCard,
+  ProjectTagPills,
 } from "../../../../components";
 import { useAuth } from "../../../../context/auth-context";
 import {
@@ -24,6 +25,8 @@ import {
 } from "../../../../hooks";
 import { getApiHostUrl } from "../../../../utils/api-config";
 import { getApiErrorMessage } from "../../../../utils/api-request";
+import { listTagsRequest } from "../../../../utils/tag-api";
+import { uniqueFlatTags, type FlatTag } from "../../../../utils/tag-utils";
 import {
   searchRequest,
   type SearchPagination,
@@ -43,6 +46,27 @@ function parseQueryParam(value: string | string[] | undefined) {
   }
 
   return rawValue.trim();
+}
+
+function parseTagIdsParam(value: string | string[] | undefined) {
+  const rawValues = Array.isArray(value) ? value : value ? [value] : [];
+  const tagIds = new Set<number>();
+
+  for (const rawValue of rawValues) {
+    const chunks = rawValue.split(",");
+
+    for (const chunk of chunks) {
+      const parsedValue = Number.parseInt(chunk.trim(), 10);
+
+      if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+        continue;
+      }
+
+      tagIds.add(parsedValue);
+    }
+  }
+
+  return [...tagIds];
 }
 
 function createInitialPagination(limit: number): SearchPagination {
@@ -93,8 +117,9 @@ function formatViewCount(timesPlayed: number) {
 
 export default function SearchResultsPage() {
   const router = useRouter();
-  const { q } = useLocalSearchParams<{ q?: string | string[] }>();
+  const { q, tagIds } = useLocalSearchParams<{ q?: string | string[]; tagIds?: string | string[] }>();
   const searchQuery = useMemo(() => parseQueryParam(q), [q]);
+  const routeTagIds = useMemo(() => parseTagIdsParam(tagIds), [tagIds]);
 
   const { token } = useAuth();
   const { colors, spacing, typography } = useThemeTokens();
@@ -111,6 +136,42 @@ export default function SearchResultsPage() {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [availableTags, setAvailableTags] = useState<FlatTag[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>(routeTagIds);
+  const [isLoadingTags, setIsLoadingTags] = useState(false);
+
+  const selectedTags = useMemo(
+    () => availableTags.filter((tag) => selectedTagIds.includes(tag.id)),
+    [availableTags, selectedTagIds],
+  );
+
+  const toggleTagFilter = useCallback((tagId: number) => {
+    setSelectedTagIds((current) => {
+      if (current.includes(tagId)) {
+        return current.filter((id) => id !== tagId);
+      }
+
+      return [...current, tagId];
+    });
+  }, []);
+
+  const loadTags = useCallback(async () => {
+    if (!token) {
+      setAvailableTags([]);
+      return;
+    }
+
+    setIsLoadingTags(true);
+
+    try {
+      const payload = await listTagsRequest(token);
+      setAvailableTags(uniqueFlatTags(payload.map((tag) => ({ id: tag.id, name: tag.name }))));
+    } catch {
+      setAvailableTags([]);
+    } finally {
+      setIsLoadingTags(false);
+    }
+  }, [token]);
 
   const clearResults = useCallback(() => {
     setUsers([]);
@@ -127,8 +188,8 @@ export default function SearchResultsPage() {
       return;
     }
 
-    if (!searchQuery) {
-      setErrorMessage("Missing search query.");
+    if (!searchQuery && selectedTagIds.length === 0) {
+      setErrorMessage("Missing search query or selected tags.");
       clearResults();
       setIsLoading(false);
       return;
@@ -140,7 +201,8 @@ export default function SearchResultsPage() {
     try {
       const payload = await searchRequest(
         {
-          query: searchQuery,
+          query: searchQuery || undefined,
+          tagIds: selectedTagIds,
           usersPage,
           usersLimit: DEFAULT_USERS_LIMIT,
           projectsPage,
@@ -159,16 +221,24 @@ export default function SearchResultsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [clearResults, projectsPage, searchQuery, token, usersPage]);
+  }, [clearResults, projectsPage, searchQuery, selectedTagIds, token, usersPage]);
+
+  useEffect(() => {
+    setSelectedTagIds(routeTagIds);
+  }, [routeTagIds]);
 
   useEffect(() => {
     setUsersPage(1);
     setProjectsPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, selectedTagIds]);
 
   useEffect(() => {
     void loadResults();
   }, [loadResults]);
+
+  useEffect(() => {
+    void loadTags();
+  }, [loadTags]);
 
   const { refreshing, onRefresh } = usePullToRefresh(loadResults);
   const refreshControlProps = useRefreshControlProps({
@@ -257,6 +327,81 @@ export default function SearchResultsPage() {
         >
           Showing all results for: {searchQuery || "your search"}.
         </Text>
+
+        <View style={{ gap: spacing.xs }}>
+          <Text
+            style={{
+              color: colors.textPrimary,
+              fontSize: typography.secondary.md,
+              fontWeight: typography.weights.semibold,
+            }}
+          >
+            Filter by tags
+          </Text>
+
+          {isLoadingTags ? (
+            <ActivityIndicator color={colors.primary} size="small" />
+          ) : null}
+
+          {!isLoadingTags && availableTags.length === 0 ? (
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: typography.secondary.sm,
+              }}
+            >
+              No tags available yet.
+            </Text>
+          ) : null}
+
+          {availableTags.length > 0 ? (
+            <ScrollView
+              contentContainerStyle={{
+                gap: spacing.xs,
+                paddingRight: spacing.xs,
+              }}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            >
+              {availableTags.map((tag) => {
+                const isSelected = selectedTagIds.includes(tag.id);
+
+                return (
+                  <Pressable
+                    accessibilityRole="button"
+                    key={`results-tag-filter-${tag.id}`}
+                    onPress={() => toggleTagFilter(tag.id)}
+                    style={({ pressed }) => [
+                      styles.filterPill,
+                      {
+                        backgroundColor: isSelected ? colors.secondaryMuted : colors.surface,
+                        borderColor: isSelected ? colors.secondary : colors.border,
+                        borderRadius: 999,
+                        opacity: pressed ? 0.82 : 1,
+                        paddingHorizontal: spacing.sm,
+                        paddingVertical: spacing.xs,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={{
+                        color: isSelected ? colors.textPrimary : colors.textSecondary,
+                        fontSize: typography.secondary.sm,
+                        fontWeight: isSelected
+                          ? typography.weights.semibold
+                          : typography.weights.medium,
+                      }}
+                    >
+                      {tag.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          ) : null}
+
+          {selectedTags.length > 0 ? <ProjectTagPills tags={selectedTags} /> : null}
+        </View>
       </Card>
 
       {isLoading ? (
@@ -457,6 +602,8 @@ export default function SearchResultsPage() {
                       {project.type} · By @{project.user.username} · {formatViewCount(project.timesPlayed)}
                     </Text>
 
+                    <ProjectTagPills tags={project.tags} />
+
                     <Button
                       disabled={!isOpenable}
                       fullWidth
@@ -491,6 +638,9 @@ export default function SearchResultsPage() {
 }
 
 const styles = StyleSheet.create({
+  filterPill: {
+    borderWidth: 1,
+  },
   headerRow: {
     alignItems: "center",
     flexDirection: "row",
