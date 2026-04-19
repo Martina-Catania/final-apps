@@ -9,11 +9,13 @@ import {
 } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
 import { useThemeTokens } from "../../../hooks";
+import { getApiErrorMessage } from "../../../utils/api-request";
 import {
-  getQuizApiErrorMessage,
   listDecksRequest,
-  listQuizzesRequest,
   type Deck,
+} from "../../../utils/deck-api";
+import {
+  listQuizzesRequest,
   type Quiz,
 } from "../../../utils/quiz-api";
 
@@ -59,7 +61,7 @@ export default function Index() {
           return;
         }
 
-        setQuizError(getQuizApiErrorMessage(error, "Unable to load quizzes"));
+        setQuizError(getApiErrorMessage(error, "Unable to load quizzes"));
         setQuizzes([]);
       } finally {
         if (isMounted) {
@@ -85,7 +87,7 @@ export default function Index() {
           return;
         }
 
-        setDeckError(getQuizApiErrorMessage(error, "Unable to load flashcards"));
+        setDeckError(getApiErrorMessage(error, "Unable to load flashcards"));
         setDecks([]);
       } finally {
         if (isMounted) {

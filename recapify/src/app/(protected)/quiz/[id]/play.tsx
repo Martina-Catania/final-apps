@@ -12,8 +12,8 @@ import { Button } from "../../../../components";
 import { useAuth } from "../../../../context/auth-context";
 import { useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
+import { getApiErrorMessage } from "../../../../utils/api-request";
 import {
-  getQuizApiErrorMessage,
   getQuizByIdRequest,
   type QuizQuestion,
 } from "../../../../utils/quiz-api";
@@ -155,7 +155,7 @@ export default function QuizPlayPage() {
       setRoundKey(0);
       setHasStartedQuiz(false);
     } catch (error) {
-      setErrorMessage(getQuizApiErrorMessage(error, "Unable to load quiz"));
+      setErrorMessage(getApiErrorMessage(error, "Unable to load quiz"));
       setQuizTitle("");
       setCreatorLabel("");
       setCreatorUserId(null);

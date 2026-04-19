@@ -14,12 +14,12 @@ import { AppTextInput } from "../../../../components/TextInput";
 import { useAuth } from "../../../../context/auth-context";
 import { useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
+import { getApiErrorMessage } from "../../../../utils/api-request";
+import { updateProjectRequest } from "../../../../utils/project-api";
 import {
   createQuizQuestionRequest,
   deleteQuizQuestionRequest,
-  getQuizApiErrorMessage,
   getQuizByIdRequest,
-  updateProjectRequest,
   updateQuizQuestionRequest,
 } from "../../../../utils/quiz-api";
 
@@ -214,7 +214,7 @@ export default function QuizEditPage() {
         setNextQuestionIndex(mappedQuestions.length + 1);
       }
     } catch (error) {
-      setLoadError(getQuizApiErrorMessage(error, "Unable to load quiz"));
+      setLoadError(getApiErrorMessage(error, "Unable to load quiz"));
       setQuestions([]);
     } finally {
       setIsLoading(false);
@@ -284,7 +284,7 @@ export default function QuizEditPage() {
 
       router.replace("..");
     } catch (error) {
-      setSubmitError(getQuizApiErrorMessage(error, "Unable to update quiz"));
+      setSubmitError(getApiErrorMessage(error, "Unable to update quiz"));
     } finally {
       setIsSubmitting(false);
     }

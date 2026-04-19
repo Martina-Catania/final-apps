@@ -5,7 +5,7 @@ import {
   getApiConnectivityErrorMessage,
 } from "./api-config";
 import type { AuthUser } from "./auth-api";
-import type { ProjectType } from "./quiz-api";
+import type { ProjectType } from "./project-api";
 
 export type ProfileUser = {
   id: number;

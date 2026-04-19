@@ -13,11 +13,11 @@ import { AppTextInput } from "../../../components/TextInput";
 import { useAuth } from "../../../context/auth-context";
 import { useThemeTokens } from "../../../hooks";
 import { SafeAreaPage } from "../../../screens/safe-area-page";
+import { getApiErrorMessage } from "../../../utils/api-request";
+import { createProjectRequest } from "../../../utils/project-api";
 import {
-  createQuizProjectRequest,
   createQuizQuestionRequest,
   createQuizRequest,
-  getQuizApiErrorMessage,
 } from "../../../utils/quiz-api";
 
 type QuestionDraft = {
@@ -173,8 +173,9 @@ export default function QuizCreatePage() {
     setIsSubmitting(true);
 
     try {
-      const project = await createQuizProjectRequest(
+      const project = await createProjectRequest(
         {
+          type: "QUIZ",
           title: quizTitle.trim(),
           userId: user.id,
         },
@@ -200,7 +201,7 @@ export default function QuizCreatePage() {
       await wait(1000);
       router.replace(`./${quiz.id}`);
     } catch (error) {
-      setSubmitError(getQuizApiErrorMessage(error, "Unable to create quiz"));
+      setSubmitError(getApiErrorMessage(error, "Unable to create quiz"));
     } finally {
       setIsSubmitting(false);
     }

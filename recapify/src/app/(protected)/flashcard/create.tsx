@@ -13,12 +13,12 @@ import { AppTextInput } from "../../../components/TextInput";
 import { useAuth } from "../../../context/auth-context";
 import { useThemeTokens } from "../../../hooks";
 import { SafeAreaPage } from "../../../screens/safe-area-page";
+import { getApiErrorMessage } from "../../../utils/api-request";
 import {
   createDeckRequest,
-  createFlashcardProjectRequest,
   createFlashcardRequest,
-  getQuizApiErrorMessage,
-} from "../../../utils/quiz-api";
+} from "../../../utils/deck-api";
+import { createProjectRequest } from "../../../utils/project-api";
 
 type FlashcardDraft = {
   key: string;
@@ -155,8 +155,9 @@ export default function FlashcardCreatePage() {
     setIsSubmitting(true);
 
     try {
-      const project = await createFlashcardProjectRequest(
+      const project = await createProjectRequest(
         {
+          type: "DECK",
           title: deckTitle.trim(),
           userId: user.id,
         },
@@ -179,7 +180,7 @@ export default function FlashcardCreatePage() {
       await wait(1000);
       router.replace(`./${deck.id}`);
     } catch (error) {
-      setSubmitError(getQuizApiErrorMessage(error, "Unable to create flashcards"));
+      setSubmitError(getApiErrorMessage(error, "Unable to create flashcards"));
     } finally {
       setIsSubmitting(false);
     }

@@ -11,8 +11,8 @@ import { Button } from "../../../../components";
 import { useAuth } from "../../../../context/auth-context";
 import { useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
+import { getApiErrorMessage } from "../../../../utils/api-request";
 import {
-  getQuizApiErrorMessage,
   getQuizByIdRequest,
   type Quiz,
 } from "../../../../utils/quiz-api";
@@ -62,7 +62,7 @@ export default function QuizDetailPage() {
       const payload = await getQuizByIdRequest(quizId, token ?? undefined);
       setQuiz(payload);
     } catch (error) {
-      setErrorMessage(getQuizApiErrorMessage(error, "Unable to load quiz"));
+      setErrorMessage(getApiErrorMessage(error, "Unable to load quiz"));
       setQuiz(null);
     } finally {
       setIsLoading(false);

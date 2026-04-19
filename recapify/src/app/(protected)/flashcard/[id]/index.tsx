@@ -11,11 +11,11 @@ import { Button } from "../../../../components";
 import { useAuth } from "../../../../context/auth-context";
 import { useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
+import { getApiErrorMessage } from "../../../../utils/api-request";
 import {
   getDeckByIdRequest,
-  getQuizApiErrorMessage,
   type Deck,
-} from "../../../../utils/quiz-api";
+} from "../../../../utils/deck-api";
 
 function parseDeckId(value: string | string[] | undefined): number | null {
   const firstValue = Array.isArray(value) ? value[0] : value;
@@ -62,7 +62,7 @@ export default function FlashcardDetailPage() {
       const payload = await getDeckByIdRequest(deckId, token ?? undefined);
       setDeck(payload);
     } catch (error) {
-      setErrorMessage(getQuizApiErrorMessage(error, "Unable to load flashcards"));
+      setErrorMessage(getApiErrorMessage(error, "Unable to load flashcards"));
       setDeck(null);
     } finally {
       setIsLoading(false);

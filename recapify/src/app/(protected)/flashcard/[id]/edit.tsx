@@ -14,14 +14,16 @@ import { AppTextInput } from "../../../../components/TextInput";
 import { useAuth } from "../../../../context/auth-context";
 import { useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
+import { getApiErrorMessage } from "../../../../utils/api-request";
 import {
   createFlashcardRequest,
   deleteFlashcardRequest,
   getDeckByIdRequest,
-  getQuizApiErrorMessage,
   updateFlashcardRequest,
+} from "../../../../utils/deck-api";
+import {
   updateProjectRequest,
-} from "../../../../utils/quiz-api";
+} from "../../../../utils/project-api";
 
 type FlashcardDraft = {
   key: string;
@@ -193,7 +195,7 @@ export default function FlashcardEditPage() {
         setNextFlashcardIndex(mappedFlashcards.length + 1);
       }
     } catch (error) {
-      setLoadError(getQuizApiErrorMessage(error, "Unable to load flashcards"));
+      setLoadError(getApiErrorMessage(error, "Unable to load flashcards"));
       setFlashcards([]);
     } finally {
       setIsLoading(false);
@@ -260,7 +262,7 @@ export default function FlashcardEditPage() {
 
       router.replace("..");
     } catch (error) {
-      setSubmitError(getQuizApiErrorMessage(error, "Unable to update flashcards"));
+      setSubmitError(getApiErrorMessage(error, "Unable to update flashcards"));
     } finally {
       setIsSubmitting(false);
     }
