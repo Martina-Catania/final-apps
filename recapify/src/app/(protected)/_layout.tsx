@@ -19,7 +19,18 @@ export default function ProtectedLayout() {
     return <Redirect href="/login" />;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="projects/[type]"
+        options={{
+          animation: "slide_from_right",
+          presentation: "card",
+        }}
+      />
+    </Stack>
+  );
 }
 
 const styles = StyleSheet.create({

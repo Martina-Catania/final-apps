@@ -200,7 +200,12 @@ export default function Index() {
               <Button
                 iconName="arrow-forward-outline"
                 label="See more"
-                onPress={() => router.push("/search")}
+                onPress={() =>
+                  router.push({
+                    pathname: "../projects/[type]",
+                    params: { type: "quiz" },
+                  })
+                }
                 variant="secondary"
               />
             </View>
@@ -297,7 +302,12 @@ export default function Index() {
               <Button
                 iconName="arrow-forward-outline"
                 label="See more"
-                onPress={() => router.push("/search")}
+                onPress={() =>
+                  router.push({
+                    pathname: "../projects/[type]",
+                    params: { type: "flashcard" },
+                  })
+                }
                 variant="secondary"
               />
             </View>
