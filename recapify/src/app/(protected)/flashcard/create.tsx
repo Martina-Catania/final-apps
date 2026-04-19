@@ -427,7 +427,10 @@ export default function FlashcardCreatePage() {
                     <Pressable
                       accessibilityRole="button"
                       key={`deck-suggested-tag-${tag.id}`}
-                      onPress={() => addSelectedTag(tag)}
+                      onPress={() => {
+                        addSelectedTag(tag);
+                        setTagInput("");
+                      }}
                       style={({ pressed }) => [
                         styles.tagPill,
                         {

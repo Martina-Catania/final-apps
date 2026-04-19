@@ -448,7 +448,10 @@ export default function QuizCreatePage() {
                     <Pressable
                       accessibilityRole="button"
                       key={`quiz-suggested-tag-${tag.id}`}
-                      onPress={() => addSelectedTag(tag)}
+                      onPress={() => {
+                        addSelectedTag(tag);
+                        setTagInput("");
+                      }}
                       style={({ pressed }) => [
                         styles.tagPill,
                         {
