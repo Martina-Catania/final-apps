@@ -8,6 +8,14 @@ import {
   Text,
   View,
 } from "react-native";
+import { Directions, Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import { Button } from "../../../../components";
 import { useAuth } from "../../../../context/auth-context";
 import { useThemeTokens } from "../../../../hooks";
@@ -80,6 +88,8 @@ export default function FlashcardPlayPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const flipProgress = useSharedValue(0);
+  const flipScale = useSharedValue(1);
 
   const playCards = useMemo(
     () => buildPlayCards(deckFlashcards, roundKey),
@@ -92,6 +102,11 @@ export default function FlashcardPlayPage() {
       : null;
 
   const isFinished = playCards.length > 0 && currentCardIndex >= playCards.length;
+
+  const resetFlipAnimation = useCallback(() => {
+    flipProgress.value = 0;
+    flipScale.value = 1;
+  }, [flipProgress, flipScale]);
 
   const goBackOnStack = useCallback(() => {
     const maybeRouter = router as typeof router & { canGoBack?: () => boolean };
@@ -123,6 +138,7 @@ export default function FlashcardPlayPage() {
       setIsAnswerVisible(false);
       setKnownCardsCount(0);
       setRoundKey(0);
+      resetFlipAnimation();
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error, "Unable to load flashcards"));
       setDeckTitle("");
@@ -130,19 +146,85 @@ export default function FlashcardPlayPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [deckId, token]);
+  }, [deckId, resetFlipAnimation, token]);
 
   useEffect(() => {
     void loadDeck();
   }, [loadDeck]);
 
-  const handleRevealAnswer = () => {
-    if (!currentCard || isAnswerVisible) {
+  const runFlipAnimation = useCallback(
+    (nextVisible: boolean) => {
+      flipProgress.value = withTiming(nextVisible ? 1 : 0, { duration: 220 });
+      flipScale.value = withSequence(
+        withTiming(0.97, { duration: 110 }),
+        withTiming(1, { duration: 110 }),
+      );
+    },
+    [flipProgress, flipScale],
+  );
+
+  const cardScaleAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: flipScale.value }],
+    };
+  });
+
+  const frontFaceAnimatedStyle = useAnimatedStyle(() => {
+    const spinValue = interpolate(flipProgress.value, [0, 1], [0, 180]);
+
+    return {
+      opacity: interpolate(flipProgress.value, [0, 0.5, 1], [1, 0, 0]),
+      transform: [{ perspective: 1000 }, { rotateX: `${spinValue}deg` }],
+    };
+  });
+
+  const backFaceAnimatedStyle = useAnimatedStyle(() => {
+    const spinValue = interpolate(flipProgress.value, [0, 1], [180, 360]);
+
+    return {
+      opacity: interpolate(flipProgress.value, [0, 0.5, 1], [0, 0, 1]),
+      transform: [{ perspective: 1000 }, { rotateX: `${spinValue}deg` }],
+    };
+  });
+
+  const handleFlipCard = useCallback(() => {
+    if (!currentCard) {
       return;
     }
 
-    setIsAnswerVisible(true);
-  };
+    setIsAnswerVisible((current) => {
+      const next = !current;
+      runFlipAnimation(next);
+      return next;
+    });
+  }, [currentCard, runFlipAnimation]);
+
+  const swipeUpGesture = useMemo(
+    () =>
+      Gesture.Fling()
+        .runOnJS(true)
+        .direction(Directions.UP)
+        .onStart(() => {
+          handleFlipCard();
+        }),
+    [handleFlipCard],
+  );
+
+  const swipeDownGesture = useMemo(
+    () =>
+      Gesture.Fling()
+        .runOnJS(true)
+        .direction(Directions.DOWN)
+        .onStart(() => {
+          handleFlipCard();
+        }),
+    [handleFlipCard],
+  );
+
+  const flipGesture = useMemo(
+    () => Gesture.Simultaneous(swipeUpGesture, swipeDownGesture),
+    [swipeDownGesture, swipeUpGesture],
+  );
 
   const handleRateCard = (isKnown: boolean) => {
     if (!currentCard || !isAnswerVisible) {
@@ -155,6 +237,7 @@ export default function FlashcardPlayPage() {
 
     setIsAnswerVisible(false);
     setCurrentCardIndex((current) => current + 1);
+    resetFlipAnimation();
   };
 
   const handlePlayAgain = () => {
@@ -162,6 +245,7 @@ export default function FlashcardPlayPage() {
     setCurrentCardIndex(0);
     setIsAnswerVisible(false);
     setKnownCardsCount(0);
+    resetFlipAnimation();
   };
 
   if (isLoading) {
@@ -433,55 +517,90 @@ export default function FlashcardPlayPage() {
             {deckTitle}
           </Text>
 
-          <Pressable
-            onPress={handleRevealAnswer}
-            style={({ pressed }) => [
-              styles.flashcardFace,
-              {
-                backgroundColor: isAnswerVisible ? colors.surfaceMuted : colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.md,
-                opacity: pressed && !isAnswerVisible ? 0.92 : 1,
-                padding: spacing.lg,
-              },
-            ]}
-          >
-            <Text
-              style={{
-                color: isAnswerVisible ? colors.success : colors.primary,
-                fontSize: typography.secondary.sm,
-                fontWeight: typography.weights.bold,
-              }}
-            >
-              {isAnswerVisible ? "Back" : "Front"}
-            </Text>
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: typography.secondary.lg,
-                fontWeight: typography.weights.semibold,
-              }}
-            >
-              {isAnswerVisible ? currentCard.back : currentCard.front}
-            </Text>
-            {!isAnswerVisible ? (
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: typography.secondary.md,
-                }}
+          <GestureDetector gesture={flipGesture}>
+            <Animated.View style={cardScaleAnimatedStyle}>
+              <Pressable
+                onPress={handleFlipCard}
+                style={({ pressed }) => [
+                  styles.flashcardFace,
+                  {
+                    backgroundColor: isAnswerVisible ? colors.surfaceMuted : colors.surface,
+                    borderColor: colors.border,
+                    borderRadius: radius.md,
+                    opacity: pressed ? 0.92 : 1,
+                    padding: spacing.lg,
+                  },
+                ]}
               >
-                Tap card or use the button below to reveal the answer.
-              </Text>
-            ) : null}
-          </Pressable>
+                <Animated.View style={[styles.flashcardFaceSide, frontFaceAnimatedStyle]}>
+                  <Text
+                    style={{
+                      color: colors.primary,
+                      fontSize: typography.secondary.sm,
+                      fontWeight: typography.weights.bold,
+                    }}
+                  >
+                    Front
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.textPrimary,
+                      fontSize: typography.secondary.lg,
+                      fontWeight: typography.weights.semibold,
+                    }}
+                  >
+                    {currentCard.front}
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.textSecondary,
+                      fontSize: typography.secondary.md,
+                    }}
+                  >
+                    Tap card, swipe up, or swipe down to reveal the answer.
+                  </Text>
+                </Animated.View>
+
+                <Animated.View
+                  style={[styles.flashcardFaceSide, styles.flashcardFaceBack, backFaceAnimatedStyle]}
+                >
+                  <Text
+                    style={{
+                      color: colors.success,
+                      fontSize: typography.secondary.sm,
+                      fontWeight: typography.weights.bold,
+                    }}
+                  >
+                    Back
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.textPrimary,
+                      fontSize: typography.secondary.lg,
+                      fontWeight: typography.weights.semibold,
+                    }}
+                  >
+                    {currentCard.back}
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.textSecondary,
+                      fontSize: typography.secondary.md,
+                    }}
+                  >
+                    Tap or swipe up/down to flip back to the front.
+                  </Text>
+                </Animated.View>
+              </Pressable>
+            </Animated.View>
+          </GestureDetector>
 
           {!isAnswerVisible ? (
             <Button
               fullWidth
               iconName="eye-outline"
               label="Reveal answer"
-              onPress={handleRevealAnswer}
+              onPress={handleFlipCard}
               variant="primary"
             />
           ) : (
@@ -538,8 +657,16 @@ const styles = StyleSheet.create({
   },
   flashcardFace: {
     borderWidth: 1,
+    overflow: "hidden",
+    position: "relative",
+  },
+  flashcardFaceSide: {
+    backfaceVisibility: "hidden",
     gap: 8,
-    minHeight: 220,
     justifyContent: "center",
+    minHeight: 220,
+  },
+  flashcardFaceBack: {
+    ...StyleSheet.absoluteFillObject,
   },
 });
