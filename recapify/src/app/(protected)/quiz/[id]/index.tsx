@@ -17,6 +17,45 @@ import {
   type Quiz,
 } from "../../../../utils/quiz-api";
 
+type QuizOption = {
+  key: string;
+  value: string;
+};
+
+function shuffle<T>(values: T[]): T[] {
+  const next = [...values];
+
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    const current = next[index];
+    next[index] = next[swapIndex];
+    next[swapIndex] = current;
+  }
+
+  return next;
+}
+
+function buildQuestionOptions(question: Quiz["questions"][number]): QuizOption[] {
+  return shuffle([
+    {
+      key: `${question.id}-answer`,
+      value: question.answer,
+    },
+    {
+      key: `${question.id}-decoy-1`,
+      value: question.decoy1,
+    },
+    {
+      key: `${question.id}-decoy-2`,
+      value: question.decoy2,
+    },
+    {
+      key: `${question.id}-decoy-3`,
+      value: question.decoy3,
+    },
+  ]);
+}
+
 function parseQuizId(value: string | string[] | undefined): number | null {
   const firstValue = Array.isArray(value) ? value[0] : value;
 
@@ -43,6 +82,16 @@ export default function QuizDetailPage() {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const optionsByQuestionId = useMemo(() => {
+    if (!quiz) {
+      return new Map<number, QuizOption[]>();
+    }
+
+    return new Map<number, QuizOption[]>(
+      quiz.questions.map((question) => [question.id, buildQuestionOptions(question)]),
+    );
+  }, [quiz]);
 
   const handleBackPress = useCallback(() => {
     router.back();
@@ -259,44 +308,14 @@ export default function QuizDetailPage() {
               </Text>
 
               <View style={{ gap: spacing.xs }}>
-                <Text
-                  style={{
-                    color: colors.success,
-                    fontSize: typography.secondary.sm,
-                    fontWeight: typography.weights.semibold,
-                  }}
-                >
-                  Correct answer
-                </Text>
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.secondary.md,
-                  }}
-                >
-                  {question.answer}
-                </Text>
-              </View>
-
-              <View style={{ gap: spacing.xs }}>
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    fontSize: typography.secondary.sm,
-                    fontWeight: typography.weights.semibold,
-                  }}
-                >
-                  Decoys
-                </Text>
-                <Text style={{ color: colors.textSecondary, fontSize: typography.secondary.md }}>
-                  • {question.decoy1}
-                </Text>
-                <Text style={{ color: colors.textSecondary, fontSize: typography.secondary.md }}>
-                  • {question.decoy2}
-                </Text>
-                <Text style={{ color: colors.textSecondary, fontSize: typography.secondary.md }}>
-                  • {question.decoy3}
-                </Text>
+                {(optionsByQuestionId.get(question.id) ?? []).map((option) => (
+                  <Text
+                    key={option.key}
+                    style={{ color: colors.textSecondary, fontSize: typography.secondary.md }}
+                  >
+                    • {option.value}
+                  </Text>
+                ))}
               </View>
             </View>
           ))}
