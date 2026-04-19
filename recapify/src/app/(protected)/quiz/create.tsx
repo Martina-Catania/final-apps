@@ -69,8 +69,7 @@ export default function QuizCreatePage() {
     selectedTags,
     suggestedTags,
     tagsError,
-    isLoadingTags,
-    setTagInput,
+    handleTagInputChange,
     selectSuggestedTag,
     handleAddTag,
     removeSelectedTag,
@@ -292,24 +291,15 @@ export default function QuizCreatePage() {
             <View style={{ gap: spacing.sm }}>
               <AppTextInput
                 label="Project tags"
-                onChangeText={setTagInput}
+                onChangeText={handleTagInputChange}
+                onSubmitEditing={() => {
+                  void handleAddTag();
+                }}
                 placeholder="Type a tag name"
                 value={tagInput}
                 errorText={tagsError ?? undefined}
                 helperText="Add existing tags or create new ones. Matching is case-insensitive."
               />
-
-              <View style={[styles.rowWrap, { gap: spacing.xs }]}>
-                <Button
-                  disabled={isSubmitting || !tagInput.trim()}
-                  iconName="pricetag-outline"
-                  label={isLoadingTags ? "Loading tags..." : "Add tag"}
-                  onPress={() => {
-                    void handleAddTag();
-                  }}
-                  variant="secondary"
-                />
-              </View>
 
               {suggestedTags.length > 0 ? (
                 <View style={[styles.rowWrap, { gap: spacing.xs }]}>

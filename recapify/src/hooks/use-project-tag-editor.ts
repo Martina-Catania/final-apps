@@ -22,10 +22,9 @@ type UseProjectTagEditorResult = {
   selectedTags: Tag[];
   suggestedTags: Tag[];
   tagsError: string | null;
-  isLoadingTags: boolean;
-  setTagInput: (value: string) => void;
+  handleTagInputChange: (value: string) => void;
   selectSuggestedTag: (tag: Tag) => void;
-  handleAddTag: () => Promise<void>;
+  handleAddTag: (inputValue?: string) => Promise<void>;
   removeSelectedTag: (tagId: number) => void;
   initializeFromProjectTags: (tags: Tag[]) => void;
   clearTagState: () => void;
@@ -43,7 +42,6 @@ export function useProjectTagEditor(
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [tagsError, setTagsError] = useState<string | null>(null);
-  const [isLoadingTags, setIsLoadingTags] = useState(false);
 
   const selectedTagIds = useMemo(() => new Set(selectedTags.map((tag) => tag.id)), [selectedTags]);
 
@@ -65,15 +63,11 @@ export function useProjectTagEditor(
       return;
     }
 
-    setIsLoadingTags(true);
-
     try {
       const payload = await listTagsRequest(token);
       setAvailableTags(uniqueFlatTags(payload.map((tag) => ({ id: tag.id, name: tag.name }))));
     } catch {
       setAvailableTags([]);
-    } finally {
-      setIsLoadingTags(false);
     }
   }, [token]);
 
@@ -118,13 +112,13 @@ export function useProjectTagEditor(
     [addSelectedTag],
   );
 
-  const handleAddTag = useCallback(async () => {
+  const addTagByInput = useCallback(async (inputValue: string, clearInputAfter: boolean) => {
     if (!token) {
       setTagsError("You must be signed in to add tags");
       return;
     }
 
-    const normalizedName = normalizeTagName(tagInput);
+    const normalizedName = normalizeTagName(inputValue);
 
     if (!normalizedName) {
       setTagsError("Tag name cannot be empty");
@@ -142,7 +136,9 @@ export function useProjectTagEditor(
     const existingTag = findTagByNameCaseInsensitive(availableTags, normalizedName);
     if (existingTag) {
       addSelectedTag(existingTag);
-      setTagInputState("");
+      if (clearInputAfter) {
+        setTagInputState("");
+      }
       return;
     }
 
@@ -150,7 +146,9 @@ export function useProjectTagEditor(
       const createdTag = await createTagRequest(normalizedName, token);
       setAvailableTags((current) => uniqueFlatTags([...current, createdTag]));
       addSelectedTag(createdTag);
-      setTagInputState("");
+      if (clearInputAfter) {
+        setTagInputState("");
+      }
       return;
     } catch (error) {
       try {
@@ -163,7 +161,9 @@ export function useProjectTagEditor(
         const recoveredTag = findTagByNameCaseInsensitive(refreshedTags, normalizedName);
         if (recoveredTag) {
           addSelectedTag(recoveredTag);
-          setTagInputState("");
+          if (clearInputAfter) {
+            setTagInputState("");
+          }
           return;
         }
       } catch {
@@ -172,7 +172,43 @@ export function useProjectTagEditor(
 
       setTagsError(getApiErrorMessage(error, "Unable to create tag"));
     }
-  }, [addSelectedTag, availableTags, selectedTags, tagInput, token]);
+  }, [addSelectedTag, availableTags, selectedTags, token]);
+
+  const handleAddTag = useCallback(
+    async (inputValue?: string) => {
+      const valueToUse = inputValue ?? tagInput;
+      await addTagByInput(valueToUse, inputValue === undefined);
+    },
+    [addTagByInput, tagInput],
+  );
+
+  const handleTagInputChange = useCallback(
+    (value: string) => {
+      if (!value.includes(",")) {
+        setTagInput(value);
+        return;
+      }
+
+      const parts = value.split(",");
+      const trailingValue = parts.pop() ?? "";
+      const completeTagParts = parts
+        .map((part) => normalizeTagName(part))
+        .filter((part) => part.length > 0);
+
+      setTagInput(trailingValue);
+
+      if (completeTagParts.length === 0) {
+        return;
+      }
+
+      void (async () => {
+        for (const part of completeTagParts) {
+          await addTagByInput(part, false);
+        }
+      })();
+    },
+    [addTagByInput, setTagInput],
+  );
 
   const removeSelectedTag = useCallback((tagId: number) => {
     setSelectedTags((current) => current.filter((tag) => tag.id !== tagId));
@@ -221,8 +257,7 @@ export function useProjectTagEditor(
     selectedTags,
     suggestedTags,
     tagsError,
-    isLoadingTags,
-    setTagInput,
+    handleTagInputChange,
     selectSuggestedTag,
     handleAddTag,
     removeSelectedTag,
