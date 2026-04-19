@@ -197,6 +197,19 @@ export default function FlashcardDetailPage() {
 
           <View style={{ gap: spacing.sm }}>
             <Button
+              disabled={deck.flashcards.length === 0}
+              fullWidth
+              iconName="play-outline"
+              label="Play flashcards"
+              onPress={() =>
+                router.push({
+                  pathname: "/flashcard/[id]/play",
+                  params: { id: String(deck.id) },
+                })
+              }
+              variant="secondary"
+            />
+            <Button
               fullWidth
               iconName="create-outline"
               label="Edit flashcards"
@@ -207,13 +220,6 @@ export default function FlashcardDetailPage() {
                 })
               }
               variant="primary"
-            />
-            <Button
-              fullWidth
-              iconName="add-circle-outline"
-              label="Create another set"
-              onPress={() => router.replace("/flashcard/create")}
-              variant="secondary"
             />
           </View>
         </View>

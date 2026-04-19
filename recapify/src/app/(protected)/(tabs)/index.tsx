@@ -360,7 +360,7 @@ export default function Index() {
                   }
 
                   router.push({
-                    pathname: "/flashcard/[id]",
+                    pathname: "/flashcard/[id]/play",
                     params: { id: String(selectedDeck.entityId) },
                   });
                 }}
