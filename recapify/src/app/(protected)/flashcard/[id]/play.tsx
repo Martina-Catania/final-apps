@@ -21,6 +21,7 @@ import { useAuth } from "../../../../context/auth-context";
 import { useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
+import { incrementProjectViewsRequest } from "../../../../utils/project-api";
 import {
   getDeckByIdRequest,
   type Flashcard,
@@ -131,6 +132,9 @@ export default function FlashcardPlayPage() {
 
     try {
       const payload = await getDeckByIdRequest(deckId, token ?? undefined);
+      void incrementProjectViewsRequest(payload.projectId, token ?? undefined).catch(
+        () => undefined,
+      );
 
       setDeckTitle(payload.project.title);
       setDeckFlashcards(payload.flashcards);

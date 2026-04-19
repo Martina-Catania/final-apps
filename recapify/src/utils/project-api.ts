@@ -56,3 +56,13 @@ export function updateProjectRequest(
     token,
   );
 }
+
+export function incrementProjectViewsRequest(projectId: number, token?: string) {
+  return requestJson<Project>(
+    `/projects/${projectId}/views/increment`,
+    {
+      method: "POST",
+    },
+    token,
+  );
+}

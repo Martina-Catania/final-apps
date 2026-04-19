@@ -13,6 +13,7 @@ import { useAuth } from "../../../../context/auth-context";
 import { useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
+import { incrementProjectViewsRequest } from "../../../../utils/project-api";
 import {
   getQuizByIdRequest,
   type QuizQuestion,
@@ -134,6 +135,9 @@ export default function QuizPlayPage() {
 
     try {
       const payload = await getQuizByIdRequest(quizId, token ?? undefined);
+      void incrementProjectViewsRequest(payload.projectId, token ?? undefined).catch(
+        () => undefined,
+      );
 
       setQuizTitle(payload.project.title);
       setQuizQuestions(payload.questions);
