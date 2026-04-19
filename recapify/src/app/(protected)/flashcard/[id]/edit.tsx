@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { Button } from "../../../../components";
+import { Accordion, Button } from "../../../../components";
 import { AppTextInput } from "../../../../components/TextInput";
 import { useAuth } from "../../../../context/auth-context";
 import { useThemeTokens } from "../../../../hooks";
@@ -434,54 +434,40 @@ export default function FlashcardEditPage() {
                   const currentErrors = flashcardErrors[item.key] ?? {};
 
                   return (
-                    <View
+                    <Accordion
+                      defaultExpanded={index === 0}
                       key={item.key}
-                      style={[
-                        styles.flashcardCard,
-                        {
-                          borderColor: colors.border,
-                          borderRadius: radius.sm,
-                          gap: spacing.sm,
-                          padding: spacing.md,
-                        },
-                      ]}
+                      title={`Card ${index + 1}`}
                     >
-                      <View style={[styles.rowBetween, { gap: spacing.sm }]}>
-                        <Text
-                          style={{
-                            color: colors.textPrimary,
-                            fontSize: typography.secondary.lg,
-                            fontWeight: typography.weights.semibold,
-                          }}
-                        >
-                          Card {index + 1}
-                        </Text>
+                      <View style={{ gap: spacing.sm }}>
                         {flashcards.length > 1 ? (
-                          <Button
-                            iconName="trash-outline"
-                            label="Remove"
-                            onPress={() => removeFlashcard(item.key)}
-                            variant="default"
-                          />
+                          <View style={{ alignItems: "flex-end" }}>
+                            <Button
+                              iconName="trash-outline"
+                              label="Remove"
+                              onPress={() => removeFlashcard(item.key)}
+                              variant="default"
+                            />
+                          </View>
                         ) : null}
+
+                        <AppTextInput
+                          label="Front"
+                          onChangeText={(value) => updateFlashcardField(item.key, "front", value)}
+                          placeholder="Concept or question"
+                          value={item.front}
+                          errorText={currentErrors.front}
+                        />
+
+                        <AppTextInput
+                          label="Back"
+                          onChangeText={(value) => updateFlashcardField(item.key, "back", value)}
+                          placeholder="Definition or answer"
+                          value={item.back}
+                          errorText={currentErrors.back}
+                        />
                       </View>
-
-                      <AppTextInput
-                        label="Front"
-                        onChangeText={(value) => updateFlashcardField(item.key, "front", value)}
-                        placeholder="Concept or question"
-                        value={item.front}
-                        errorText={currentErrors.front}
-                      />
-
-                      <AppTextInput
-                        label="Back"
-                        onChangeText={(value) => updateFlashcardField(item.key, "back", value)}
-                        placeholder="Definition or answer"
-                        value={item.back}
-                        errorText={currentErrors.back}
-                      />
-                    </View>
+                    </Accordion>
                   );
                 })}
               </View>
@@ -547,9 +533,6 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   errorCard: {
-    borderWidth: 1,
-  },
-  flashcardCard: {
     borderWidth: 1,
   },
   headerRow: {

@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { Button } from "../../../../components";
+import { Accordion, Button } from "../../../../components";
 import { AppTextInput } from "../../../../components/TextInput";
 import { useAuth } from "../../../../context/auth-context";
 import { useThemeTokens } from "../../../../hooks";
@@ -456,78 +456,64 @@ export default function QuizEditPage() {
                   const currentErrors = questionErrors[item.key] ?? {};
 
                   return (
-                    <View
+                    <Accordion
+                      defaultExpanded={index === 0}
                       key={item.key}
-                      style={[
-                        styles.questionCard,
-                        {
-                          borderColor: colors.border,
-                          borderRadius: radius.sm,
-                          gap: spacing.sm,
-                          padding: spacing.md,
-                        },
-                      ]}
+                      title={`Question ${index + 1}`}
                     >
-                      <View style={[styles.rowBetween, { gap: spacing.sm }]}>
-                        <Text
-                          style={{
-                            color: colors.textPrimary,
-                            fontSize: typography.secondary.lg,
-                            fontWeight: typography.weights.semibold,
-                          }}
-                        >
-                          Question {index + 1}
-                        </Text>
+                      <View style={{ gap: spacing.sm }}>
                         {questions.length > 1 ? (
-                          <Button
-                            iconName="trash-outline"
-                            label="Remove"
-                            onPress={() => removeQuestion(item.key)}
-                            variant="default"
-                          />
+                          <View style={{ alignItems: "flex-end" }}>
+                            <Button
+                              iconName="trash-outline"
+                              label="Remove"
+                              onPress={() => removeQuestion(item.key)}
+                              variant="default"
+                            />
+                          </View>
                         ) : null}
+
+                        <AppTextInput
+                          label="Question"
+                          onChangeText={(value) => updateQuestionField(item.key, "question", value)}
+                          placeholder="Write your question"
+                          value={item.question}
+                          errorText={currentErrors.question}
+                        />
+
+                        <AppTextInput
+                          label="Correct answer"
+                          onChangeText={(value) => updateQuestionField(item.key, "answer", value)}
+                          placeholder="Write the correct answer"
+                          value={item.answer}
+                          errorText={currentErrors.answer}
+                        />
+
+                        <AppTextInput
+                          label="Decoy 1"
+                          onChangeText={(value) => updateQuestionField(item.key, "decoy1", value)}
+                          placeholder="Write a decoy answer"
+                          value={item.decoy1}
+                          errorText={currentErrors.decoy1}
+                        />
+
+                        <AppTextInput
+                          label="Decoy 2"
+                          onChangeText={(value) => updateQuestionField(item.key, "decoy2", value)}
+                          placeholder="Write a decoy answer"
+                          value={item.decoy2}
+                          errorText={currentErrors.decoy2}
+                        />
+
+                        <AppTextInput
+                          label="Decoy 3"
+                          onChangeText={(value) => updateQuestionField(item.key, "decoy3", value)}
+                          placeholder="Write a decoy answer"
+                          value={item.decoy3}
+                          errorText={currentErrors.decoy3}
+                        />
                       </View>
-
-                      <AppTextInput
-                        label="Question"
-                        onChangeText={(value) => updateQuestionField(item.key, "question", value)}
-                        placeholder="Write your question"
-                        value={item.question}
-                        errorText={currentErrors.question}
-                      />
-
-                      <AppTextInput
-                        label="Correct answer"
-                        onChangeText={(value) => updateQuestionField(item.key, "answer", value)}
-                        placeholder="Write the correct answer"
-                        value={item.answer}
-                        errorText={currentErrors.answer}
-                      />
-
-                      <AppTextInput
-                        label="Decoy 1"
-                        onChangeText={(value) => updateQuestionField(item.key, "decoy1", value)}
-                        placeholder="Write a decoy answer"
-                        value={item.decoy1}
-                        errorText={currentErrors.decoy1}
-                      />
-
-                      <AppTextInput
-                        label="Decoy 2"
-                        onChangeText={(value) => updateQuestionField(item.key, "decoy2", value)}
-                        placeholder="Write a decoy answer"
-                        value={item.decoy2}
-                        errorText={currentErrors.decoy2}
-                      />
-
-                      <AppTextInput
-                        label="Decoy 3"
-                        onChangeText={(value) => updateQuestionField(item.key, "decoy3", value)}
-                        placeholder="Write a decoy answer"
-                        value={item.decoy3}
-                        errorText={currentErrors.decoy3}
-                      />
-                    </View>
+                    </Accordion>
                   );
                 })}
               </View>
@@ -593,9 +579,6 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   errorCard: {
-    borderWidth: 1,
-  },
-  questionCard: {
     borderWidth: 1,
   },
   headerRow: {

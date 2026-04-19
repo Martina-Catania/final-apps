@@ -220,13 +220,6 @@ export default function QuizDetailPage() {
               }
               variant="primary"
             />
-            <Button
-              fullWidth
-              iconName="add-circle-outline"
-              label="Create another quiz"
-              onPress={() => router.replace("/quiz/create")}
-              variant="primary"
-            />
           </View>
         </View>
 
