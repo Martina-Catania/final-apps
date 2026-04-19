@@ -263,7 +263,7 @@ export default function Index() {
                   }
 
                   router.push({
-                    pathname: "/quiz/[id]/play",
+                    pathname: "/quiz/[id]",
                     params: { id: String(selectedQuiz.entityId) },
                   });
                 }}
@@ -360,7 +360,7 @@ export default function Index() {
                   }
 
                   router.push({
-                    pathname: "/flashcard/[id]/play",
+                    pathname: "/flashcard/[id]",
                     params: { id: String(selectedDeck.entityId) },
                   });
                 }}
