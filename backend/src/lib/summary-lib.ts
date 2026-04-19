@@ -2,7 +2,22 @@ import type { Prisma } from "../../generated/prisma/index.js";
 import type { AppContext } from "../context.js";
 
 const summaryInclude = {
-  project: true,
+  project: {
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          avatarUrl: true,
+        },
+      },
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
+    },
+  },
   files: true,
 };
 

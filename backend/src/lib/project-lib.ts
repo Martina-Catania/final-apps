@@ -25,6 +25,11 @@ const followedProjectInclude = {
       id: true,
     },
   },
+  summary: {
+    select: {
+      id: true,
+    },
+  },
   deck: {
     select: {
       id: true,
@@ -45,7 +50,7 @@ export function listProjectsByFollowing(userId: number, ctx: AppContext) {
   return ctx.prisma.project.findMany({
     where: {
       type: {
-        in: ["QUIZ", "DECK"],
+        in: ["QUIZ", "DECK", "SUMMARY"],
       },
       user: {
         followers: {

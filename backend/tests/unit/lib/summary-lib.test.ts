@@ -16,13 +16,33 @@ function createCtx() {
 }
 
 describe("summary-lib", () => {
+  const expectedSummaryInclude = {
+    project: {
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+          },
+        },
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
+    },
+    files: true,
+  };
+
   it("lists summaries", () => {
     const { ctx, summary } = createCtx();
     listSummaries(ctx);
 
     expect(summary.findMany).toHaveBeenCalledWith({
       orderBy: { id: "asc" },
-      include: { project: true, files: true },
+      include: expectedSummaryInclude,
     });
   });
 
@@ -32,18 +52,18 @@ describe("summary-lib", () => {
 
     expect(summary.findUnique).toHaveBeenCalledWith({
       where: { id: 8 },
-      include: { project: true, files: true },
+      include: expectedSummaryInclude,
     });
   });
 
   it("creates summary", () => {
     const { ctx, summary } = createCtx();
-    const data = { projectId: 2, subject: "History", content: "Text" };
+    const data = { projectId: 2, content: "Text" };
     createSummary(data as never, ctx);
 
     expect(summary.create).toHaveBeenCalledWith({
       data,
-      include: { project: true, files: true },
+      include: expectedSummaryInclude,
     });
   });
 
@@ -55,7 +75,7 @@ describe("summary-lib", () => {
     expect(summary.update).toHaveBeenCalledWith({
       where: { id: 8 },
       data,
-      include: { project: true, files: true },
+      include: expectedSummaryInclude,
     });
   });
 
@@ -65,7 +85,7 @@ describe("summary-lib", () => {
 
     expect(summary.delete).toHaveBeenCalledWith({
       where: { id: 8 },
-      include: { project: true, files: true },
+      include: expectedSummaryInclude,
     });
   });
 });

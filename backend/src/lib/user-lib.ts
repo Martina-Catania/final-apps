@@ -9,6 +9,7 @@ type ProfileProject = {
   createdAt: Date;
   updatedAt: Date;
   quizId: number | null;
+  summaryId: number | null;
   deckId: number | null;
   tags: {
     projectId: number;
@@ -93,6 +94,11 @@ export async function getUserProfileSummary(
               id: true,
             },
           },
+          summary: {
+            select: {
+              id: true,
+            },
+          },
           deck: {
             select: {
               id: true,
@@ -141,6 +147,7 @@ export async function getUserProfileSummary(
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
       quizId: project.quiz?.id ?? null,
+      summaryId: project.summary?.id ?? null,
       deckId: project.deck?.id ?? null,
       tags: project.tags,
     })),

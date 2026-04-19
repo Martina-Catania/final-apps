@@ -32,6 +32,7 @@ export type SearchProjectResult = {
     avatarUrl: string | null;
   };
   quizId: number | null;
+  summaryId: number | null;
   deckId: number | null;
   tags: {
     id: number;
@@ -195,6 +196,11 @@ async function searchProjects(
             id: true,
           },
         },
+        summary: {
+          select: {
+            id: true,
+          },
+        },
         deck: {
           select: {
             id: true,
@@ -224,6 +230,7 @@ async function searchProjects(
       updatedAt: project.updatedAt,
       user: project.user,
       quizId: project.quiz?.id ?? null,
+      summaryId: project.summary?.id ?? null,
       deckId: project.deck?.id ?? null,
       tags: project.tags.map((projectTag) => projectTag.tag),
     })),

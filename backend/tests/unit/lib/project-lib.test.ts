@@ -34,6 +34,11 @@ const followedProjectInclude = {
       id: true,
     },
   },
+  summary: {
+    select: {
+      id: true,
+    },
+  },
   deck: {
     select: {
       id: true,
@@ -80,14 +85,14 @@ describe("project-lib", () => {
     });
   });
 
-  it("lists quiz and flashcard projects from followed users", () => {
+  it("lists quiz, flashcard, and summary projects from followed users", () => {
     const { ctx, project } = createCtx();
     listProjectsByFollowing(12, ctx);
 
     expect(project.findMany).toHaveBeenCalledWith({
       where: {
         type: {
-          in: ["QUIZ", "DECK"],
+          in: ["QUIZ", "DECK", "SUMMARY"],
         },
         user: {
           followers: {

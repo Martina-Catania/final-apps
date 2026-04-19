@@ -41,7 +41,6 @@ export function createSummaryRouter(ctx: AppContext) {
     "/",
     asyncHandler(async (req, res) => {
       const projectId = requireInt(req.body.projectId, "projectId");
-      const subject = requireString(req.body.subject, "subject");
       const content = requireString(req.body.content, "content");
 
       const project = await ctx.prisma.project.findUnique({
@@ -57,7 +56,7 @@ export function createSummaryRouter(ctx: AppContext) {
         throw new ApiError(400, "Project type must be SUMMARY");
       }
 
-      const summary = await createSummary({ projectId, subject, content }, ctx);
+      const summary = await createSummary({ projectId, content }, ctx);
       res.status(201).json(summary);
     }),
   );
@@ -71,7 +70,6 @@ export function createSummaryRouter(ctx: AppContext) {
         id,
         {
           projectId: typeof req.body.projectId === "number" ? requireInt(req.body.projectId, "projectId") : undefined,
-          subject: optionalString(req.body.subject, "subject"),
           content: optionalString(req.body.content, "content"),
         },
         ctx,

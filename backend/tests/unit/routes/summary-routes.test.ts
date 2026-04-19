@@ -17,13 +17,13 @@ describe("summary-routes", () => {
     expect((await request(app).get("/summaries/6")).status).toBe(404);
 
     mocks.project.findUnique.mockResolvedValue({ type: ProjectType.SUMMARY } as never);
-    mocks.summary.create.mockResolvedValue({ id: 8, projectId: 1, subject: "S", content: "C" } as never);
+    mocks.summary.create.mockResolvedValue({ id: 8, projectId: 1, content: "C" } as never);
 
     expect(
       (
         await request(app)
           .post("/summaries")
-          .send({ projectId: 1, subject: "S", content: "C" })
+          .send({ projectId: 1, content: "C" })
       ).status,
     ).toBe(201);
 
@@ -33,11 +33,11 @@ describe("summary-routes", () => {
       (
         await request(app)
           .post("/summaries")
-          .send({ projectId: 1, subject: "S", content: "C" })
+          .send({ projectId: 1, content: "C" })
       ).status,
     ).toBe(404);
 
-    expect((await request(app).patch("/summaries/6").send({ subject: "Updated" })).status).toBe(200);
+    expect((await request(app).patch("/summaries/6").send({ content: "Updated" })).status).toBe(200);
     expect((await request(app).delete("/summaries/6")).status).toBe(200);
   });
 
@@ -49,7 +49,7 @@ describe("summary-routes", () => {
 
     const response = await request(app)
       .post("/summaries")
-      .send({ projectId: 9, subject: "Topic", content: "Body" });
+      .send({ projectId: 9, content: "Body" });
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe("Project type must be SUMMARY");
@@ -60,11 +60,11 @@ describe("summary-routes", () => {
     const { ctx, mocks } = createRouteMockContext();
     const app = createRouteApp("/summaries", createSummaryRouter(ctx));
 
-    mocks.summary.findUnique.mockResolvedValue({ id: 6, subject: "S" } as never);
+    mocks.summary.findUnique.mockResolvedValue({ id: 6, content: "S" } as never);
 
     const response = await request(app).get("/summaries/6");
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ id: 6, subject: "S" });
+    expect(response.body).toEqual({ id: 6, content: "S" });
   });
 });

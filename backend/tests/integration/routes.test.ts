@@ -117,7 +117,6 @@ describe("api routes", () => {
 
     const response = await request(app).post("/api/summaries").send({
       projectId: 10,
-      subject: "History",
       content: "Topic",
     });
 

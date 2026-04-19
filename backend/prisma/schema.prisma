@@ -64,7 +64,6 @@ model Summary {
   id        Int       @id @default(autoincrement())
   projectId Int       @unique
   project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  subject   String
   content   String
   files     SummaryFile[]
 }
