@@ -528,11 +528,12 @@ export default function FlashcardPlayPage() {
                     borderColor: colors.border,
                     borderRadius: radius.md,
                     opacity: pressed ? 0.92 : 1,
-                    padding: spacing.lg,
                   },
                 ]}
               >
-                <Animated.View style={[styles.flashcardFaceSide, frontFaceAnimatedStyle]}>
+                <Animated.View
+                  style={[styles.flashcardFaceSide, frontFaceAnimatedStyle, { padding: spacing.lg }]}
+                >
                   <Text
                     style={{
                       color: colors.primary,
@@ -562,7 +563,12 @@ export default function FlashcardPlayPage() {
                 </Animated.View>
 
                 <Animated.View
-                  style={[styles.flashcardFaceSide, styles.flashcardFaceBack, backFaceAnimatedStyle]}
+                  style={[
+                    styles.flashcardFaceSide,
+                    styles.flashcardFaceBack,
+                    backFaceAnimatedStyle,
+                    { padding: spacing.lg },
+                  ]}
                 >
                   <Text
                     style={{
