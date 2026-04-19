@@ -13,21 +13,10 @@ import {
 import { Accordion, Button } from "../../../../components";
 import { AppTextInput } from "../../../../components/TextInput";
 import { useAuth } from "../../../../context/auth-context";
-import { useThemeTokens } from "../../../../hooks";
+import { useProjectTagEditor, useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
-import {
-  addTagToProjectRequest,
-  createTagRequest,
-  listTagsRequest,
-  removeTagFromProjectRequest,
-  type Tag,
-} from "../../../../utils/tag-api";
-import {
-  findTagByNameCaseInsensitive,
-  normalizeTagName,
-  uniqueFlatTags,
-} from "../../../../utils/tag-utils";
+import { uniqueFlatTags } from "../../../../utils/tag-utils";
 import {
   createFlashcardRequest,
   deleteFlashcardRequest,
@@ -86,13 +75,7 @@ export default function FlashcardEditPage() {
   const [deckTitle, setDeckTitle] = useState("");
   const [flashcards, setFlashcards] = useState<FlashcardDraft[]>([]);
   const [initialFlashcardIds, setInitialFlashcardIds] = useState<number[]>([]);
-  const [initialTagIds, setInitialTagIds] = useState<number[]>([]);
   const [nextFlashcardIndex, setNextFlashcardIndex] = useState(1);
-  const [tagInput, setTagInput] = useState("");
-  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
-  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
-  const [tagsError, setTagsError] = useState<string | null>(null);
-  const [isLoadingTags, setIsLoadingTags] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -102,137 +85,21 @@ export default function FlashcardEditPage() {
   const [flashcardErrors, setFlashcardErrors] = useState<Record<string, FlashcardFieldErrors>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const selectedTagIds = useMemo(() => new Set(selectedTags.map((tag) => tag.id)), [selectedTags]);
-
-  const suggestedTags = useMemo(() => {
-    const normalizedInput = normalizeTagName(tagInput);
-
-    if (!normalizedInput) {
-      return [];
-    }
-
-    return availableTags
-      .filter(
-        (tag) => tag.name.includes(normalizedInput) && !selectedTagIds.has(tag.id),
-      )
-      .slice(0, 8);
-  }, [availableTags, selectedTagIds, tagInput]);
-
-  const loadTags = useCallback(async () => {
-    if (!token) {
-      setAvailableTags([]);
-      return;
-    }
-
-    setIsLoadingTags(true);
-
-    try {
-      const payload = await listTagsRequest(token);
-      setAvailableTags(uniqueFlatTags(payload.map((tag) => ({ id: tag.id, name: tag.name }))));
-    } catch {
-      setAvailableTags([]);
-    } finally {
-      setIsLoadingTags(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    void loadTags();
-  }, [loadTags]);
-
-  const addSelectedTag = useCallback((tag: Tag) => {
-    setSelectedTags((current) => {
-      const alreadySelected = current.some(
-        (item) => normalizeTagName(item.name) === normalizeTagName(tag.name),
-      );
-
-      if (alreadySelected) {
-        return current;
-      }
-
-      return [...current, tag];
-    });
-  }, []);
-
-  const handleAddTag = useCallback(async () => {
-    if (!token) {
-      setTagsError("You must be signed in to add tags");
-      return;
-    }
-
-    const normalizedName = normalizeTagName(tagInput);
-
-    if (!normalizedName) {
-      setTagsError("Tag name cannot be empty");
-      return;
-    }
-
-    setTagsError(null);
-
-    const existingSelectedTag = findTagByNameCaseInsensitive(selectedTags, normalizedName);
-    if (existingSelectedTag) {
-      setTagsError("Tag already selected");
-      return;
-    }
-
-    const existingTag = findTagByNameCaseInsensitive(availableTags, normalizedName);
-    if (existingTag) {
-      addSelectedTag(existingTag);
-      setTagInput("");
-      return;
-    }
-
-    try {
-      const createdTag = await createTagRequest(normalizedName, token);
-      setAvailableTags((current) => uniqueFlatTags([...current, createdTag]));
-      addSelectedTag(createdTag);
-      setTagInput("");
-      return;
-    } catch (error) {
-      try {
-        const refreshed = await listTagsRequest(token);
-        const refreshedTags = uniqueFlatTags(
-          refreshed.map((tag) => ({ id: tag.id, name: tag.name })),
-        );
-        setAvailableTags(refreshedTags);
-
-        const recoveredTag = findTagByNameCaseInsensitive(refreshedTags, normalizedName);
-        if (recoveredTag) {
-          addSelectedTag(recoveredTag);
-          setTagInput("");
-          return;
-        }
-      } catch {
-        // Keep the original error message below when refresh also fails.
-      }
-
-      setTagsError(getApiErrorMessage(error, "Unable to create tag"));
-    }
-  }, [addSelectedTag, availableTags, selectedTags, tagInput, token]);
-
-  const removeSelectedTag = (tagId: number) => {
-    setSelectedTags((current) => current.filter((tag) => tag.id !== tagId));
-  };
-
-  const syncProjectTags = useCallback(
-    async (nextProjectId: number) => {
-      if (!token) {
-        return;
-      }
-
-      const initialIds = new Set(initialTagIds);
-      const nextIds = new Set(selectedTags.map((tag) => tag.id));
-
-      const tagIdsToAdd = [...nextIds].filter((tagId) => !initialIds.has(tagId));
-      const tagIdsToRemove = [...initialIds].filter((tagId) => !nextIds.has(tagId));
-
-      await Promise.all([
-        ...tagIdsToAdd.map((tagId) => addTagToProjectRequest(nextProjectId, tagId, token)),
-        ...tagIdsToRemove.map((tagId) => removeTagFromProjectRequest(nextProjectId, tagId, token)),
-      ]);
-    },
-    [initialTagIds, selectedTags, token],
-  );
+  const {
+    tagInput,
+    selectedTags,
+    suggestedTags,
+    tagsError,
+    isLoadingTags,
+    setTagInput,
+    selectSuggestedTag,
+    handleAddTag,
+    removeSelectedTag,
+    initializeFromProjectTags,
+    clearTagState,
+    clearTagsError,
+    syncProjectTags,
+  } = useProjectTagEditor({ token: token ?? undefined });
 
   const addFlashcard = () => {
     setFlashcards((current) => [...current, createFlashcardDraft(nextFlashcardIndex)]);
@@ -341,11 +208,8 @@ export default function FlashcardEditPage() {
         setProjectId(null);
         setDeckTitle("");
         setInitialFlashcardIds([]);
-        setInitialTagIds([]);
         setFlashcards([]);
-        setSelectedTags([]);
-        setTagInput("");
-        setTagsError(null);
+        clearTagState();
         setNextFlashcardIndex(1);
         return;
       }
@@ -355,10 +219,7 @@ export default function FlashcardEditPage() {
       setDeckTitle(payload.project.title);
       setInitialFlashcardIds(payload.flashcards.map((item) => item.id));
       const projectTags = uniqueFlatTags(payload.project.tags.map((projectTag) => projectTag.tag));
-      setInitialTagIds(projectTags.map((tag) => tag.id));
-      setSelectedTags(projectTags);
-      setTagInput("");
-      setTagsError(null);
+      initializeFromProjectTags(projectTags);
 
       const mappedFlashcards: FlashcardDraft[] = payload.flashcards.map((item, index) => ({
         key: `existing-${item.id}-${index + 1}`,
@@ -378,14 +239,11 @@ export default function FlashcardEditPage() {
       setLoadError(getApiErrorMessage(error, "Unable to load flashcards"));
       setCreatorUserId(null);
       setFlashcards([]);
-      setInitialTagIds([]);
-      setSelectedTags([]);
-      setTagInput("");
-      setTagsError(null);
+      clearTagState();
     } finally {
       setIsLoading(false);
     }
-  }, [deckId, token, user]);
+  }, [clearTagState, deckId, initializeFromProjectTags, token, user]);
 
   useEffect(() => {
     void loadDeck();
@@ -393,7 +251,7 @@ export default function FlashcardEditPage() {
 
   const handleSaveFlashcards = async () => {
     setSubmitError(null);
-    setTagsError(null);
+    clearTagsError();
 
     if (!token || !user) {
       setSubmitError("You must be signed in to edit flashcards");
@@ -597,7 +455,6 @@ export default function FlashcardEditPage() {
                 label="Project tags"
                 onChangeText={(value) => {
                   setTagInput(value);
-                  setTagsError(null);
                 }}
                 placeholder="Type a tag name"
                 value={tagInput}
@@ -624,8 +481,7 @@ export default function FlashcardEditPage() {
                       accessibilityRole="button"
                       key={`deck-edit-suggested-tag-${tag.id}`}
                       onPress={() => {
-                        addSelectedTag(tag);
-                        setTagInput("");
+                        selectSuggestedTag(tag);
                       }}
                       style={({ pressed }) => [
                         styles.tagPill,

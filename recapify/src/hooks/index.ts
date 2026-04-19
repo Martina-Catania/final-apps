@@ -3,3 +3,4 @@
 export * from "./use-theme-tokens";
 export * from "./use-pull-to-refresh";
 export * from "./use-refresh-control-props";
+export * from "./use-project-tag-editor";
