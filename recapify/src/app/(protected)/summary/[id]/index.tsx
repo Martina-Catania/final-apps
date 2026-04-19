@@ -344,7 +344,7 @@ export default function SummaryDetailPage() {
               <Button
                 fullWidth
                 iconName="play-outline"
-                label="Play summary"
+                label="Read summary"
                 onPress={() =>
                   router.push({
                     pathname: "/summary/[id]/play",
