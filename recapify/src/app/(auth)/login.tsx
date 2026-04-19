@@ -9,14 +9,14 @@ import {
   Text,
   View,
 } from "react-native";
-import { Button } from "../../components";
+import { Button, Card } from "../../components";
 import { AppTextInput } from "../../components/TextInput";
 import { useAuth } from "../../context/auth-context";
 import { useThemeTokens } from "../../hooks";
 import { SafeAreaPage } from "../../screens/safe-area-page";
 
 export default function LoginPage() {
-  const { colors, spacing, typography, radius } = useThemeTokens();
+  const { colors, spacing, typography } = useThemeTokens();
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -53,13 +53,10 @@ export default function LoginPage() {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          <View
+          <Card
             style={[
               styles.card,
               {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.md,
                 gap: spacing.lg,
                 padding: spacing.lg,
               },
@@ -153,7 +150,7 @@ export default function LoginPage() {
                 </Link>
               </View>
             </View>
-          </View>
+          </Card>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaPage>
@@ -172,7 +169,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   card: {
-    borderWidth: 1,
     maxWidth: 520,
     width: "100%",
     alignSelf: "center",

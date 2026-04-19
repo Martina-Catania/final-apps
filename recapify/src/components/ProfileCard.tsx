@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { useThemeTokens } from "../hooks";
 import { Button } from "./Button";
+import { Card } from "./Card";
 import { Avatar } from "./Avatar";
 
 type ProfileCardProps = {
@@ -30,12 +31,10 @@ export const ProfileCard = ({
   const { colors, spacing, typography } = useThemeTokens();
 
   return (
-    <View
+    <Card
       style={[
         styles.container,
         {
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
           gap: spacing.md,
           padding: spacing.lg,
         },
@@ -109,14 +108,13 @@ export const ProfileCard = ({
           variant="primary"
         />
       ) : null}
-    </View>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     borderRadius: 18,
-    borderWidth: 1,
   },
   stats: {
     flexDirection: "row",

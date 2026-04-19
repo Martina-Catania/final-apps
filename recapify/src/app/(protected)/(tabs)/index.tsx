@@ -10,6 +10,7 @@ import {
 
 import {
   Button,
+  Card,
   Carousel,
   SkeletonCard,
 } from "../../../components";
@@ -41,7 +42,7 @@ type HomeCarouselItem = {
 export default function Index() {
   const router = useRouter();
   const { token, user } = useAuth();
-  const { colors, spacing, typography, radius } = useThemeTokens();
+  const { colors, spacing, typography } = useThemeTokens();
 
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(true);
@@ -135,255 +136,231 @@ export default function Index() {
         <RefreshControl {...refreshControlProps} />
       }
     >
-          <View
-            style={[
-              styles.heroCard,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.md,
-                gap: spacing.xs,
-                padding: spacing.lg,
-              },
-            ]}
+      <Card
+        style={{
+          gap: spacing.xs,
+          padding: spacing.lg,
+        }}
+      >
+        <Text
+          style={{
+            color: colors.textPrimary,
+            fontSize: typography.primary.md,
+            fontWeight: typography.weights.bold,
+          }}
+        >
+          Welcome back{user?.username ? `, ${user.username}` : ""}
+        </Text>
+        <Text
+          style={{
+            color: colors.textSecondary,
+            fontSize: typography.secondary.md,
+          }}
+        >
+          Jump into your latest quizzes and flashcards or browse all projects.
+        </Text>
+      </Card>
+
+      <Card
+        style={{
+          gap: spacing.md,
+          padding: spacing.lg,
+        }}
+      >
+        <View style={[styles.sectionHeader, { gap: spacing.sm }]}>
+          <Text
+            style={{
+              color: colors.textPrimary,
+              fontSize: typography.primary.sm,
+              fontWeight: typography.weights.bold,
+            }}
           >
+            Quiz Showcase
+          </Text>
+
+          <Button
+            iconName="arrow-forward-outline"
+            label="See more"
+            onPress={() =>
+              router.push({
+                pathname: "../projects/[type]",
+                params: { type: "quiz" },
+              })
+            }
+            variant="secondary"
+          />
+        </View>
+
+        {isLoadingQuizzes ? (
+          <View style={{ gap: spacing.sm }}>
+            <SkeletonCard />
+            <SkeletonCard />
+          </View>
+        ) : null}
+
+        {!isLoadingQuizzes && quizError ? (
+          <View style={{ gap: spacing.sm }}>
             <Text
               style={{
-                color: colors.textPrimary,
-                fontSize: typography.primary.md,
-                fontWeight: typography.weights.bold,
+                color: colors.danger,
+                fontSize: typography.secondary.md,
               }}
             >
-              Welcome back{user?.username ? `, ${user.username}` : ""}
+              {quizError}
             </Text>
+            <Button
+              iconName="refresh-outline"
+              label="Try again"
+              onPress={() => {
+                void onRefresh();
+              }}
+              variant="default"
+            />
+          </View>
+        ) : null}
+
+        {!isLoadingQuizzes && !quizError && quizCarouselItems.length === 0 ? (
+          <View style={{ gap: spacing.sm }}>
             <Text
               style={{
                 color: colors.textSecondary,
                 fontSize: typography.secondary.md,
               }}
             >
-              Jump into your latest quizzes and flashcards or browse all projects.
+              No quizzes yet. Create your first quiz to get started.
             </Text>
+            <Button
+              iconName="add-circle-outline"
+              label="Create quiz"
+              onPress={() => router.push("/quiz/create")}
+              variant="primary"
+            />
           </View>
+        ) : null}
 
-          <View
-            style={[
-              styles.section,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.md,
-                gap: spacing.md,
-                padding: spacing.lg,
-              },
-            ]}
+        {!isLoadingQuizzes && !quizError && quizCarouselItems.length > 0 ? (
+          <Carousel
+            items={quizCarouselItems}
+            onItemPress={(item) => {
+              const selectedQuiz = quizCarouselItems.find(
+                (candidate) => candidate.id === item.id,
+              );
+
+              if (!selectedQuiz) {
+                return;
+              }
+
+              router.push({
+                pathname: "/quiz/[id]",
+                params: { id: String(selectedQuiz.entityId) },
+              });
+            }}
+          />
+        ) : null}
+      </Card>
+
+      <Card
+        style={{
+          gap: spacing.md,
+          padding: spacing.lg,
+        }}
+      >
+        <View style={[styles.sectionHeader, { gap: spacing.sm }]}>
+          <Text
+            style={{
+              color: colors.textPrimary,
+              fontSize: typography.primary.sm,
+              fontWeight: typography.weights.bold,
+            }}
           >
-            <View style={[styles.sectionHeader, { gap: spacing.sm }]}>
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: typography.primary.sm,
-                  fontWeight: typography.weights.bold,
-                }}
-              >
-                Quiz Showcase
-              </Text>
+            Flashcard Showcase
+          </Text>
 
-              <Button
-                iconName="arrow-forward-outline"
-                label="See more"
-                onPress={() =>
-                  router.push({
-                    pathname: "../projects/[type]",
-                    params: { type: "quiz" },
-                  })
-                }
-                variant="secondary"
-              />
-            </View>
+          <Button
+            iconName="arrow-forward-outline"
+            label="See more"
+            onPress={() =>
+              router.push({
+                pathname: "../projects/[type]",
+                params: { type: "flashcard" },
+              })
+            }
+            variant="secondary"
+          />
+        </View>
 
-            {isLoadingQuizzes ? (
-              <View style={{ gap: spacing.sm }}>
-                <SkeletonCard />
-                <SkeletonCard />
-              </View>
-            ) : null}
-
-            {!isLoadingQuizzes && quizError ? (
-              <View style={{ gap: spacing.sm }}>
-                <Text
-                  style={{
-                    color: colors.danger,
-                    fontSize: typography.secondary.md,
-                  }}
-                >
-                  {quizError}
-                </Text>
-                <Button
-                  iconName="refresh-outline"
-                  label="Try again"
-                  onPress={() => {
-                    void onRefresh();
-                  }}
-                  variant="default"
-                />
-              </View>
-            ) : null}
-
-            {!isLoadingQuizzes && !quizError && quizCarouselItems.length === 0 ? (
-              <View style={{ gap: spacing.sm }}>
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    fontSize: typography.secondary.md,
-                  }}
-                >
-                  No quizzes yet. Create your first quiz to get started.
-                </Text>
-                <Button
-                  iconName="add-circle-outline"
-                  label="Create quiz"
-                  onPress={() => router.push("/quiz/create")}
-                  variant="primary"
-                />
-              </View>
-            ) : null}
-
-            {!isLoadingQuizzes && !quizError && quizCarouselItems.length > 0 ? (
-              <Carousel
-                items={quizCarouselItems}
-                onItemPress={(item) => {
-                  const selectedQuiz = quizCarouselItems.find(
-                    (candidate) => candidate.id === item.id,
-                  );
-
-                  if (!selectedQuiz) {
-                    return;
-                  }
-
-                  router.push({
-                    pathname: "/quiz/[id]",
-                    params: { id: String(selectedQuiz.entityId) },
-                  });
-                }}
-              />
-            ) : null}
+        {isLoadingDecks ? (
+          <View style={{ gap: spacing.sm }}>
+            <SkeletonCard />
+            <SkeletonCard />
           </View>
+        ) : null}
 
-          <View
-            style={[
-              styles.section,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.md,
-                gap: spacing.md,
-                padding: spacing.lg,
-              },
-            ]}
-          >
-            <View style={[styles.sectionHeader, { gap: spacing.sm }]}>
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: typography.primary.sm,
-                  fontWeight: typography.weights.bold,
-                }}
-              >
-                Flashcard Showcase
-              </Text>
-
-              <Button
-                iconName="arrow-forward-outline"
-                label="See more"
-                onPress={() =>
-                  router.push({
-                    pathname: "../projects/[type]",
-                    params: { type: "flashcard" },
-                  })
-                }
-                variant="secondary"
-              />
-            </View>
-
-            {isLoadingDecks ? (
-              <View style={{ gap: spacing.sm }}>
-                <SkeletonCard />
-                <SkeletonCard />
-              </View>
-            ) : null}
-
-            {!isLoadingDecks && deckError ? (
-              <View style={{ gap: spacing.sm }}>
-                <Text
-                  style={{
-                    color: colors.danger,
-                    fontSize: typography.secondary.md,
-                  }}
-                >
-                  {deckError}
-                </Text>
-                <Button
-                  iconName="refresh-outline"
-                  label="Try again"
-                  onPress={() => {
-                    void onRefresh();
-                  }}
-                  variant="default"
-                />
-              </View>
-            ) : null}
-
-            {!isLoadingDecks && !deckError && flashcardCarouselItems.length === 0 ? (
-              <View style={{ gap: spacing.sm }}>
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    fontSize: typography.secondary.md,
-                  }}
-                >
-                  No flashcard sets yet. Create your first set to get started.
-                </Text>
-                <Button
-                  iconName="add-circle-outline"
-                  label="Create flashcards"
-                  onPress={() => router.push("/flashcard/create")}
-                  variant="primary"
-                />
-              </View>
-            ) : null}
-
-            {!isLoadingDecks && !deckError && flashcardCarouselItems.length > 0 ? (
-              <Carousel
-                items={flashcardCarouselItems}
-                onItemPress={(item) => {
-                  const selectedDeck = flashcardCarouselItems.find(
-                    (candidate) => candidate.id === item.id,
-                  );
-
-                  if (!selectedDeck) {
-                    return;
-                  }
-
-                  router.push({
-                    pathname: "/flashcard/[id]",
-                    params: { id: String(selectedDeck.entityId) },
-                  });
-                }}
-              />
-            ) : null}
+        {!isLoadingDecks && deckError ? (
+          <View style={{ gap: spacing.sm }}>
+            <Text
+              style={{
+                color: colors.danger,
+                fontSize: typography.secondary.md,
+              }}
+            >
+              {deckError}
+            </Text>
+            <Button
+              iconName="refresh-outline"
+              label="Try again"
+              onPress={() => {
+                void onRefresh();
+              }}
+              variant="default"
+            />
           </View>
+        ) : null}
+
+        {!isLoadingDecks && !deckError && flashcardCarouselItems.length === 0 ? (
+          <View style={{ gap: spacing.sm }}>
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: typography.secondary.md,
+              }}
+            >
+              No flashcard sets yet. Create your first set to get started.
+            </Text>
+            <Button
+              iconName="add-circle-outline"
+              label="Create flashcards"
+              onPress={() => router.push("/flashcard/create")}
+              variant="primary"
+            />
+          </View>
+        ) : null}
+
+        {!isLoadingDecks && !deckError && flashcardCarouselItems.length > 0 ? (
+          <Carousel
+            items={flashcardCarouselItems}
+            onItemPress={(item) => {
+              const selectedDeck = flashcardCarouselItems.find(
+                (candidate) => candidate.id === item.id,
+              );
+
+              if (!selectedDeck) {
+                return;
+              }
+
+              router.push({
+                pathname: "/flashcard/[id]",
+                params: { id: String(selectedDeck.entityId) },
+              });
+            }}
+          />
+        ) : null}
+      </Card>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  heroCard: {
-    borderWidth: 1,
-  },
-  section: {
-    borderWidth: 1,
-  },
   sectionHeader: {
     alignItems: "center",
     flexDirection: "row",

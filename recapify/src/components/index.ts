@@ -8,6 +8,7 @@ export * from "./TextInput";
 export * from "./Toggle";
 export * from "./Avatar";
 export * from "./BottomNavBar";
+export * from "./Card";
 export * from "./Carousel";
 export * from "./DateTimeField";
 export * from "./DrawerPanel";

@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { Button } from "../../components";
+import { Button, Card } from "../../components";
 import { AppTextInput } from "../../components/TextInput";
 import { useAuth } from "../../context/auth-context";
 import { useThemeTokens } from "../../hooks";
@@ -22,7 +22,7 @@ function getErrorMessage(error: unknown): string {
 }
 
 export default function RegisterPage() {
-  const { colors, spacing, typography, radius } = useThemeTokens();
+  const { colors, spacing, typography } = useThemeTokens();
   const { register } = useAuth();
 
   const [username, setUsername] = useState("");
@@ -100,13 +100,10 @@ export default function RegisterPage() {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          <View
+          <Card
             style={[
               styles.card,
               {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.md,
                 gap: spacing.lg,
                 padding: spacing.lg,
               },
@@ -234,7 +231,7 @@ export default function RegisterPage() {
                 </Link>
               </View>
             </View>
-          </View>
+          </Card>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaPage>
@@ -253,7 +250,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   card: {
-    borderWidth: 1,
     maxWidth: 520,
     width: "100%",
     alignSelf: "center",

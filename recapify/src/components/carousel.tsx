@@ -12,6 +12,7 @@ import {
 } from "react-native";
 
 import { useThemeTokens } from "../hooks";
+import { PressableCard } from "./Card";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -76,55 +77,48 @@ export const Carousel = ({ items, onItemPress }: CarouselProps) => {
         ref={listRef}
         renderItem={({ item }) => (
           <View style={{ width: screenWidth }}>
-            <Pressable
+            <PressableCard
               accessibilityRole={onItemPress ? "button" : undefined}
               disabled={!onItemPress}
               onPress={() => onItemPress?.(item)}
-              style={({ pressed }) => ({
-                opacity: onItemPress && pressed ? 0.82 : 1,
-              })}
+              pressedOpacity={0.82}
+              style={[
+                styles.card,
+                {
+                  gap: spacing.sm,
+                  marginHorizontal: spacing.lg + spacing.sm,
+                  padding: spacing.lg,
+                },
+              ]}
             >
-              <View
-                style={[
-                  styles.card,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                    gap: spacing.sm,
-                    marginHorizontal: spacing.lg + spacing.sm,
-                    padding: spacing.lg,
-                  },
-                ]}
-              >
-                <View style={[styles.titleRow, { gap: spacing.sm }]}>
-                  {item.iconName ? (
-                    <Ionicons
-                      color={item.accentColor ?? colors.primary}
-                      name={item.iconName}
-                      size={iconSizes.md}
-                    />
-                  ) : null}
-                  <Text
-                    style={{
-                      color: colors.textPrimary,
-                      flex: 1,
-                      fontSize: typography.primary.sm,
-                      fontWeight: typography.weights.bold,
-                    }}
-                  >
-                    {item.title}
-                  </Text>
-                </View>
+              <View style={[styles.titleRow, { gap: spacing.sm }]}>
+                {item.iconName ? (
+                  <Ionicons
+                    color={item.accentColor ?? colors.primary}
+                    name={item.iconName}
+                    size={iconSizes.md}
+                  />
+                ) : null}
                 <Text
                   style={{
-                    color: colors.textSecondary,
-                    fontSize: typography.secondary.md,
+                    color: colors.textPrimary,
+                    flex: 1,
+                    fontSize: typography.primary.sm,
+                    fontWeight: typography.weights.bold,
                   }}
                 >
-                  {item.description}
+                  {item.title}
                 </Text>
               </View>
-            </Pressable>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: typography.secondary.md,
+                }}
+              >
+                {item.description}
+              </Text>
+            </PressableCard>
           </View>
         )}
         showsHorizontalScrollIndicator={false}
