@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -42,7 +41,6 @@ function resolveAvatarUri(avatarUrl: string | null) {
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
   const { goBack } = useSafeNavigation();
   const { token, user, refreshUser } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
@@ -202,17 +200,16 @@ export default function SettingsPage() {
               iconName="arrow-back-outline"
               label="Back"
               onPress={() => {
-                if (user?.id) {
-                  router.replace({
-                    pathname: "/profile/[id]",
-                    params: {
-                      id: String(user.id),
-                    },
-                  });
-                  return;
-                }
-
-                goBack();
+                goBack(
+                  user?.id
+                    ? {
+                        pathname: "/profile/[id]",
+                        params: {
+                          id: String(user.id),
+                        },
+                      }
+                    : "/",
+                );
               }}
               variant="icon"
             />
