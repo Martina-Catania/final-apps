@@ -8,6 +8,7 @@ import { createProjectRouter } from "./project-routes.js";
 import { createProjectTagRouter } from "./project-tag-routes.js";
 import { createQuizRouter } from "./quiz-routes.js";
 import { createQuizQuestionRouter } from "./quiz-question-routes.js";
+import { createSearchRouter } from "./search-routes.js";
 import { createSummaryRouter } from "./summary-routes.js";
 import { createSummaryFileRouter } from "./summary-file-routes.js";
 import { createTagRouter } from "./tag-routes.js";
@@ -18,6 +19,7 @@ export function createApiRouter(ctx: AppContext) {
 
 	apiRouter.use("/auth", createAuthRouter(ctx));
 	apiRouter.use("/users", createUserRouter(ctx));
+	apiRouter.use("/search", createSearchRouter(ctx));
 	apiRouter.use("/projects", createProjectRouter(ctx));
 	apiRouter.use("/follows", createFollowRouter(ctx));
 	apiRouter.use("/summaries", createSummaryRouter(ctx));
