@@ -6,7 +6,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { useThemeTokens } from "../hooks";
+import { useRefreshControlProps } from "../hooks";
 
 type RefreshableScrollProps = {
   children: ReactNode;
@@ -21,19 +21,16 @@ export const RefreshableScroll = ({
   onRefresh,
   contentContainerStyle,
 }: RefreshableScrollProps) => {
-  const { colors } = useThemeTokens();
+  const refreshControlProps = useRefreshControlProps({
+    onRefresh,
+    refreshing,
+  });
 
   return (
     <ScrollView
       contentContainerStyle={contentContainerStyle}
       refreshControl={
-        <RefreshControl
-          colors={[colors.primary]}
-          onRefresh={onRefresh}
-          progressBackgroundColor={colors.surface}
-          refreshing={refreshing}
-          tintColor={colors.primary}
-        />
+        <RefreshControl {...refreshControlProps} />
       }
     >
       {children}

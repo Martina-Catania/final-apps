@@ -1,6 +1,12 @@
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import {
   Button,
@@ -8,7 +14,11 @@ import {
   SkeletonCard,
 } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
-import { useThemeTokens } from "../../../hooks";
+import {
+  usePullToRefresh,
+  useRefreshControlProps,
+  useThemeTokens,
+} from "../../../hooks";
 import { getApiErrorMessage } from "../../../utils/api-request";
 import {
   listDecksRequest,
@@ -39,34 +49,19 @@ export default function Index() {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [isLoadingDecks, setIsLoadingDecks] = useState(true);
   const [deckError, setDeckError] = useState<string | null>(null);
-  const [reloadTick, setReloadTick] = useState(0);
-
-  useEffect(() => {
-    let isMounted = true;
-
+  const loadData = useCallback(async () => {
     const loadQuizzes = async () => {
       setIsLoadingQuizzes(true);
       setQuizError(null);
 
       try {
         const payload = await listQuizzesRequest(token ?? undefined);
-
-        if (!isMounted) {
-          return;
-        }
-
         setQuizzes(payload);
       } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
         setQuizError(getApiErrorMessage(error, "Unable to load quizzes"));
         setQuizzes([]);
       } finally {
-        if (isMounted) {
-          setIsLoadingQuizzes(false);
-        }
+        setIsLoadingQuizzes(false);
       }
     };
 
@@ -76,33 +71,27 @@ export default function Index() {
 
       try {
         const payload = await listDecksRequest(token ?? undefined);
-
-        if (!isMounted) {
-          return;
-        }
-
         setDecks(payload);
       } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
         setDeckError(getApiErrorMessage(error, "Unable to load flashcards"));
         setDecks([]);
       } finally {
-        if (isMounted) {
-          setIsLoadingDecks(false);
-        }
+        setIsLoadingDecks(false);
       }
     };
 
-    void loadQuizzes();
-    void loadDecks();
+    await Promise.all([loadQuizzes(), loadDecks()]);
+  }, [token]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [reloadTick, token]);
+  const { refreshing, onRefresh } = usePullToRefresh(loadData);
+  const refreshControlProps = useRefreshControlProps({
+    onRefresh,
+    refreshing,
+  });
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   const quizCarouselItems = useMemo<HomeCarouselItem[]>(() => {
     return quizzes.map((quiz) => {
@@ -142,6 +131,9 @@ export default function Index() {
         gap: spacing.lg,
         padding: spacing.lg,
       }}
+      refreshControl={
+        <RefreshControl {...refreshControlProps} />
+      }
     >
           <View
             style={[
@@ -230,7 +222,9 @@ export default function Index() {
                 <Button
                   iconName="refresh-outline"
                   label="Try again"
-                  onPress={() => setReloadTick((current) => current + 1)}
+                  onPress={() => {
+                    void onRefresh();
+                  }}
                   variant="default"
                 />
               </View>
@@ -332,7 +326,9 @@ export default function Index() {
                 <Button
                   iconName="refresh-outline"
                   label="Try again"
-                  onPress={() => setReloadTick((current) => current + 1)}
+                  onPress={() => {
+                    void onRefresh();
+                  }}
                   variant="default"
                 />
               </View>

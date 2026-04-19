@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,7 +11,11 @@ import {
 
 import { Button } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
-import { useThemeTokens } from "../../../hooks";
+import {
+  usePullToRefresh,
+  useRefreshControlProps,
+  useThemeTokens,
+} from "../../../hooks";
 import { SafeAreaPage } from "../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../utils/api-request";
 import { listDecksRequest } from "../../../utils/deck-api";
@@ -44,7 +49,70 @@ export default function ProjectsByTypePage() {
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [reloadTick, setReloadTick] = useState(0);
+
+  const loadProjects = useCallback(async () => {
+    if (!selectedType) {
+      setProjects([]);
+      setErrorMessage("Invalid project type");
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      if (selectedType === "quiz") {
+        const payload = await listQuizzesRequest(token ?? undefined);
+
+        setProjects(
+          payload.map((quiz) => {
+            const questionCount = quiz.questions.length;
+            const questionLabel = questionCount === 1 ? "question" : "questions";
+
+            return {
+              id: quiz.id,
+              title: quiz.project.title,
+              summary: `${questionCount} ${questionLabel}`,
+            };
+          }),
+        );
+
+        return;
+      }
+
+      const payload = await listDecksRequest(token ?? undefined);
+
+      setProjects(
+        payload.map((deck) => {
+          const cardCount = deck.flashcards.length;
+          const cardLabel = cardCount === 1 ? "card" : "cards";
+
+          return {
+            id: deck.id,
+            title: deck.project.title,
+            summary: `${cardCount} ${cardLabel}`,
+          };
+        }),
+      );
+    } catch (error) {
+      const fallbackMessage =
+        selectedType === "quiz"
+          ? "Unable to load quiz projects"
+          : "Unable to load flashcard projects";
+
+      setErrorMessage(getApiErrorMessage(error, fallbackMessage));
+      setProjects([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedType, token]);
+
+  const { refreshing, onRefresh } = usePullToRefresh(loadProjects);
+  const refreshControlProps = useRefreshControlProps({
+    onRefresh,
+    refreshing,
+  });
 
   const pageTitle =
     selectedType === "quiz"
@@ -94,86 +162,8 @@ export default function ProjectsByTypePage() {
   );
 
   useEffect(() => {
-    let isMounted = true;
-
-    const loadProjects = async () => {
-      if (!selectedType) {
-        setProjects([]);
-        setErrorMessage("Invalid project type");
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      try {
-        if (selectedType === "quiz") {
-          const payload = await listQuizzesRequest(token ?? undefined);
-
-          if (!isMounted) {
-            return;
-          }
-
-          setProjects(
-            payload.map((quiz) => {
-              const questionCount = quiz.questions.length;
-              const questionLabel = questionCount === 1 ? "question" : "questions";
-
-              return {
-                id: quiz.id,
-                title: quiz.project.title,
-                summary: `${questionCount} ${questionLabel}`,
-              };
-            }),
-          );
-
-          return;
-        }
-
-        const payload = await listDecksRequest(token ?? undefined);
-
-        if (!isMounted) {
-          return;
-        }
-
-        setProjects(
-          payload.map((deck) => {
-            const cardCount = deck.flashcards.length;
-            const cardLabel = cardCount === 1 ? "card" : "cards";
-
-            return {
-              id: deck.id,
-              title: deck.project.title,
-              summary: `${cardCount} ${cardLabel}`,
-            };
-          }),
-        );
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
-        const fallbackMessage =
-          selectedType === "quiz"
-            ? "Unable to load quiz projects"
-            : "Unable to load flashcard projects";
-
-        setErrorMessage(getApiErrorMessage(error, fallbackMessage));
-        setProjects([]);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
     void loadProjects();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [reloadTick, selectedType, token]);
+  }, [loadProjects]);
 
   return (
     <SafeAreaPage backgroundColor={colors.background}>
@@ -182,6 +172,9 @@ export default function ProjectsByTypePage() {
           gap: spacing.lg,
           padding: spacing.lg,
         }}
+        refreshControl={
+          <RefreshControl {...refreshControlProps} />
+        }
       >
         <View
           style={[
@@ -275,7 +268,9 @@ export default function ProjectsByTypePage() {
               fullWidth
               iconName="refresh-outline"
               label="Try again"
-              onPress={() => setReloadTick((current) => current + 1)}
+              onPress={() => {
+                void loadProjects();
+              }}
               variant="primary"
             />
           </View>

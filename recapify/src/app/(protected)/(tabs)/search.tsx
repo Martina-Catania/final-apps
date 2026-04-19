@@ -1,12 +1,33 @@
-import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useState } from "react";
+import {
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { AppTextInput, Button } from "../../../components";
-import { useThemeTokens } from "../../../hooks";
+import {
+  usePullToRefresh,
+  useRefreshControlProps,
+  useThemeTokens,
+} from "../../../hooks";
 
 export default function SearchPage() {
   const { colors, spacing, typography, radius } = useThemeTokens();
   const [query, setQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setQuery("");
+    setHasSearched(false);
+  }, []);
+
+  const { refreshing, onRefresh } = usePullToRefresh(handleRefresh);
+  const refreshControlProps = useRefreshControlProps({
+    onRefresh,
+    refreshing,
+  });
 
   const handleSearch = () => {
     setHasSearched(true);
@@ -18,6 +39,9 @@ export default function SearchPage() {
         gap: spacing.md,
         padding: spacing.lg,
       }}
+      refreshControl={
+        <RefreshControl {...refreshControlProps} />
+      }
     >
       <View
         style={[
