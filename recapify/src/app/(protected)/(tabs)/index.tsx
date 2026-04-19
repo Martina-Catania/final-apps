@@ -16,6 +16,7 @@ import {
 } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
 import {
+  useProjectDetailNavigation,
   usePullToRefresh,
   useRefreshControlProps,
   useThemeTokens,
@@ -63,6 +64,7 @@ function getCreatorLabel(username: string | null | undefined) {
 
 export default function Index() {
   const router = useRouter();
+  const { openProjectDetail } = useProjectDetailNavigation();
   const { token, user } = useAuth();
   const { colors, spacing, typography } = useThemeTokens();
 
@@ -273,28 +275,9 @@ export default function Index() {
 
   const openCarouselItem = useCallback(
     (item: HomeCarouselItem) => {
-      if (item.targetType === "quiz") {
-        router.push({
-          pathname: "/quiz/[id]",
-          params: { id: String(item.entityId) },
-        });
-        return;
-      }
-
-      if (item.targetType === "summary") {
-        router.push({
-          pathname: "../summary/[id]",
-          params: { id: String(item.entityId) },
-        });
-        return;
-      }
-
-      router.push({
-        pathname: "/flashcard/[id]",
-        params: { id: String(item.entityId) },
-      });
+      openProjectDetail(item.targetType, item.entityId);
     },
-    [router],
+    [openProjectDetail],
   );
 
   return (
@@ -351,7 +334,7 @@ export default function Index() {
           <Button
             iconName="arrow-forward-outline"
             label="See more"
-            onPress={() => router.push("../projects/following")}
+            onPress={() => router.push("/projects/following")}
             variant="secondary"
           />
         </View>
@@ -437,7 +420,7 @@ export default function Index() {
             label="See more"
             onPress={() =>
               router.push({
-                pathname: "../projects/[type]",
+                pathname: "/projects/[type]",
                 params: { type: "quiz" },
               })
             }
@@ -532,7 +515,7 @@ export default function Index() {
             label="See more"
             onPress={() =>
               router.push({
-                pathname: "../projects/[type]",
+                pathname: "/projects/[type]",
                 params: { type: "summary" },
               })
             }
@@ -581,7 +564,7 @@ export default function Index() {
             <Button
               iconName="add-circle-outline"
               label="Create summary"
-              onPress={() => router.push("../summary/create")}
+              onPress={() => router.push("/summary/create")}
               variant="primary"
             />
           </View>
@@ -627,7 +610,7 @@ export default function Index() {
             label="See more"
             onPress={() =>
               router.push({
-                pathname: "../projects/[type]",
+                pathname: "/projects/[type]",
                 params: { type: "flashcard" },
               })
             }

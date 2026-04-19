@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { AppActionSheet, AppModal, Button } from "../../../../components";
 import { useAuth } from "../../../../context/auth-context";
-import { useThemeTokens } from "../../../../hooks";
+import { useSafeNavigation, useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
 import { deleteProjectRequest } from "../../../../utils/project-api";
@@ -48,6 +48,7 @@ export default function FlashcardDetailPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const deckId = useMemo(() => parseDeckId(id), [id]);
   const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
@@ -60,8 +61,8 @@ export default function FlashcardDetailPage() {
   const [isDeletePending, setIsDeletePending] = useState(false);
 
   const handleBackPress = useCallback(() => {
-    router.back();
-  }, [router]);
+    goBack();
+  }, [goBack]);
 
   const loadDeck = useCallback(async () => {
     if (!deckId) {
@@ -192,14 +193,14 @@ export default function FlashcardDetailPage() {
     try {
       await deleteProjectRequest(deck.projectId, token ?? undefined);
       setIsDeleteConfirmOpen(false);
-      router.back();
+      goBack();
     } catch (error) {
       setDeleteErrorMessage(getApiErrorMessage(error, "Unable to delete project"));
       setIsDeleteConfirmOpen(false);
     } finally {
       setIsDeletePending(false);
     }
-  }, [deck, isDeletePending, router, token]);
+  }, [deck, goBack, isDeletePending, token]);
 
   if (isLoading) {
     return (
@@ -265,7 +266,7 @@ export default function FlashcardDetailPage() {
               fullWidth
               iconName="home-outline"
               label="Back to home"
-              onPress={() => router.replace("../..")}
+              onPress={() => router.replace("/")}
               variant="default"
             />
           </View>

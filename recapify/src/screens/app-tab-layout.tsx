@@ -22,7 +22,6 @@ export type AppTabKey = "home" | "create" | "search";
 type AppTabLayoutProps = {
   title: string;
   activeTab: AppTabKey;
-  onTabPress: (key: AppTabKey) => void;
   children: ReactNode;
 };
 
@@ -64,7 +63,6 @@ function resolveAvatarUri(avatarUrl: string | null) {
 export function AppTabLayout({
   title,
   activeTab,
-  onTabPress,
   children,
 }: AppTabLayoutProps) {
   const router = useRouter();
@@ -160,7 +158,6 @@ export function AppTabLayout({
             <BottomNavBar
               activeKey={activeTab}
               items={APP_TAB_ITEMS}
-              onTabPress={(key) => onTabPress(key as AppTabKey)}
             />
           </View>
         )

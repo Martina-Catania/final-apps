@@ -10,7 +10,11 @@ import {
 } from "react-native";
 import { Button, ProfileCard, ProjectTagPills } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
-import { useThemeTokens } from "../../../hooks";
+import {
+  useProjectDetailNavigation,
+  useSafeNavigation,
+  useThemeTokens,
+} from "../../../hooks";
 import {
   followUserRequest,
   getUserApiErrorMessage,
@@ -69,6 +73,8 @@ export default function ProfilePage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const profileUserId = useMemo(() => parseUserId(id), [id]);
   const router = useRouter();
+  const { openApiProjectDetail } = useProjectDetailNavigation();
+  const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
@@ -139,34 +145,12 @@ export default function ProfilePage() {
       return;
     }
 
-    if (project.type === "QUIZ" && project.quizId) {
-      router.push({
-        pathname: "/quiz/[id]",
-        params: {
-          id: String(project.quizId),
-        },
-      });
-      return;
-    }
-
-    if (project.type === "DECK" && project.deckId) {
-      router.push({
-        pathname: "/flashcard/[id]",
-        params: {
-          id: String(project.deckId),
-        },
-      });
-      return;
-    }
-
-    if (project.type === "SUMMARY" && project.summaryId) {
-      router.push({
-        pathname: "../summary/[id]",
-        params: {
-          id: String(project.summaryId),
-        },
-      });
-    }
+    openApiProjectDetail({
+      projectType: project.type,
+      quizId: project.quizId,
+      deckId: project.deckId,
+      summaryId: project.summaryId,
+    });
   };
 
   if (isLoading) {
@@ -226,7 +210,7 @@ export default function ProfilePage() {
               fullWidth
               iconName="home-outline"
               label="Back to home"
-              onPress={() => router.replace("..")}
+              onPress={() => router.replace("/")}
               variant="default"
             />
           </View>
@@ -247,7 +231,7 @@ export default function ProfilePage() {
           <Button
             iconName="arrow-back-outline"
             label="Back"
-            onPress={() => router.back()}
+            onPress={() => goBack()}
             variant="icon"
           />
           {isOwnProfile ? (

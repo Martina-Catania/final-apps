@@ -13,7 +13,7 @@ import {
 import { Accordion, Button } from "../../../../components";
 import { AppTextInput } from "../../../../components/TextInput";
 import { useAuth } from "../../../../context/auth-context";
-import { useProjectTagEditor, useThemeTokens } from "../../../../hooks";
+import { useProjectTagEditor, useSafeNavigation, useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
 import { updateProjectRequest } from "../../../../utils/project-api";
@@ -71,6 +71,7 @@ export default function QuizEditPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const quizId = useMemo(() => parseQuizId(id), [id]);
   const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
@@ -388,7 +389,7 @@ export default function QuizEditPage() {
               fullWidth
               iconName="home-outline"
               label="Back to home"
-              onPress={() => router.replace("../..")}
+              onPress={() => router.replace("/")}
               variant="default"
             />
             <Button
@@ -437,7 +438,7 @@ export default function QuizEditPage() {
               <Button
                 accessibilityLabel="Back"
                 iconName="arrow-back-outline"
-                onPress={() => router.back()}
+                onPress={() => goBack()}
                 variant="icon"
               />
 
@@ -687,7 +688,7 @@ export default function QuizEditPage() {
                 fullWidth
                 iconName="close-outline"
                 label="Cancel"
-                onPress={() => router.back()}
+                onPress={() => goBack()}
                 variant="default"
               />
             </View>

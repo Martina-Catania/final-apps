@@ -17,7 +17,7 @@ import {
   type UploadedFile,
 } from "../../components";
 import { useAuth } from "../../context/auth-context";
-import { useThemeTokens } from "../../hooks";
+import { useSafeNavigation, useThemeTokens } from "../../hooks";
 import {
   getUserApiErrorMessage,
   updateCurrentUserPasswordRequest,
@@ -43,6 +43,7 @@ function resolveAvatarUri(avatarUrl: string | null) {
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const { token, user, refreshUser } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
@@ -211,7 +212,7 @@ export default function SettingsPage() {
                   return;
                 }
 
-                router.back();
+                goBack();
               }}
               variant="icon"
             />

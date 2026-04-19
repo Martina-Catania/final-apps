@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { AppActionSheet, AppModal, Button } from "../../../../components";
 import { useAuth } from "../../../../context/auth-context";
-import { useThemeTokens } from "../../../../hooks";
+import { useSafeNavigation, useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
 import { deleteProjectRequest } from "../../../../utils/project-api";
@@ -87,6 +87,7 @@ export default function QuizDetailPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const quizId = useMemo(() => parseQuizId(id), [id]);
   const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
@@ -109,8 +110,8 @@ export default function QuizDetailPage() {
   }, [quiz]);
 
   const handleBackPress = useCallback(() => {
-    router.back();
-  }, [router]);
+    goBack();
+  }, [goBack]);
 
   const loadQuiz = useCallback(async () => {
     if (!quizId) {
@@ -241,14 +242,14 @@ export default function QuizDetailPage() {
     try {
       await deleteProjectRequest(quiz.projectId, token ?? undefined);
       setIsDeleteConfirmOpen(false);
-      router.back();
+      goBack();
     } catch (error) {
       setDeleteErrorMessage(getApiErrorMessage(error, "Unable to delete project"));
       setIsDeleteConfirmOpen(false);
     } finally {
       setIsDeletePending(false);
     }
-  }, [isDeletePending, quiz, router, token]);
+  }, [goBack, isDeletePending, quiz, token]);
 
   if (isLoading) {
     return (
@@ -314,7 +315,7 @@ export default function QuizDetailPage() {
               fullWidth
               iconName="home-outline"
               label="Back to home"
-              onPress={() => router.replace("../..")}
+              onPress={() => router.replace("/")}
               variant="default"
             />
           </View>

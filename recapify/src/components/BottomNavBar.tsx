@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { TabTrigger } from "expo-router/ui";
 import { type ComponentProps } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -16,13 +17,11 @@ type BottomNavItem = {
 type BottomNavBarProps = {
   items: BottomNavItem[];
   activeKey: string;
-  onTabPress: (key: string) => void;
 };
 
 export const BottomNavBar = ({
   items,
   activeKey,
-  onTabPress,
 }: BottomNavBarProps) => {
   const { colors, iconSizes, spacing, typography } = useThemeTokens();
 
@@ -43,39 +42,39 @@ export const BottomNavBar = ({
         const icon = isActive ? item.activeIconName ?? item.iconName : item.iconName;
 
         return (
-          <Pressable
-            accessibilityRole="button"
-            key={item.key}
-            onPress={() => onTabPress(item.key)}
-            style={({ pressed }) => [
-              styles.item,
-              {
-                backgroundColor: isActive ? colors.primaryMuted : "transparent",
-                borderColor: isActive ? colors.primary : "transparent",
-                gap: spacing.xxs,
-                opacity: pressed ? 0.8 : 1,
-                paddingHorizontal: spacing.sm,
-                paddingVertical: spacing.xs,
-              },
-            ]}
-          >
-            <Ionicons
-              color={isActive ? colors.primary : colors.textSecondary}
-              name={icon}
-              size={iconSizes.md}
-            />
-            <Text
-              style={{
-                color: isActive ? colors.primary : colors.textSecondary,
-                fontSize: typography.secondary.sm,
-                fontWeight: isActive
-                  ? typography.weights.semibold
-                  : typography.weights.medium,
-              }}
+          <TabTrigger asChild key={item.key} name={item.key}>
+            <Pressable
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.item,
+                {
+                  backgroundColor: isActive ? colors.primaryMuted : "transparent",
+                  borderColor: isActive ? colors.primary : "transparent",
+                  gap: spacing.xxs,
+                  opacity: pressed ? 0.8 : 1,
+                  paddingHorizontal: spacing.sm,
+                  paddingVertical: spacing.xs,
+                },
+              ]}
             >
-              {item.label}
-            </Text>
-          </Pressable>
+              <Ionicons
+                color={isActive ? colors.primary : colors.textSecondary}
+                name={icon}
+                size={iconSizes.md}
+              />
+              <Text
+                style={{
+                  color: isActive ? colors.primary : colors.textSecondary,
+                  fontSize: typography.secondary.sm,
+                  fontWeight: isActive
+                    ? typography.weights.semibold
+                    : typography.weights.medium,
+                }}
+              >
+                {item.label}
+              </Text>
+            </Pressable>
+          </TabTrigger>
         );
       })}
     </View>

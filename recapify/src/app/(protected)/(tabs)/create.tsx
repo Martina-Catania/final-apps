@@ -116,7 +116,7 @@ export default function CreatePage() {
           fullWidth
           iconName="document-text-outline"
           label="Create summary"
-          onPress={() => router.push("../summary/create")}
+          onPress={() => router.push("/summary/create")}
           variant="primary"
         />
       </View>

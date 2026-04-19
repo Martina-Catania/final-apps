@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,8 +12,10 @@ import {
 import { Button, ProjectTagPills } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
 import {
+  useProjectDetailNavigation,
   usePullToRefresh,
   useRefreshControlProps,
+  useSafeNavigation,
   useThemeTokens,
 } from "../../../hooks";
 import { SafeAreaPage } from "../../../screens/safe-area-page";
@@ -56,7 +58,8 @@ function parseSelectedType(value: string | string[] | undefined): SelectedType |
 export default function ProjectsByTypePage() {
   const { type } = useLocalSearchParams<{ type?: string | string[] }>();
   const selectedType = useMemo(() => parseSelectedType(type), [type]);
-  const router = useRouter();
+  const { openProjectDetail } = useProjectDetailNavigation();
+  const { goBack } = useSafeNavigation();
   const { token } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
@@ -181,41 +184,21 @@ export default function ProjectsByTypePage() {
         : "No summary projects were found.";
 
   const handleBack = useCallback(() => {
-    router.back();
-  }, [router]);
+    goBack();
+  }, [goBack]);
 
   const openProject = useCallback(
     (projectId: number) => {
-      if (selectedType === "quiz") {
-        router.push({
-          pathname: "../quiz/[id]",
-          params: {
-            id: String(projectId),
-          },
-        });
-        return;
-      }
-
-      if (selectedType === "flashcard") {
-        router.push({
-          pathname: "../flashcard/[id]",
-          params: {
-            id: String(projectId),
-          },
-        });
-        return;
-      }
-
       if (selectedType === "summary") {
-        router.push({
-          pathname: "../summary/[id]",
-          params: {
-            id: String(projectId),
-          },
-        });
+        openProjectDetail("summary", projectId);
+        return;
+      }
+
+      if (selectedType) {
+        openProjectDetail(selectedType, projectId);
       }
     },
-    [router, selectedType],
+    [openProjectDetail, selectedType],
   );
 
   useEffect(() => {

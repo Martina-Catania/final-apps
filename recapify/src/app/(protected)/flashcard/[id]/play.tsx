@@ -18,7 +18,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Button } from "../../../../components";
 import { useAuth } from "../../../../context/auth-context";
-import { useThemeTokens } from "../../../../hooks";
+import { useSafeNavigation, useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
 import { incrementProjectTimesPlayedRequest } from "../../../../utils/project-api";
@@ -76,6 +76,7 @@ export default function FlashcardPlayPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const deckId = useMemo(() => parseDeckId(id), [id]);
   const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const { token } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
@@ -110,15 +111,8 @@ export default function FlashcardPlayPage() {
   }, [flipProgress, flipScale]);
 
   const goBackOnStack = useCallback(() => {
-    const maybeRouter = router as typeof router & { canGoBack?: () => boolean };
-
-    if (typeof maybeRouter.canGoBack === "function" && maybeRouter.canGoBack()) {
-      router.back();
-      return;
-    }
-
-    router.replace("../../..");
-  }, [router]);
+    goBack();
+  }, [goBack]);
 
   const loadDeck = useCallback(async () => {
     if (!deckId) {
@@ -316,7 +310,7 @@ export default function FlashcardPlayPage() {
               fullWidth
               iconName="home-outline"
               label="Back to home"
-              onPress={() => router.replace("../../..")}
+              onPress={() => router.replace("/")}
               variant="default"
             />
           </View>
@@ -370,7 +364,7 @@ export default function FlashcardPlayPage() {
               fullWidth
               iconName="home-outline"
               label="Back to home"
-              onPress={() => router.replace("../../..")}
+              onPress={() => router.replace("/")}
               variant="default"
             />
           </View>
@@ -444,7 +438,7 @@ export default function FlashcardPlayPage() {
               fullWidth
               iconName="home-outline"
               label="Go home"
-              onPress={() => router.replace("../../..")}
+              onPress={() => router.replace("/")}
               variant="default"
             />
           </View>

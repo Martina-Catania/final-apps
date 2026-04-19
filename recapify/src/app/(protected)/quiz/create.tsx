@@ -12,7 +12,7 @@ import {
 import { Accordion, Button } from "../../../components";
 import { AppTextInput } from "../../../components/TextInput";
 import { useAuth } from "../../../context/auth-context";
-import { useProjectTagEditor, useThemeTokens } from "../../../hooks";
+import { useProjectTagEditor, useSafeNavigation, useThemeTokens } from "../../../hooks";
 import { SafeAreaPage } from "../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../utils/api-request";
 import { createProjectRequest } from "../../../utils/project-api";
@@ -53,6 +53,7 @@ function wait(ms: number) {
 
 export default function QuizCreatePage() {
   const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
@@ -254,7 +255,7 @@ export default function QuizCreatePage() {
               <Button
                 accessibilityLabel="Back"
                 iconName="arrow-back-outline"
-                onPress={() => router.back()}
+                onPress={() => goBack()}
                 variant="icon"
               />
 

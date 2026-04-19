@@ -15,7 +15,7 @@ import {
   SummaryMarkdownView,
 } from "../../../../components";
 import { useAuth } from "../../../../context/auth-context";
-import { useThemeTokens } from "../../../../hooks";
+import { useSafeNavigation, useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
 import { deleteProjectRequest } from "../../../../utils/project-api";
@@ -55,6 +55,7 @@ export default function SummaryDetailPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const summaryId = useMemo(() => parseSummaryId(id), [id]);
   const router = useRouter();
+  const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
@@ -67,8 +68,8 @@ export default function SummaryDetailPage() {
   const [isDeletePending, setIsDeletePending] = useState(false);
 
   const handleBackPress = useCallback(() => {
-    router.back();
-  }, [router]);
+    goBack();
+  }, [goBack]);
 
   const loadSummary = useCallback(async () => {
     if (!summaryId) {
@@ -199,14 +200,14 @@ export default function SummaryDetailPage() {
     try {
       await deleteProjectRequest(summary.projectId, token ?? undefined);
       setIsDeleteConfirmOpen(false);
-      router.back();
+      goBack();
     } catch (error) {
       setDeleteErrorMessage(getApiErrorMessage(error, "Unable to delete project"));
       setIsDeleteConfirmOpen(false);
     } finally {
       setIsDeletePending(false);
     }
-  }, [isDeletePending, router, summary, token]);
+  }, [goBack, isDeletePending, summary, token]);
 
   if (isLoading) {
     return (
@@ -272,7 +273,7 @@ export default function SummaryDetailPage() {
               fullWidth
               iconName="home-outline"
               label="Back to home"
-              onPress={() => router.replace("../..")}
+              onPress={() => router.replace("/")}
               variant="default"
             />
           </View>

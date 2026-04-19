@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,8 +11,10 @@ import {
 import { Button, ProjectTagPills } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
 import {
+  useProjectDetailNavigation,
   usePullToRefresh,
   useRefreshControlProps,
+  useSafeNavigation,
   useThemeTokens,
 } from "../../../hooks";
 import { SafeAreaPage } from "../../../screens/safe-area-page";
@@ -83,7 +84,8 @@ function mapFollowingProject(project: FollowingProject): FollowedProjectListItem
 }
 
 export default function FollowingProjectsPage() {
-  const router = useRouter();
+  const { openProjectDetail } = useProjectDetailNavigation();
+  const { goBack } = useSafeNavigation();
   const { token } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
@@ -126,34 +128,9 @@ export default function FollowingProjectsPage() {
 
   const openProject = useCallback(
     (project: FollowedProjectListItem) => {
-      if (project.targetType === "quiz") {
-        router.push({
-          pathname: "../quiz/[id]",
-          params: {
-            id: String(project.entityId),
-          },
-        });
-        return;
-      }
-
-      if (project.targetType === "flashcard") {
-        router.push({
-          pathname: "../flashcard/[id]",
-          params: {
-            id: String(project.entityId),
-          },
-        });
-        return;
-      }
-
-      router.push({
-        pathname: "../summary/[id]",
-        params: {
-          id: String(project.entityId),
-        },
-      });
+      openProjectDetail(project.targetType, project.entityId);
     },
-    [router],
+    [openProjectDetail],
   );
 
   const pageSubtitle = useMemo(
@@ -192,7 +169,7 @@ export default function FollowingProjectsPage() {
             <Button
               iconName="arrow-back-outline"
               label="Back"
-              onPress={() => router.back()}
+              onPress={() => goBack()}
               variant="icon"
             />
             <Text
