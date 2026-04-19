@@ -17,4 +17,6 @@ export * from "./Pagination";
 export * from "./ProfileCard";
 export * from "./ProjectTagPills";
 export * from "./RefreshableScroll";
+export * from "./SummaryEditor";
+export * from "./SummaryMarkdownView";
 export * from "./Skeleton";
