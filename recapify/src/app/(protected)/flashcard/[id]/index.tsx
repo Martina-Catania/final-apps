@@ -146,6 +146,18 @@ export default function FlashcardDetailPage() {
     );
   }
 
+  const creatorUsername = deck.project.user?.username;
+  const creatorLabel = creatorUsername ? `@${creatorUsername}` : `User #${deck.project.userId}`;
+
+  const handleOpenCreatorProfile = () => {
+    router.push({
+      pathname: "/profile/[id]",
+      params: {
+        id: String(deck.project.userId),
+      },
+    });
+  };
+
   return (
     <SafeAreaPage backgroundColor={colors.background}>
       <ScrollView
@@ -190,12 +202,19 @@ export default function FlashcardDetailPage() {
                   fontSize: typography.secondary.md,
                 }}
               >
-                Deck #{deck.id} · {deck.flashcards.length} card{deck.flashcards.length === 1 ? "" : "s"}
+                {creatorLabel} · {deck.flashcards.length} card{deck.flashcards.length === 1 ? "" : "s"}
               </Text>
             </View>
           </View>
 
           <View style={{ gap: spacing.sm }}>
+            <Button
+              fullWidth
+              iconName="person-outline"
+              label="View creator profile"
+              onPress={handleOpenCreatorProfile}
+              variant="default"
+            />
             <Button
               disabled={deck.flashcards.length === 0}
               fullWidth

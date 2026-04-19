@@ -195,6 +195,18 @@ export default function QuizDetailPage() {
     );
   }
 
+  const creatorUsername = quiz.project.user?.username;
+  const creatorLabel = creatorUsername ? `@${creatorUsername}` : `User #${quiz.project.userId}`;
+
+  const handleOpenCreatorProfile = () => {
+    router.push({
+      pathname: "/profile/[id]",
+      params: {
+        id: String(quiz.project.userId),
+      },
+    });
+  };
+
   return (
     <SafeAreaPage backgroundColor={colors.background}>
       <ScrollView
@@ -239,12 +251,19 @@ export default function QuizDetailPage() {
                   fontSize: typography.secondary.md,
                 }}
               >
-                Quiz #{quiz.id} · {quiz.questions.length} question{quiz.questions.length === 1 ? "" : "s"}
+                {creatorLabel} · {quiz.questions.length} question{quiz.questions.length === 1 ? "" : "s"}
               </Text>
             </View>
           </View>
 
           <View style={{ gap: spacing.sm }}>
+            <Button
+              fullWidth
+              iconName="person-outline"
+              label="View creator profile"
+              onPress={handleOpenCreatorProfile}
+              variant="default"
+            />
             <Button
               fullWidth
               iconName="play-outline"
