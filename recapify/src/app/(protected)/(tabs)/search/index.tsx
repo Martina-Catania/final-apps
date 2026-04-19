@@ -2,6 +2,8 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -277,137 +279,143 @@ export default function SearchPage() {
   );
 
   return (
-    <ScrollView
-      contentContainerStyle={{
-        gap: spacing.lg,
-        padding: spacing.lg,
-      }}
-      refreshControl={
-        <RefreshControl {...refreshControlProps} />
-      }
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={styles.keyboardAvoiding}
     >
-      <Card
-        style={{
-          gap: spacing.md,
-          padding: spacing.md,
+      <ScrollView
+        contentContainerStyle={{
+          gap: spacing.lg,
+          padding: spacing.lg,
         }}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl {...refreshControlProps} />
+        }
       >
-        <AppTextInput
-          label="Search"
-          leftIcon="search-outline"
-          onChangeText={setQuery}
-          onSubmitEditing={() => {
-            void runSearch(query);
+        <Card
+          style={{
+            gap: spacing.md,
+            padding: spacing.md,
           }}
-          placeholder="Type a username or project title"
-          returnKeyType="search"
-          value={query}
-        />
+        >
+          <AppTextInput
+            label="Search"
+            leftIcon="search-outline"
+            onChangeText={setQuery}
+            onSubmitEditing={() => {
+              void runSearch(query);
+            }}
+            placeholder="Type a username or project title"
+            returnKeyType="search"
+            value={query}
+          />
 
-        <View style={{ gap: spacing.xs }}>
-          <Text
+          <View style={{ gap: spacing.xs }}>
+            <Text
+              style={{
+                color: colors.textPrimary,
+                fontSize: typography.secondary.md,
+                fontWeight: typography.weights.semibold,
+              }}
+            >
+              Filter by tags
+            </Text>
+
+            {isLoadingTags ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : null}
+
+            {!isLoadingTags && availableTags.length === 0 ? (
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: typography.secondary.sm,
+                }}
+              >
+                No tags available yet.
+              </Text>
+            ) : null}
+
+            {availableTags.length > 0 ? (
+              <ScrollView
+                contentContainerStyle={{
+                  gap: spacing.xs,
+                  paddingRight: spacing.xs,
+                }}
+                horizontal
+                keyboardShouldPersistTaps="handled"
+                showsHorizontalScrollIndicator={false}
+              >
+                {availableTags.map((tag) => {
+                  const isSelected = selectedTagIds.includes(tag.id);
+
+                  return (
+                    <Pressable
+                      accessibilityRole="button"
+                      key={`search-tag-filter-${tag.id}`}
+                      onPress={() => toggleTagFilter(tag.id)}
+                      style={({ pressed }) => [
+                        styles.filterPill,
+                        {
+                          backgroundColor: isSelected ? colors.secondaryMuted : colors.surface,
+                          borderColor: isSelected ? colors.secondary : colors.border,
+                          borderRadius: 999,
+                          opacity: pressed ? 0.82 : 1,
+                          paddingHorizontal: spacing.sm,
+                          paddingVertical: spacing.xs,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: isSelected ? colors.textPrimary : colors.textSecondary,
+                          fontSize: typography.secondary.sm,
+                          fontWeight: isSelected
+                            ? typography.weights.semibold
+                            : typography.weights.medium,
+                        }}
+                      >
+                        {tag.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            ) : null}
+
+          </View>
+
+          <Button
+            fullWidth
+            iconName="search-outline"
+            label={isLoading ? "Searching..." : "Search"}
+            onPress={() => {
+              void runSearch(query);
+            }}
+            variant="primary"
+          />
+        </Card>
+
+        {isLoading ? (
+          <Card
             style={{
-              color: colors.textPrimary,
-              fontSize: typography.secondary.md,
-              fontWeight: typography.weights.semibold,
+              alignItems: "center",
+              gap: spacing.sm,
+              padding: spacing.lg,
             }}
           >
-            Filter by tags
-          </Text>
-
-          {isLoadingTags ? (
-            <ActivityIndicator color={colors.primary} size="small" />
-          ) : null}
-
-          {!isLoadingTags && availableTags.length === 0 ? (
+            <ActivityIndicator color={colors.primary} size="large" />
             <Text
               style={{
                 color: colors.textSecondary,
-                fontSize: typography.secondary.sm,
+                fontSize: typography.secondary.md,
               }}
             >
-              No tags available yet.
+              Loading results...
             </Text>
-          ) : null}
-
-          {availableTags.length > 0 ? (
-            <ScrollView
-              contentContainerStyle={{
-                gap: spacing.xs,
-                paddingRight: spacing.xs,
-              }}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            >
-              {availableTags.map((tag) => {
-                const isSelected = selectedTagIds.includes(tag.id);
-
-                return (
-                  <Pressable
-                    accessibilityRole="button"
-                    key={`search-tag-filter-${tag.id}`}
-                    onPress={() => toggleTagFilter(tag.id)}
-                    style={({ pressed }) => [
-                      styles.filterPill,
-                      {
-                        backgroundColor: isSelected ? colors.secondaryMuted : colors.surface,
-                        borderColor: isSelected ? colors.secondary : colors.border,
-                        borderRadius: 999,
-                        opacity: pressed ? 0.82 : 1,
-                        paddingHorizontal: spacing.sm,
-                        paddingVertical: spacing.xs,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={{
-                        color: isSelected ? colors.textPrimary : colors.textSecondary,
-                        fontSize: typography.secondary.sm,
-                        fontWeight: isSelected
-                          ? typography.weights.semibold
-                          : typography.weights.medium,
-                      }}
-                    >
-                      {tag.name}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          ) : null}
-
-        </View>
-
-        <Button
-          fullWidth
-          iconName="search-outline"
-          label={isLoading ? "Searching..." : "Search"}
-          onPress={() => {
-            void runSearch(query);
-          }}
-          variant="primary"
-        />
-      </Card>
-
-      {isLoading ? (
-        <Card
-          style={{
-            alignItems: "center",
-            gap: spacing.sm,
-            padding: spacing.lg,
-          }}
-        >
-          <ActivityIndicator color={colors.primary} size="large" />
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: typography.secondary.md,
-            }}
-          >
-            Loading results...
-          </Text>
-        </Card>
-      ) : null}
+          </Card>
+        ) : null}
 
       {!isLoading && errorMessage ? (
         <Card
@@ -436,7 +444,7 @@ export default function SearchPage() {
         </Card>
       ) : null}
 
-      {!isLoading && !errorMessage && hasSearched ? (
+        {!isLoading && !errorMessage && hasSearched ? (
         <Card
           style={{
             gap: spacing.md,
@@ -469,6 +477,7 @@ export default function SearchPage() {
                 paddingRight: spacing.xs,
               }}
               horizontal
+              keyboardShouldPersistTaps="handled"
               showsHorizontalScrollIndicator={false}
             >
               {users.map((userItem) => (
@@ -591,7 +600,7 @@ export default function SearchPage() {
         </Card>
       ) : null}
 
-      {!isLoading && !errorMessage && hasSearched && hasOverflowResults ? (
+        {!isLoading && !errorMessage && hasSearched && hasOverflowResults ? (
         <Button
           fullWidth
           iconName="layers-outline"
@@ -619,12 +628,16 @@ export default function SearchPage() {
           }}
           variant="primary"
         />
-      ) : null}
-    </ScrollView>
+        ) : null}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboardAvoiding: {
+    flex: 1,
+  },
   filterPill: {
     borderWidth: 1,
   },

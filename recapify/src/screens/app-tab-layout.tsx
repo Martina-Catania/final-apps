@@ -1,7 +1,15 @@
 import { useRouter } from "expo-router";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  Keyboard,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { AppToggle, Button, BottomNavBar, DrawerPanel } from "../components";
 import { useAuth } from "../context/auth-context";
 import { useThemePreference } from "../context/theme-context";
@@ -67,6 +75,28 @@ export function AppTabLayout({
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      return;
+    }
+
+    const showEventName = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEventName = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSubscription = Keyboard.addListener(showEventName, () => {
+      setIsKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener(hideEventName, () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -118,20 +148,22 @@ export function AppTabLayout({
         </View>
       }
       bottomContent={
-        <View
-          style={{
-            backgroundColor: colors.background,
-            paddingHorizontal: spacing.md,
-            paddingTop: spacing.sm,
-            paddingBottom: spacing.sm,
-          }}
-        >
-          <BottomNavBar
-            activeKey={activeTab}
-            items={APP_TAB_ITEMS}
-            onTabPress={(key) => onTabPress(key as AppTabKey)}
-          />
-        </View>
+        isKeyboardVisible ? null : (
+          <View
+            style={{
+              backgroundColor: colors.background,
+              paddingHorizontal: spacing.md,
+              paddingTop: spacing.sm,
+              paddingBottom: spacing.sm,
+            }}
+          >
+            <BottomNavBar
+              activeKey={activeTab}
+              items={APP_TAB_ITEMS}
+              onTabPress={(key) => onTabPress(key as AppTabKey)}
+            />
+          </View>
+        )
       }
     >
       <>

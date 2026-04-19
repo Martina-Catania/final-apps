@@ -1,6 +1,13 @@
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import {
   Accordion,
   Avatar,
@@ -178,197 +185,206 @@ export default function SettingsPage() {
 
   return (
     <SafeAreaPage backgroundColor={colors.background}>
-      <ScrollView
-        contentContainerStyle={{
-          gap: spacing.lg,
-          padding: spacing.lg,
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.keyboardAvoiding}
       >
-        <View style={[styles.rowBetween, { gap: spacing.sm }]}>
-          <Button
-            iconName="arrow-back-outline"
-            label="Back"
-            onPress={() => {
-              if (user?.id) {
-                router.replace({
-                  pathname: "/profile/[id]",
-                  params: {
-                    id: String(user.id),
-                  },
-                });
-                return;
-              }
-
-              router.back();
-            }}
-            variant="icon"
-          />
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: typography.primary.md,
-              fontWeight: typography.weights.bold,
-            }}
-          >
-            Settings
-          </Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              borderRadius: radius.md,
-              gap: spacing.md,
-              padding: spacing.lg,
-            },
-          ]}
+        <ScrollView
+          contentContainerStyle={{
+            gap: spacing.lg,
+            padding: spacing.lg,
+          }}
+          keyboardShouldPersistTaps="handled"
         >
-          <Avatar avatarUri={previewAvatarUri} name={username || user?.username || "Current user"} />
-
-          {errorMessage ? (
-            <Text
-              style={{
-                color: colors.danger,
-                fontSize: typography.secondary.md,
-              }}
-            >
-              {errorMessage}
-            </Text>
-          ) : null}
-
-          {profileMessage ? (
-            <Text
-              style={{
-                color: colors.success,
-                fontSize: typography.secondary.md,
-              }}
-            >
-              {profileMessage}
-            </Text>
-          ) : null}
-
-          {avatarMessage ? (
-            <Text
-              style={{
-                color: colors.success,
-                fontSize: typography.secondary.md,
-              }}
-            >
-              {avatarMessage}
-            </Text>
-          ) : null}
-
-          {passwordMessage ? (
-            <Text
-              style={{
-                color: colors.success,
-                fontSize: typography.secondary.md,
-              }}
-            >
-              {passwordMessage}
-            </Text>
-          ) : null}
-        </View>
-
-        <Accordion defaultExpanded title="Profile details">
-          <View style={{ gap: spacing.md }}>
-            <AppTextInput
-              autoCapitalize="none"
-              label="Username"
-              onChangeText={setUsername}
-              placeholder="username"
-              value={username}
-            />
+          <View style={[styles.rowBetween, { gap: spacing.sm }]}> 
             <Button
-              disabled={isSavingProfile}
-              fullWidth
-              iconName="save-outline"
-              label={isSavingProfile ? "Saving..." : "Save profile details"}
+              iconName="arrow-back-outline"
+              label="Back"
               onPress={() => {
-                void handleSaveProfile();
-              }}
-              variant="primary"
-            />
-          </View>
-        </Accordion>
+                if (user?.id) {
+                  router.replace({
+                    pathname: "/profile/[id]",
+                    params: {
+                      id: String(user.id),
+                    },
+                  });
+                  return;
+                }
 
-        <Accordion title="Profile picture">
-          <View style={{ gap: spacing.md }}>
-            <FileUploadField
-              allowedTypes={["image/*"]}
-              clearButtonLabel="Clear image"
-              helperText="Pick a JPEG, PNG, WEBP, or GIF image (max 5MB)."
-              label="Upload avatar"
-              onFileSelected={setSelectedAvatar}
-              pickButtonLabel="Pick image"
-            />
-            <Button
-              disabled={isUploadingAvatar || !selectedAvatar}
-              fullWidth
-              iconName="cloud-upload-outline"
-              label={isUploadingAvatar ? "Uploading..." : "Upload avatar"}
-              onPress={() => {
-                void handleUploadAvatar();
+                router.back();
               }}
-              variant="primary"
+              variant="icon"
             />
+            <Text
+              style={{
+                color: colors.textPrimary,
+                fontSize: typography.primary.md,
+                fontWeight: typography.weights.bold,
+              }}
+            >
+              Settings
+            </Text>
+            <View style={{ width: 40 }} />
           </View>
-        </Accordion>
 
-        <Accordion title="Password">
-          <View style={{ gap: spacing.md }}>
-            <AppTextInput
-              autoCapitalize="none"
-              autoComplete="password"
-              label="Current password"
-              onChangeText={setCurrentPassword}
-              onRightIconPress={() => setShowCurrentPassword((current) => !current)}
-              rightIcon={showCurrentPassword ? "eye-off-outline" : "eye-outline"}
-              secureTextEntry={!showCurrentPassword}
-              value={currentPassword}
-            />
-            <AppTextInput
-              autoCapitalize="none"
-              autoComplete="password"
-              label="New password"
-              onChangeText={setNewPassword}
-              onRightIconPress={() => setShowNewPassword((current) => !current)}
-              rightIcon={showNewPassword ? "eye-off-outline" : "eye-outline"}
-              secureTextEntry={!showNewPassword}
-              value={newPassword}
-            />
-            <AppTextInput
-              autoCapitalize="none"
-              autoComplete="password"
-              label="Confirm new password"
-              onChangeText={setConfirmPassword}
-              onRightIconPress={() => setShowConfirmPassword((current) => !current)}
-              rightIcon={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-              secureTextEntry={!showConfirmPassword}
-              value={confirmPassword}
-            />
-            <Button
-              disabled={isChangingPassword}
-              fullWidth
-              iconName="lock-closed-outline"
-              label={isChangingPassword ? "Updating..." : "Update password"}
-              onPress={() => {
-                void handleChangePassword();
-              }}
-              variant="primary"
-            />
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderRadius: radius.md,
+                gap: spacing.md,
+                padding: spacing.lg,
+              },
+            ]}
+          >
+            <Avatar avatarUri={previewAvatarUri} name={username || user?.username || "Current user"} />
+
+            {errorMessage ? (
+              <Text
+                style={{
+                  color: colors.danger,
+                  fontSize: typography.secondary.md,
+                }}
+              >
+                {errorMessage}
+              </Text>
+            ) : null}
+
+            {profileMessage ? (
+              <Text
+                style={{
+                  color: colors.success,
+                  fontSize: typography.secondary.md,
+                }}
+              >
+                {profileMessage}
+              </Text>
+            ) : null}
+
+            {avatarMessage ? (
+              <Text
+                style={{
+                  color: colors.success,
+                  fontSize: typography.secondary.md,
+                }}
+              >
+                {avatarMessage}
+              </Text>
+            ) : null}
+
+            {passwordMessage ? (
+              <Text
+                style={{
+                  color: colors.success,
+                  fontSize: typography.secondary.md,
+                }}
+              >
+                {passwordMessage}
+              </Text>
+            ) : null}
           </View>
-        </Accordion>
-      </ScrollView>
+
+          <Accordion defaultExpanded title="Profile details">
+            <View style={{ gap: spacing.md }}>
+              <AppTextInput
+                autoCapitalize="none"
+                label="Username"
+                onChangeText={setUsername}
+                placeholder="username"
+                value={username}
+              />
+              <Button
+                disabled={isSavingProfile}
+                fullWidth
+                iconName="save-outline"
+                label={isSavingProfile ? "Saving..." : "Save profile details"}
+                onPress={() => {
+                  void handleSaveProfile();
+                }}
+                variant="primary"
+              />
+            </View>
+          </Accordion>
+
+          <Accordion title="Profile picture">
+            <View style={{ gap: spacing.md }}>
+              <FileUploadField
+                allowedTypes={["image/*"]}
+                clearButtonLabel="Clear image"
+                helperText="Pick a JPEG, PNG, WEBP, or GIF image (max 5MB)."
+                label="Upload avatar"
+                onFileSelected={setSelectedAvatar}
+                pickButtonLabel="Pick image"
+              />
+              <Button
+                disabled={isUploadingAvatar || !selectedAvatar}
+                fullWidth
+                iconName="cloud-upload-outline"
+                label={isUploadingAvatar ? "Uploading..." : "Upload avatar"}
+                onPress={() => {
+                  void handleUploadAvatar();
+                }}
+                variant="primary"
+              />
+            </View>
+          </Accordion>
+
+          <Accordion title="Password">
+            <View style={{ gap: spacing.md }}>
+              <AppTextInput
+                autoCapitalize="none"
+                autoComplete="password"
+                label="Current password"
+                onChangeText={setCurrentPassword}
+                onRightIconPress={() => setShowCurrentPassword((current) => !current)}
+                rightIcon={showCurrentPassword ? "eye-off-outline" : "eye-outline"}
+                secureTextEntry={!showCurrentPassword}
+                value={currentPassword}
+              />
+              <AppTextInput
+                autoCapitalize="none"
+                autoComplete="password"
+                label="New password"
+                onChangeText={setNewPassword}
+                onRightIconPress={() => setShowNewPassword((current) => !current)}
+                rightIcon={showNewPassword ? "eye-off-outline" : "eye-outline"}
+                secureTextEntry={!showNewPassword}
+                value={newPassword}
+              />
+              <AppTextInput
+                autoCapitalize="none"
+                autoComplete="password"
+                label="Confirm new password"
+                onChangeText={setConfirmPassword}
+                onRightIconPress={() => setShowConfirmPassword((current) => !current)}
+                rightIcon={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                secureTextEntry={!showConfirmPassword}
+                value={confirmPassword}
+              />
+              <Button
+                disabled={isChangingPassword}
+                fullWidth
+                iconName="lock-closed-outline"
+                label={isChangingPassword ? "Updating..." : "Update password"}
+                onPress={() => {
+                  void handleChangePassword();
+                }}
+                variant="primary"
+              />
+            </View>
+          </Accordion>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaPage>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboardAvoiding: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
   },
