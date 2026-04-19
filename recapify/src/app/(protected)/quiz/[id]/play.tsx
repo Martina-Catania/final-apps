@@ -84,15 +84,12 @@ export default function QuizPlayPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const quizId = useMemo(() => parseQuizId(id), [id]);
   const router = useRouter();
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
   const [quizTitle, setQuizTitle] = useState("");
-  const [creatorLabel, setCreatorLabel] = useState("");
-  const [creatorUserId, setCreatorUserId] = useState<number | null>(null);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [roundKey, setRoundKey] = useState(0);
-  const [hasStartedQuiz, setHasStartedQuiz] = useState(false);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
@@ -137,33 +134,22 @@ export default function QuizPlayPage() {
 
     try {
       const payload = await getQuizByIdRequest(quizId, token ?? undefined);
-      const ownUsername = user?.username?.trim();
-      const creatorUsername = payload.project.user?.username?.trim();
-      const nextCreatorLabel =
-        payload.project.userId === user?.id
-          ? (ownUsername ? `@${ownUsername}` : `User #${payload.project.userId}`)
-          : (creatorUsername ? `@${creatorUsername}` : `User #${payload.project.userId}`);
 
       setQuizTitle(payload.project.title);
-      setCreatorLabel(nextCreatorLabel);
-      setCreatorUserId(payload.project.userId);
       setQuizQuestions(payload.questions);
       setCurrentQuestionIndex(0);
       setSelectedOptionKey(null);
       setSelectedOptionValue(null);
       setCorrectAnswersCount(0);
       setRoundKey(0);
-      setHasStartedQuiz(false);
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error, "Unable to load quiz"));
       setQuizTitle("");
-      setCreatorLabel("");
-      setCreatorUserId(null);
       setQuizQuestions([]);
     } finally {
       setIsLoading(false);
     }
-  }, [quizId, token, user]);
+  }, [quizId, token]);
 
   useEffect(() => {
     void loadQuiz();
@@ -194,15 +180,6 @@ export default function QuizPlayPage() {
 
   const handlePlayAgain = () => {
     setRoundKey((current) => current + 1);
-    setCurrentQuestionIndex(0);
-    setSelectedOptionKey(null);
-    setSelectedOptionValue(null);
-    setCorrectAnswersCount(0);
-    setHasStartedQuiz(false);
-  };
-
-  const handleStartQuiz = () => {
-    setHasStartedQuiz(true);
     setCurrentQuestionIndex(0);
     setSelectedOptionKey(null);
     setSelectedOptionValue(null);
@@ -329,99 +306,6 @@ export default function QuizPlayPage() {
               label="Back to home"
               onPress={() => router.replace("../../..")}
               variant="default"
-            />
-          </View>
-        </View>
-      </SafeAreaPage>
-    );
-  }
-
-  if (!hasStartedQuiz) {
-    const totalQuestions = playQuestions.length;
-    const questionLabel = totalQuestions === 1 ? "question" : "questions";
-
-    return (
-      <SafeAreaPage backgroundColor={colors.background}>
-        <View
-          style={[
-            styles.introScreen,
-            {
-              padding: spacing.lg,
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.md,
-                gap: spacing.xs,
-                padding: spacing.lg,
-              },
-            ]}
-          >
-            <View style={[styles.headerRow, { gap: spacing.sm }]}>
-              <Button
-                accessibilityLabel="Back"
-                iconName="arrow-back-outline"
-                onPress={goBackOnStack}
-                variant="icon"
-              />
-
-              <View style={[styles.headerText, { gap: spacing.xs }]}>
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.primary.lg,
-                    fontWeight: typography.weights.bold,
-                  }}
-                >
-                  {quizTitle}
-                </Text>
-              </View>
-            </View>
-
-            <Pressable
-              onPress={() => {
-                if (!creatorUserId) {
-                  return;
-                }
-
-                router.push({
-                  pathname: "../../../profile/[id]",
-                  params: { id: String(creatorUserId) },
-                });
-              }}
-              style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
-            >
-              <Text
-                style={{
-                  color: colors.primary,
-                  fontSize: typography.secondary.md,
-                  fontWeight: typography.weights.semibold,
-                }}
-              >
-                Created by {creatorLabel || "unknown user"}
-              </Text>
-            </Pressable>
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontSize: typography.secondary.md,
-              }}
-            >
-              {totalQuestions} {questionLabel}
-            </Text>
-          </View>
-
-          <View style={styles.introActions}>
-            <Button
-              iconName="play-outline"
-              label="Start quiz"
-              onPress={handleStartQuiz}
-              variant="primary"
             />
           </View>
         </View>
@@ -638,13 +522,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  introScreen: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  introActions: {
-    alignItems: "flex-end",
-  },
   centered: {
     alignItems: "center",
     flex: 1,
@@ -658,13 +535,6 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     borderWidth: 1,
-  },
-  headerRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-  },
-  headerText: {
-    flex: 1,
   },
   rowBetween: {
     alignItems: "center",

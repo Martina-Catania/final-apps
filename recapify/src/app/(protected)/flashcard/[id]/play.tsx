@@ -67,15 +67,12 @@ export default function FlashcardPlayPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const deckId = useMemo(() => parseDeckId(id), [id]);
   const router = useRouter();
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
 
   const [deckTitle, setDeckTitle] = useState("");
-  const [creatorLabel, setCreatorLabel] = useState("");
-  const [creatorUserId, setCreatorUserId] = useState<number | null>(null);
   const [deckFlashcards, setDeckFlashcards] = useState<Flashcard[]>([]);
   const [roundKey, setRoundKey] = useState(0);
-  const [hasStartedSession, setHasStartedSession] = useState(false);
 
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
@@ -119,43 +116,25 @@ export default function FlashcardPlayPage() {
 
     try {
       const payload = await getDeckByIdRequest(deckId, token ?? undefined);
-      const ownUsername = user?.username?.trim();
-      const creatorUsername = payload.project.user?.username?.trim();
-      const nextCreatorLabel =
-        payload.project.userId === user?.id
-          ? (ownUsername ? `@${ownUsername}` : `User #${payload.project.userId}`)
-          : (creatorUsername ? `@${creatorUsername}` : `User #${payload.project.userId}`);
 
       setDeckTitle(payload.project.title);
-      setCreatorLabel(nextCreatorLabel);
-      setCreatorUserId(payload.project.userId);
       setDeckFlashcards(payload.flashcards);
       setCurrentCardIndex(0);
       setIsAnswerVisible(false);
       setKnownCardsCount(0);
       setRoundKey(0);
-      setHasStartedSession(false);
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error, "Unable to load flashcards"));
       setDeckTitle("");
-      setCreatorLabel("");
-      setCreatorUserId(null);
       setDeckFlashcards([]);
     } finally {
       setIsLoading(false);
     }
-  }, [deckId, token, user]);
+  }, [deckId, token]);
 
   useEffect(() => {
     void loadDeck();
   }, [loadDeck]);
-
-  const handleStartSession = () => {
-    setHasStartedSession(true);
-    setCurrentCardIndex(0);
-    setIsAnswerVisible(false);
-    setKnownCardsCount(0);
-  };
 
   const handleRevealAnswer = () => {
     if (!currentCard || isAnswerVisible) {
@@ -183,7 +162,6 @@ export default function FlashcardPlayPage() {
     setCurrentCardIndex(0);
     setIsAnswerVisible(false);
     setKnownCardsCount(0);
-    setHasStartedSession(false);
   };
 
   if (isLoading) {
@@ -306,99 +284,6 @@ export default function FlashcardPlayPage() {
               label="Back to home"
               onPress={() => router.replace("../../..")}
               variant="default"
-            />
-          </View>
-        </View>
-      </SafeAreaPage>
-    );
-  }
-
-  if (!hasStartedSession) {
-    const totalCards = playCards.length;
-    const cardLabel = totalCards === 1 ? "card" : "cards";
-
-    return (
-      <SafeAreaPage backgroundColor={colors.background}>
-        <View
-          style={[
-            styles.introScreen,
-            {
-              padding: spacing.lg,
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.md,
-                gap: spacing.xs,
-                padding: spacing.lg,
-              },
-            ]}
-          >
-            <View style={[styles.headerRow, { gap: spacing.sm }]}>
-              <Button
-                accessibilityLabel="Back"
-                iconName="arrow-back-outline"
-                onPress={goBackOnStack}
-                variant="icon"
-              />
-
-              <View style={[styles.headerText, { gap: spacing.xs }]}>
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.primary.lg,
-                    fontWeight: typography.weights.bold,
-                  }}
-                >
-                  {deckTitle}
-                </Text>
-              </View>
-            </View>
-
-            <Pressable
-              onPress={() => {
-                if (!creatorUserId) {
-                  return;
-                }
-
-                router.push({
-                  pathname: "../../../profile/[id]",
-                  params: { id: String(creatorUserId) },
-                });
-              }}
-              style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
-            >
-              <Text
-                style={{
-                  color: colors.primary,
-                  fontSize: typography.secondary.md,
-                  fontWeight: typography.weights.semibold,
-                }}
-              >
-                Created by {creatorLabel || "unknown user"}
-              </Text>
-            </Pressable>
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontSize: typography.secondary.md,
-              }}
-            >
-              {totalCards} {cardLabel}
-            </Text>
-          </View>
-
-          <View style={styles.introActions}>
-            <Button
-              iconName="play-outline"
-              label="Start session"
-              onPress={handleStartSession}
-              variant="primary"
             />
           </View>
         </View>
@@ -635,13 +520,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  introScreen: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  introActions: {
-    alignItems: "flex-end",
-  },
   centered: {
     alignItems: "center",
     flex: 1,
@@ -652,13 +530,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     maxWidth: 760,
     width: "100%",
-  },
-  headerRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-  },
-  headerText: {
-    flex: 1,
   },
   rowBetween: {
     alignItems: "center",
