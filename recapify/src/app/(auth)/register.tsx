@@ -14,34 +14,11 @@ import { AppTextInput } from "../../components/TextInput";
 import { useAuth } from "../../context/auth-context";
 import { useThemeTokens } from "../../hooks";
 import { SafeAreaPage } from "../../screens/safe-area-page";
-import { AuthApiError } from "../../utils/auth-api";
+import { getApiErrorMessage } from "../../utils/api-request";
 import { validatePasswordWithBreachCheck } from "../../utils/password-validation";
 
 function getErrorMessage(error: unknown): string {
-  if (error instanceof AuthApiError) {
-    if (
-      error.details &&
-      typeof error.details === "object" &&
-      "errors" in error.details &&
-      Array.isArray(error.details.errors)
-    ) {
-      const message = error.details.errors
-        .filter((item): item is string => typeof item === "string")
-        .join(". ");
-
-      if (message) {
-        return message;
-      }
-    }
-
-    return error.message;
-  }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return "Unable to register";
+  return getApiErrorMessage(error, "Unable to register");
 }
 
 export default function RegisterPage() {

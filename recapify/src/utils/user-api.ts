@@ -1,9 +1,9 @@
 import { Platform } from "react-native";
 import {
-  fetchWithTimeout,
-  getApiBaseUrl,
-  getApiConnectivityErrorMessage,
-} from "./api-config";
+  ApiRequestError,
+  getApiErrorMessage,
+  requestJson,
+} from "./api-request";
 import type { AuthUser } from "./auth-api";
 import type { ProjectType } from "./project-api";
 
@@ -51,77 +51,9 @@ export type UploadAvatarInput = {
   webFile?: Blob;
 };
 
-type ErrorResponse = {
-  error?: string;
-  details?: unknown;
-};
-
-type RequestJsonOptions = {
-  timeoutMs?: number;
-};
-
 const AVATAR_UPLOAD_TIMEOUT_MS = 30_000;
 const AVATAR_UPLOAD_MAX_ATTEMPTS = 2;
 const AVATAR_UPLOAD_RETRY_DELAY_MS = 350;
-
-export class UserApiError extends Error {
-  statusCode: number;
-  details?: unknown;
-
-  constructor(message: string, statusCode: number, details?: unknown) {
-    super(message);
-    this.name = "UserApiError";
-    this.statusCode = statusCode;
-    this.details = details;
-  }
-}
-
-const API_BASE_URL = getApiBaseUrl();
-
-async function requestJson<T>(
-  path: string,
-  init: RequestInit,
-  token?: string,
-  includeJsonContentType = true,
-  options?: RequestJsonOptions,
-): Promise<T> {
-  const headers = new Headers(init.headers ?? undefined);
-
-  if (includeJsonContentType) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  let response: Response;
-
-  try {
-    response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
-      ...init,
-      headers,
-    }, {
-      timeoutMs: options?.timeoutMs,
-    });
-  } catch (error) {
-    throw new UserApiError(getApiConnectivityErrorMessage(API_BASE_URL, error), 0, {
-      apiBaseUrl: API_BASE_URL,
-      reason: error instanceof Error ? error.message : "Unknown network error",
-    });
-  }
-
-  const contentType = response.headers.get("content-type") ?? "";
-  const hasJsonBody = contentType.includes("application/json");
-  const body = hasJsonBody ? ((await response.json()) as ErrorResponse) : undefined;
-
-  if (!response.ok) {
-    const message = body?.error ?? `Request failed (${response.status})`;
-    throw new UserApiError(message, response.status, body?.details);
-  }
-
-  return body as T;
-}
 
 export function getUserProfileRequest(userId: number, token: string) {
   return requestJson<UserProfileSummary>(
@@ -223,14 +155,14 @@ export async function uploadCurrentUserAvatarRequest(input: UploadAvatarInput, t
           body: formData,
         },
         token,
-        false,
         {
+          includeJsonContentType: false,
           timeoutMs: AVATAR_UPLOAD_TIMEOUT_MS,
         },
       );
     } catch (error) {
       const isTransientConnectivityFailure =
-        error instanceof UserApiError && error.statusCode === 0;
+        error instanceof ApiRequestError && error.statusCode === 0;
 
       if (!isTransientConnectivityFailure || attempt >= AVATAR_UPLOAD_MAX_ATTEMPTS) {
         throw error;
@@ -242,32 +174,9 @@ export async function uploadCurrentUserAvatarRequest(input: UploadAvatarInput, t
     }
   }
 
-  throw new UserApiError("Unable to upload avatar", 0);
+  throw new ApiRequestError("Unable to upload avatar", 0);
 }
 
 export function getUserApiErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof UserApiError) {
-    if (
-      error.details &&
-      typeof error.details === "object" &&
-      "errors" in error.details &&
-      Array.isArray(error.details.errors)
-    ) {
-      const message = error.details.errors
-        .filter((item): item is string => typeof item === "string")
-        .join(". ");
-
-      if (message) {
-        return message;
-      }
-    }
-
-    return error.message;
-  }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return fallback;
+  return getApiErrorMessage(error, fallback);
 }

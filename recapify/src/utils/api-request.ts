@@ -9,6 +9,11 @@ type ErrorResponse = {
   details?: unknown;
 };
 
+export type RequestJsonOptions = {
+  includeJsonContentType?: boolean;
+  timeoutMs?: number;
+};
+
 const API_BASE_URL = getApiBaseUrl();
 
 export class ApiRequestError extends Error {
@@ -27,9 +32,13 @@ export async function requestJson<T>(
   path: string,
   init: RequestInit,
   token?: string,
+  options?: RequestJsonOptions,
 ): Promise<T> {
   const headers = new Headers(init.headers ?? undefined);
-  headers.set("Content-Type", "application/json");
+
+  if (options?.includeJsonContentType !== false) {
+    headers.set("Content-Type", "application/json");
+  }
 
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
@@ -41,6 +50,8 @@ export async function requestJson<T>(
     response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
       ...init,
       headers,
+    }, {
+      timeoutMs: options?.timeoutMs,
     });
   } catch (error) {
     throw new ApiRequestError(getApiConnectivityErrorMessage(API_BASE_URL, error), 0, {
