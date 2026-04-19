@@ -347,7 +347,7 @@ export default function ProfilePage() {
                         fontSize: typography.secondary.sm,
                       }}
                     >
-                      {project.type} · {project.views} view{project.views === 1 ? "" : "s"}
+                      {project.type} · played {project.timesPlayed} time{project.timesPlayed === 1 ? "" : "s"}
                     </Text>
 
                     <Text

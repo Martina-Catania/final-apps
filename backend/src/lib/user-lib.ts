@@ -5,7 +5,7 @@ type ProfileProject = {
   id: number;
   type: ProjectType;
   title: string;
-  views: number;
+  timesPlayed: number;
   createdAt: Date;
   updatedAt: Date;
   quizId: number | null;
@@ -77,7 +77,7 @@ export async function getUserProfileSummary(
           id: true,
           type: true,
           title: true,
-          views: true,
+          timesPlayed: true,
           createdAt: true,
           updatedAt: true,
           quiz: {
@@ -117,7 +117,7 @@ export async function getUserProfileSummary(
       id: project.id,
       type: project.type,
       title: project.title,
-      views: project.views,
+      timesPlayed: project.timesPlayed,
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
       quizId: project.quiz?.id ?? null,

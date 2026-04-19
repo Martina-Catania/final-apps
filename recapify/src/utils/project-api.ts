@@ -14,7 +14,7 @@ export type Project = {
   title: string;
   userId: number;
   user?: ProjectCreator;
-  views: number;
+  timesPlayed: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -57,9 +57,9 @@ export function updateProjectRequest(
   );
 }
 
-export function incrementProjectViewsRequest(projectId: number, token?: string) {
+export function incrementProjectTimesPlayedRequest(projectId: number, token?: string) {
   return requestJson<Project>(
-    `/projects/${projectId}/views/increment`,
+    `/projects/${projectId}/times-played/increment`,
     {
       method: "POST",
     },

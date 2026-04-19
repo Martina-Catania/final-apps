@@ -32,10 +32,10 @@ export function deleteProject(id: number, ctx: AppContext) {
   return ctx.prisma.project.delete({ where: { id }, include: projectInclude });
 }
 
-export function incrementProjectViews(id: number, ctx: AppContext) {
+export function incrementProjectTimesPlayed(id: number, ctx: AppContext) {
   return ctx.prisma.project.update({
     where: { id },
-    data: { views: { increment: 1 } },
+    data: { timesPlayed: { increment: 1 } },
     include: projectInclude,
   });
 }

@@ -4,7 +4,7 @@ import {
   createProject,
   deleteProject,
   getProjectById,
-  incrementProjectViews,
+  incrementProjectTimesPlayed,
   listProjects,
   updateProject,
 } from "../../../src/lib/project-lib.js";
@@ -87,13 +87,13 @@ describe("project-lib", () => {
     });
   });
 
-  it("increments project views", () => {
+  it("increments project times played", () => {
     const { ctx, project } = createCtx();
-    incrementProjectViews(9, ctx);
+    incrementProjectTimesPlayed(9, ctx);
 
     expect(project.update).toHaveBeenCalledWith({
       where: { id: 9 },
-      data: { views: { increment: 1 } },
+      data: { timesPlayed: { increment: 1 } },
       include: projectInclude,
     });
   });

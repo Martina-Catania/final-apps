@@ -17,7 +17,7 @@ export type ProfileProject = {
   id: number;
   type: ProjectType;
   title: string;
-  views: number;
+  timesPlayed: number;
   createdAt: string;
   updatedAt: string;
   quizId: number | null;

@@ -96,7 +96,7 @@ describe("user-routes", () => {
         id: 18,
         type: "QUIZ",
         title: "Project",
-        views: 12,
+        timesPlayed: 12,
         createdAt: new Date("2026-04-18T10:00:00.000Z"),
         updatedAt: new Date("2026-04-18T10:00:00.000Z"),
         quiz: { id: 4 },

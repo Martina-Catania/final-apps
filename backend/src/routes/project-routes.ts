@@ -5,7 +5,7 @@ import {
   createProject,
   deleteProject,
   getProjectById,
-  incrementProjectViews,
+  incrementProjectTimesPlayed,
   listProjects,
   updateProject,
 } from "../lib/project-lib.js";
@@ -67,10 +67,10 @@ export function createProjectRouter(ctx: AppContext) {
   );
 
   projectRouter.post(
-    "/:id/views/increment",
+    "/:id/times-played/increment",
     asyncHandler(async (req, res) => {
       const id = parseIntParam(req.params.id, "id");
-      const project = await incrementProjectViews(id, ctx);
+      const project = await incrementProjectTimesPlayed(id, ctx);
       res.json(project);
     }),
   );
