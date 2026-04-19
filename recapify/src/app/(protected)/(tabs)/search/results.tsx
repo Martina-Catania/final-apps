@@ -140,11 +140,6 @@ export default function SearchResultsPage() {
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>(routeTagIds);
   const [isLoadingTags, setIsLoadingTags] = useState(false);
 
-  const selectedTags = useMemo(
-    () => availableTags.filter((tag) => selectedTagIds.includes(tag.id)),
-    [availableTags, selectedTagIds],
-  );
-
   const toggleTagFilter = useCallback((tagId: number) => {
     setSelectedTagIds((current) => {
       if (current.includes(tagId)) {
@@ -400,7 +395,6 @@ export default function SearchResultsPage() {
             </ScrollView>
           ) : null}
 
-          {selectedTags.length > 0 ? <ProjectTagPills tags={selectedTags} /> : null}
         </View>
       </Card>
 

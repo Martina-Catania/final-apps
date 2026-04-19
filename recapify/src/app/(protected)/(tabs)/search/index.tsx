@@ -134,11 +134,6 @@ export default function SearchPage() {
     }
   }, [token]);
 
-  const selectedTags = useMemo(
-    () => availableTags.filter((tag) => selectedTagIds.includes(tag.id)),
-    [availableTags, selectedTagIds],
-  );
-
   const toggleTagFilter = useCallback((tagId: number) => {
     setSelectedTagIds((current) => {
       if (current.includes(tagId)) {
@@ -366,7 +361,6 @@ export default function SearchPage() {
             </ScrollView>
           ) : null}
 
-          {selectedTags.length > 0 ? <ProjectTagPills tags={selectedTags} /> : null}
         </View>
 
         <Button
