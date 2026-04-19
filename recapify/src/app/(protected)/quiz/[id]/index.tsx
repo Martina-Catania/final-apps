@@ -7,11 +7,12 @@ import {
   Text,
   View,
 } from "react-native";
-import { Button } from "../../../../components";
+import { AppActionSheet, AppModal, Button } from "../../../../components";
 import { useAuth } from "../../../../context/auth-context";
 import { useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
+import { deleteProjectRequest } from "../../../../utils/project-api";
 import {
   getQuizByIdRequest,
   type Quiz,
@@ -20,6 +21,16 @@ import {
 type QuizOption = {
   key: string;
   value: string;
+};
+
+type QuizActionValue = "view-creator" | "edit-quiz" | "delete-project";
+
+type QuizActionItem = {
+  label: string;
+  value: QuizActionValue;
+  iconName?: "person-outline" | "create-outline" | "trash-outline";
+  destructive?: boolean;
+  disabled?: boolean;
 };
 
 function shuffle<T>(values: T[]): T[] {
@@ -82,6 +93,10 @@ export default function QuizDetailPage() {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeletePending, setIsDeletePending] = useState(false);
 
   const optionsByQuestionId = useMemo(() => {
     if (!quiz) {
@@ -106,6 +121,7 @@ export default function QuizDetailPage() {
 
     setIsLoading(true);
     setErrorMessage(null);
+    setDeleteErrorMessage(null);
 
     try {
       const payload = await getQuizByIdRequest(quizId, token ?? undefined);
@@ -121,6 +137,118 @@ export default function QuizDetailPage() {
   useEffect(() => {
     void loadQuiz();
   }, [loadQuiz]);
+
+  const creatorUsername = quiz?.project.user?.username;
+  const creatorLabel = quiz
+    ? creatorUsername
+      ? `@${creatorUsername}`
+      : `User #${quiz.project.userId}`
+    : "";
+  const isOwner = quiz ? user?.id === quiz.project.userId : false;
+
+  const handleOpenCreatorProfile = useCallback(() => {
+    if (!quiz) {
+      return;
+    }
+
+    router.push({
+      pathname: "/profile/[id]",
+      params: {
+        id: String(quiz.project.userId),
+      },
+    });
+  }, [quiz, router]);
+
+  const handleOpenActions = useCallback(() => {
+    setIsActionsOpen(true);
+  }, []);
+
+  const handleCloseActions = useCallback(() => {
+    setIsActionsOpen(false);
+  }, []);
+
+  const handleOpenDeleteConfirm = useCallback(() => {
+    setIsDeleteConfirmOpen(true);
+  }, []);
+
+  const handleCloseDeleteConfirm = useCallback(() => {
+    if (isDeletePending) {
+      return;
+    }
+
+    setIsDeleteConfirmOpen(false);
+  }, [isDeletePending]);
+
+  const actionItems = useMemo<QuizActionItem[]>(() => {
+    const items: QuizActionItem[] = [
+      {
+        label: "View creator profile",
+        value: "view-creator",
+        iconName: "person-outline",
+      },
+    ];
+
+    if (isOwner) {
+      items.push({
+        label: "Edit quiz",
+        value: "edit-quiz",
+        iconName: "create-outline",
+      });
+      items.push({
+        label: "Delete project",
+        value: "delete-project",
+        iconName: "trash-outline",
+        destructive: true,
+        disabled: isDeletePending,
+      });
+    }
+
+    return items;
+  }, [isDeletePending, isOwner]);
+
+  const handleSelectAction = useCallback(
+    (value: QuizActionValue) => {
+      if (!quiz) {
+        return;
+      }
+
+      if (value === "view-creator") {
+        handleOpenCreatorProfile();
+        return;
+      }
+
+      if (value === "edit-quiz") {
+        router.push({
+          pathname: "/quiz/[id]/edit",
+          params: { id: String(quiz.id) },
+        });
+        return;
+      }
+
+      handleOpenDeleteConfirm();
+    },
+    [handleOpenCreatorProfile, handleOpenDeleteConfirm, quiz, router],
+  );
+
+  const handleConfirmDeleteProject = useCallback(async () => {
+    if (!quiz || isDeletePending) {
+      return;
+    }
+
+    setDeleteErrorMessage(null);
+    setIsDeletePending(true);
+
+    try {
+      await deleteProjectRequest(quiz.projectId, token ?? undefined);
+      setIsDeleteConfirmOpen(false);
+      router.replace("../..");
+    } catch (error) {
+      setDeleteErrorMessage(getApiErrorMessage(error, "Unable to delete project"));
+      setIsDeleteConfirmOpen(false);
+    } finally {
+      setIsDeletePending(false);
+    }
+  }, [isDeletePending, quiz, router, token]);
 
   if (isLoading) {
     return (
@@ -195,151 +323,169 @@ export default function QuizDetailPage() {
     );
   }
 
-  const creatorUsername = quiz.project.user?.username;
-  const creatorLabel = creatorUsername ? `@${creatorUsername}` : `User #${quiz.project.userId}`;
-
-  const handleOpenCreatorProfile = () => {
-    router.push({
-      pathname: "/profile/[id]",
-      params: {
-        id: String(quiz.project.userId),
-      },
-    });
-  };
-
   return (
     <SafeAreaPage backgroundColor={colors.background}>
-      <ScrollView
-        contentContainerStyle={{
-          gap: spacing.lg,
-          padding: spacing.lg,
-        }}
-      >
-        <View
-          style={[
-            styles.headerCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              borderRadius: radius.md,
-              gap: spacing.sm,
-              padding: spacing.lg,
-            },
-          ]}
+      <>
+        <ScrollView
+          contentContainerStyle={{
+            gap: spacing.lg,
+            padding: spacing.lg,
+          }}
         >
-          <View style={[styles.headerInfoRow, { gap: spacing.sm }]}>
-            <Button
-              iconName="arrow-back-outline"
-              label="Back"
-              onPress={handleBackPress}
-              variant="icon"
-            />
+          <View
+            style={[
+              styles.headerCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderRadius: radius.md,
+                gap: spacing.sm,
+                padding: spacing.lg,
+              },
+            ]}
+          >
+            <View style={[styles.headerInfoRow, { gap: spacing.sm }]}>
+              <Button
+                iconName="arrow-back-outline"
+                label="Back"
+                onPress={handleBackPress}
+                variant="icon"
+              />
 
-            <View style={[styles.headerInfoText, { gap: spacing.xxs }]}>
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: typography.primary.lg,
-                  fontWeight: typography.weights.bold,
-                }}
-              >
-                {quiz.project.title}
-              </Text>
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: typography.secondary.md,
-                }}
-              >
-                {creatorLabel} · {quiz.questions.length} question{quiz.questions.length === 1 ? "" : "s"}
-              </Text>
+              <View style={[styles.headerInfoText, { gap: spacing.xxs }]}>
+                <Text
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: typography.primary.lg,
+                    fontWeight: typography.weights.bold,
+                  }}
+                >
+                  {quiz.project.title}
+                </Text>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: typography.secondary.md,
+                  }}
+                >
+                  {creatorLabel} · {quiz.questions.length} question{quiz.questions.length === 1 ? "" : "s"}
+                </Text>
+              </View>
+
+              <Button
+                disabled={isDeletePending}
+                iconName="ellipsis-vertical-outline"
+                label="Actions"
+                onPress={handleOpenActions}
+                variant="icon"
+              />
             </View>
-          </View>
 
-          <View style={{ gap: spacing.sm }}>
-            <Button
-              fullWidth
-              iconName="person-outline"
-              label="View creator profile"
-              onPress={handleOpenCreatorProfile}
-              variant="default"
-            />
-            <Button
-              fullWidth
-              iconName="play-outline"
-              label="Play quiz"
-              onPress={() =>
-                router.push({
-                  pathname: "/quiz/[id]/play",
-                  params: { id: String(quiz.id) },
-                })
-              }
-              variant="secondary"
-            />
-            {user?.id === quiz.project.userId ? (
+            <View style={{ gap: spacing.sm }}>
               <Button
                 fullWidth
-                iconName="create-outline"
-                label="Edit quiz"
+                iconName="play-outline"
+                label="Play quiz"
                 onPress={() =>
                   router.push({
-                    pathname: "/quiz/[id]/edit",
+                    pathname: "/quiz/[id]/play",
                     params: { id: String(quiz.id) },
                   })
                 }
-                variant="primary"
+                variant="secondary"
               />
-            ) : null}
-          </View>
-        </View>
-
-        <View style={{ gap: spacing.md }}>
-          {quiz.questions.map((question, index) => (
-            <View
-              key={question.id}
-              style={[
-                styles.questionCard,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  borderRadius: radius.sm,
-                  gap: spacing.sm,
-                  padding: spacing.md,
-                },
-              ]}
-            >
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: typography.secondary.lg,
-                  fontWeight: typography.weights.semibold,
-                }}
-              >
-                Question {index + 1}
-              </Text>
-              <Text
-                style={{
-                  color: colors.textPrimary,
-                  fontSize: typography.secondary.md,
-                }}
-              >
-                {question.question}
-              </Text>
-
-              <View style={{ gap: spacing.xs }}>
-                {(optionsByQuestionId.get(question.id) ?? []).map((option) => (
-                  <Text
-                    key={option.key}
-                    style={{ color: colors.textSecondary, fontSize: typography.secondary.md }}
-                  >
-                    • {option.value}
-                  </Text>
-                ))}
-              </View>
+              {deleteErrorMessage ? (
+                <Text
+                  style={{
+                    color: colors.danger,
+                    fontSize: typography.secondary.sm,
+                  }}
+                >
+                  {deleteErrorMessage}
+                </Text>
+              ) : null}
             </View>
-          ))}
-        </View>
-      </ScrollView>
+          </View>
+
+          <View style={{ gap: spacing.md }}>
+            {quiz.questions.map((question, index) => (
+              <View
+                key={question.id}
+                style={[
+                  styles.questionCard,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    borderRadius: radius.sm,
+                    gap: spacing.sm,
+                    padding: spacing.md,
+                  },
+                ]}
+              >
+                <Text
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: typography.secondary.lg,
+                    fontWeight: typography.weights.semibold,
+                  }}
+                >
+                  Question {index + 1}
+                </Text>
+                <Text
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: typography.secondary.md,
+                  }}
+                >
+                  {question.question}
+                </Text>
+
+                <View style={{ gap: spacing.xs }}>
+                  {(optionsByQuestionId.get(question.id) ?? []).map((option) => (
+                    <Text
+                      key={option.key}
+                      style={{ color: colors.textSecondary, fontSize: typography.secondary.md }}
+                    >
+                      • {option.value}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+
+        <AppActionSheet<QuizActionValue>
+          isOpen={isActionsOpen}
+          items={actionItems}
+          onClose={handleCloseActions}
+          onSelect={handleSelectAction}
+          title="Quiz actions"
+        />
+
+        <AppModal
+          actions={[
+            {
+              iconName: "close-outline",
+              label: "Cancel",
+              onPress: handleCloseDeleteConfirm,
+              variant: "default",
+            },
+            {
+              iconName: "trash-outline",
+              label: isDeletePending ? "Deleting..." : "Delete project",
+              onPress: () => {
+                void handleConfirmDeleteProject();
+              },
+              variant: "primary",
+            },
+          ]}
+          description="This will permanently remove this project and its quiz data. This action cannot be undone."
+          onClose={handleCloseDeleteConfirm}
+          title="Delete project?"
+          visible={isDeleteConfirmOpen}
+        />
+      </>
     </SafeAreaPage>
   );
 }

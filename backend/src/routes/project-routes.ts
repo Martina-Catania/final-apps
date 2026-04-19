@@ -19,6 +19,7 @@ import {
   requireInt,
   requireString,
 } from "../utils/http.js";
+import { getAuthUserId, requireAuth } from "../middleware/auth.js";
 
 export function createProjectRouter(ctx: AppContext) {
   const projectRouter = Router();
@@ -126,8 +127,20 @@ export function createProjectRouter(ctx: AppContext) {
 
   projectRouter.delete(
     "/:id",
+    requireAuth,
     asyncHandler(async (req, res) => {
       const id = parseIntParam(req.params.id, "id");
+      const authUserId = getAuthUserId(res);
+
+      const existingProject = await getProjectById(id, ctx);
+      if (!existingProject) {
+        throw new ApiError(404, "Project not found");
+      }
+
+      if (existingProject.userId !== authUserId) {
+        throw new ApiError(403, "You are not allowed to delete this project");
+      }
+
       const project = await deleteProject(id, ctx);
       res.json(project);
     }),

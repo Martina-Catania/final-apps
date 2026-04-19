@@ -1,15 +1,24 @@
 import request from "supertest";
 import { ProjectType } from "../../../generated/prisma/index.js";
 import { createProjectRouter } from "../../../src/routes/project-routes.js";
+import { generateAuthToken } from "../../../src/utils/jwt.js";
 import { createRouteApp, createRouteMockContext } from "./helpers.js";
 
 describe("project-routes", () => {
+  beforeEach(() => {
+    process.env.JWT_SECRET = "test-secret";
+    process.env.JWT_EXPIRES_IN = "1h";
+  });
+
   it("lists projects and handles get-not-found/create/tag-links/times-played-increment/update/delete", async () => {
     const { ctx, mocks } = createRouteMockContext();
     const app = createRouteApp("/projects", createProjectRouter(ctx));
+    const ownerToken = generateAuthToken(1);
 
     mocks.project.findMany.mockResolvedValue([] as never);
-    mocks.project.findUnique.mockResolvedValue(null as never);
+    mocks.project.findUnique
+      .mockResolvedValueOnce(null as never)
+      .mockResolvedValueOnce({ id: 20, userId: 1 } as never);
     mocks.project.create.mockResolvedValue({ id: 20 } as never);
     mocks.projectTag.create.mockResolvedValue({ projectId: 20, tagId: 1 } as never);
     mocks.projectTag.delete.mockResolvedValue({ projectId: 20, tagId: 1 } as never);
@@ -23,7 +32,13 @@ describe("project-routes", () => {
     expect((await request(app).delete("/projects/20/tags/1")).status).toBe(200);
     expect((await request(app).post("/projects/20/times-played/increment")).status).toBe(200);
     expect((await request(app).patch("/projects/20").send({ title: "Updated" })).status).toBe(200);
-    expect((await request(app).delete("/projects/20")).status).toBe(200);
+    expect(
+      (
+        await request(app)
+          .delete("/projects/20")
+          .set("Authorization", `Bearer ${ownerToken}`)
+      ).status,
+    ).toBe(200);
   });
 
   it("lists tags for a project", async () => {
@@ -70,5 +85,31 @@ describe("project-routes", () => {
         data: expect.objectContaining({ type: ProjectType.QUIZ, userId: 8 }),
       }),
     );
+  });
+
+  it("requires authentication to delete a project", async () => {
+    const { ctx } = createRouteMockContext();
+    const app = createRouteApp("/projects", createProjectRouter(ctx));
+
+    const response = await request(app).delete("/projects/20");
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe("Authorization token is required");
+  });
+
+  it("forbids deleting a project owned by another user", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/projects", createProjectRouter(ctx));
+    const requesterToken = generateAuthToken(2);
+
+    mocks.project.findUnique.mockResolvedValue({ id: 20, userId: 1 } as never);
+
+    const response = await request(app)
+      .delete("/projects/20")
+      .set("Authorization", `Bearer ${requesterToken}`);
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe("You are not allowed to delete this project");
+    expect(mocks.project.delete).not.toHaveBeenCalled();
   });
 });

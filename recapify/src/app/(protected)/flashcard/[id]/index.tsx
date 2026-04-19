@@ -7,15 +7,26 @@ import {
   Text,
   View,
 } from "react-native";
-import { Button } from "../../../../components";
+import { AppActionSheet, AppModal, Button } from "../../../../components";
 import { useAuth } from "../../../../context/auth-context";
 import { useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
+import { deleteProjectRequest } from "../../../../utils/project-api";
 import {
   getDeckByIdRequest,
   type Deck,
 } from "../../../../utils/deck-api";
+
+type FlashcardActionValue = "view-creator" | "edit-flashcards" | "delete-project";
+
+type FlashcardActionItem = {
+  label: string;
+  value: FlashcardActionValue;
+  iconName?: "person-outline" | "create-outline" | "trash-outline";
+  destructive?: boolean;
+  disabled?: boolean;
+};
 
 function parseDeckId(value: string | string[] | undefined): number | null {
   const firstValue = Array.isArray(value) ? value[0] : value;
@@ -43,6 +54,10 @@ export default function FlashcardDetailPage() {
   const [deck, setDeck] = useState<Deck | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeletePending, setIsDeletePending] = useState(false);
 
   const handleBackPress = useCallback(() => {
     router.back();
@@ -57,6 +72,7 @@ export default function FlashcardDetailPage() {
 
     setIsLoading(true);
     setErrorMessage(null);
+    setDeleteErrorMessage(null);
 
     try {
       const payload = await getDeckByIdRequest(deckId, token ?? undefined);
@@ -72,6 +88,118 @@ export default function FlashcardDetailPage() {
   useEffect(() => {
     void loadDeck();
   }, [loadDeck]);
+
+  const creatorUsername = deck?.project.user?.username;
+  const creatorLabel = deck
+    ? creatorUsername
+      ? `@${creatorUsername}`
+      : `User #${deck.project.userId}`
+    : "";
+  const isOwner = deck ? user?.id === deck.project.userId : false;
+
+  const handleOpenCreatorProfile = useCallback(() => {
+    if (!deck) {
+      return;
+    }
+
+    router.push({
+      pathname: "/profile/[id]",
+      params: {
+        id: String(deck.project.userId),
+      },
+    });
+  }, [deck, router]);
+
+  const handleOpenActions = useCallback(() => {
+    setIsActionsOpen(true);
+  }, []);
+
+  const handleCloseActions = useCallback(() => {
+    setIsActionsOpen(false);
+  }, []);
+
+  const handleOpenDeleteConfirm = useCallback(() => {
+    setIsDeleteConfirmOpen(true);
+  }, []);
+
+  const handleCloseDeleteConfirm = useCallback(() => {
+    if (isDeletePending) {
+      return;
+    }
+
+    setIsDeleteConfirmOpen(false);
+  }, [isDeletePending]);
+
+  const actionItems = useMemo<FlashcardActionItem[]>(() => {
+    const items: FlashcardActionItem[] = [
+      {
+        label: "View creator profile",
+        value: "view-creator",
+        iconName: "person-outline",
+      },
+    ];
+
+    if (isOwner) {
+      items.push({
+        label: "Edit flashcards",
+        value: "edit-flashcards",
+        iconName: "create-outline",
+      });
+      items.push({
+        label: "Delete project",
+        value: "delete-project",
+        iconName: "trash-outline",
+        destructive: true,
+        disabled: isDeletePending,
+      });
+    }
+
+    return items;
+  }, [isDeletePending, isOwner]);
+
+  const handleSelectAction = useCallback(
+    (value: FlashcardActionValue) => {
+      if (!deck) {
+        return;
+      }
+
+      if (value === "view-creator") {
+        handleOpenCreatorProfile();
+        return;
+      }
+
+      if (value === "edit-flashcards") {
+        router.push({
+          pathname: "/flashcard/[id]/edit",
+          params: { id: String(deck.id) },
+        });
+        return;
+      }
+
+      handleOpenDeleteConfirm();
+    },
+    [deck, handleOpenCreatorProfile, handleOpenDeleteConfirm, router],
+  );
+
+  const handleConfirmDeleteProject = useCallback(async () => {
+    if (!deck || isDeletePending) {
+      return;
+    }
+
+    setDeleteErrorMessage(null);
+    setIsDeletePending(true);
+
+    try {
+      await deleteProjectRequest(deck.projectId, token ?? undefined);
+      setIsDeleteConfirmOpen(false);
+      router.replace("../..");
+    } catch (error) {
+      setDeleteErrorMessage(getApiErrorMessage(error, "Unable to delete project"));
+      setIsDeleteConfirmOpen(false);
+    } finally {
+      setIsDeletePending(false);
+    }
+  }, [deck, isDeletePending, router, token]);
 
   if (isLoading) {
     return (
@@ -146,55 +274,112 @@ export default function FlashcardDetailPage() {
     );
   }
 
-  const creatorUsername = deck.project.user?.username;
-  const creatorLabel = creatorUsername ? `@${creatorUsername}` : `User #${deck.project.userId}`;
-
-  const handleOpenCreatorProfile = () => {
-    router.push({
-      pathname: "/profile/[id]",
-      params: {
-        id: String(deck.project.userId),
-      },
-    });
-  };
-
   return (
     <SafeAreaPage backgroundColor={colors.background}>
-      <ScrollView
-        contentContainerStyle={{
-          gap: spacing.lg,
-          padding: spacing.lg,
-        }}
-      >
-        <View
-          style={[
-            styles.headerCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              borderRadius: radius.md,
-              gap: spacing.sm,
-              padding: spacing.lg,
-            },
-          ]}
+      <>
+        <ScrollView
+          contentContainerStyle={{
+            gap: spacing.lg,
+            padding: spacing.lg,
+          }}
         >
-          <View style={[styles.headerInfoRow, { gap: spacing.sm }]}>
-            <Button
-              iconName="arrow-back-outline"
-              label="Back"
-              onPress={handleBackPress}
-              variant="icon"
-            />
+          <View
+            style={[
+              styles.headerCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderRadius: radius.md,
+                gap: spacing.sm,
+                padding: spacing.lg,
+              },
+            ]}
+          >
+            <View style={[styles.headerInfoRow, { gap: spacing.sm }]}>
+              <Button
+                iconName="arrow-back-outline"
+                label="Back"
+                onPress={handleBackPress}
+                variant="icon"
+              />
 
-            <View style={[styles.headerInfoText, { gap: spacing.xxs }]}>
+              <View style={[styles.headerInfoText, { gap: spacing.xxs }]}>
+                <Text
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: typography.primary.lg,
+                    fontWeight: typography.weights.bold,
+                  }}
+                >
+                  {deck.project.title}
+                </Text>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: typography.secondary.md,
+                  }}
+                >
+                  {creatorLabel} · {deck.flashcards.length} card{deck.flashcards.length === 1 ? "" : "s"}
+                </Text>
+              </View>
+
+              <Button
+                disabled={isDeletePending}
+                iconName="ellipsis-vertical-outline"
+                label="Actions"
+                onPress={handleOpenActions}
+                variant="icon"
+              />
+            </View>
+
+            <View style={{ gap: spacing.sm }}>
+              <Button
+                disabled={deck.flashcards.length === 0}
+                fullWidth
+                iconName="play-outline"
+                label="Play flashcards"
+                onPress={() =>
+                  router.push({
+                    pathname: "/flashcard/[id]/play",
+                    params: { id: String(deck.id) },
+                  })
+                }
+                variant="secondary"
+              />
+              {deleteErrorMessage ? (
+                <Text
+                  style={{
+                    color: colors.danger,
+                    fontSize: typography.secondary.sm,
+                  }}
+                >
+                  {deleteErrorMessage}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+
+          {deck.flashcards.length === 0 ? (
+            <View
+              style={[
+                styles.flashcardCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderRadius: radius.sm,
+                  gap: spacing.xs,
+                  padding: spacing.md,
+                },
+              ]}
+            >
               <Text
                 style={{
                   color: colors.textPrimary,
-                  fontSize: typography.primary.lg,
-                  fontWeight: typography.weights.bold,
+                  fontSize: typography.secondary.lg,
+                  fontWeight: typography.weights.semibold,
                 }}
               >
-                {deck.project.title}
+                No cards yet
               </Text>
               <Text
                 style={{
@@ -202,150 +387,111 @@ export default function FlashcardDetailPage() {
                   fontSize: typography.secondary.md,
                 }}
               >
-                {creatorLabel} · {deck.flashcards.length} card{deck.flashcards.length === 1 ? "" : "s"}
+                Add cards to start studying this set.
               </Text>
             </View>
-          </View>
-
-          <View style={{ gap: spacing.sm }}>
-            <Button
-              fullWidth
-              iconName="person-outline"
-              label="View creator profile"
-              onPress={handleOpenCreatorProfile}
-              variant="default"
-            />
-            <Button
-              disabled={deck.flashcards.length === 0}
-              fullWidth
-              iconName="play-outline"
-              label="Play flashcards"
-              onPress={() =>
-                router.push({
-                  pathname: "/flashcard/[id]/play",
-                  params: { id: String(deck.id) },
-                })
-              }
-              variant="secondary"
-            />
-            {user?.id === deck.project.userId ? (
-              <Button
-                fullWidth
-                iconName="create-outline"
-                label="Edit flashcards"
-                onPress={() =>
-                  router.push({
-                    pathname: "/flashcard/[id]/edit",
-                    params: { id: String(deck.id) },
-                  })
-                }
-                variant="primary"
-              />
-            ) : null}
-          </View>
-        </View>
-
-        {deck.flashcards.length === 0 ? (
-          <View
-            style={[
-              styles.flashcardCard,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.sm,
-                gap: spacing.xs,
-                padding: spacing.md,
-              },
-            ]}
-          >
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: typography.secondary.lg,
-                fontWeight: typography.weights.semibold,
-              }}
-            >
-              No cards yet
-            </Text>
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontSize: typography.secondary.md,
-              }}
-            >
-              Add cards to start studying this set.
-            </Text>
-          </View>
-        ) : (
-          <View style={{ gap: spacing.md }}>
-            {deck.flashcards.map((flashcard, index) => (
-              <View
-                key={flashcard.id}
-                style={[
-                  styles.flashcardCard,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                    borderRadius: radius.sm,
-                    gap: spacing.sm,
-                    padding: spacing.md,
-                  },
-                ]}
-              >
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.secondary.lg,
-                    fontWeight: typography.weights.semibold,
-                  }}
+          ) : (
+            <View style={{ gap: spacing.md }}>
+              {deck.flashcards.map((flashcard, index) => (
+                <View
+                  key={flashcard.id}
+                  style={[
+                    styles.flashcardCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                      borderRadius: radius.sm,
+                      gap: spacing.sm,
+                      padding: spacing.md,
+                    },
+                  ]}
                 >
-                  Card {index + 1}
-                </Text>
-
-                <View style={{ gap: spacing.xs }}>
-                  <Text
-                    style={{
-                      color: colors.primary,
-                      fontSize: typography.secondary.sm,
-                      fontWeight: typography.weights.semibold,
-                    }}
-                  >
-                    Front
-                  </Text>
                   <Text
                     style={{
                       color: colors.textPrimary,
-                      fontSize: typography.secondary.md,
-                    }}
-                  >
-                    {flashcard.front}
-                  </Text>
-                </View>
-
-                <View style={{ gap: spacing.xs }}>
-                  <Text
-                    style={{
-                      color: colors.success,
-                      fontSize: typography.secondary.sm,
+                      fontSize: typography.secondary.lg,
                       fontWeight: typography.weights.semibold,
                     }}
                   >
-                    Back
+                    Card {index + 1}
                   </Text>
-                  <Text
-                    style={{
-                      color: colors.textPrimary,
-                      fontSize: typography.secondary.md,
-                    }}
-                  >
-                    {flashcard.back}
-                  </Text>
+
+                  <View style={{ gap: spacing.xs }}>
+                    <Text
+                      style={{
+                        color: colors.primary,
+                        fontSize: typography.secondary.sm,
+                        fontWeight: typography.weights.semibold,
+                      }}
+                    >
+                      Front
+                    </Text>
+                    <Text
+                      style={{
+                        color: colors.textPrimary,
+                        fontSize: typography.secondary.md,
+                      }}
+                    >
+                      {flashcard.front}
+                    </Text>
+                  </View>
+
+                  <View style={{ gap: spacing.xs }}>
+                    <Text
+                      style={{
+                        color: colors.success,
+                        fontSize: typography.secondary.sm,
+                        fontWeight: typography.weights.semibold,
+                      }}
+                    >
+                      Back
+                    </Text>
+                    <Text
+                      style={{
+                        color: colors.textPrimary,
+                        fontSize: typography.secondary.md,
+                      }}
+                    >
+                      {flashcard.back}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            ))}
-          </View>
-        )}
-      </ScrollView>
+              ))}
+            </View>
+          )}
+        </ScrollView>
+
+        <AppActionSheet<FlashcardActionValue>
+          isOpen={isActionsOpen}
+          items={actionItems}
+          onClose={handleCloseActions}
+          onSelect={handleSelectAction}
+          title="Flashcard actions"
+        />
+
+        <AppModal
+          actions={[
+            {
+              iconName: "close-outline",
+              label: "Cancel",
+              onPress: handleCloseDeleteConfirm,
+              variant: "default",
+            },
+            {
+              iconName: "trash-outline",
+              label: isDeletePending ? "Deleting..." : "Delete project",
+              onPress: () => {
+                void handleConfirmDeleteProject();
+              },
+              variant: "primary",
+            },
+          ]}
+          description="This will permanently remove this project and its flashcard data. This action cannot be undone."
+          onClose={handleCloseDeleteConfirm}
+          title="Delete project?"
+          visible={isDeleteConfirmOpen}
+        />
+      </>
     </SafeAreaPage>
   );
 }

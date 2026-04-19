@@ -66,3 +66,13 @@ export function incrementProjectTimesPlayedRequest(projectId: number, token?: st
     token,
   );
 }
+
+export function deleteProjectRequest(projectId: number, token?: string) {
+  return requestJson<Project>(
+    `/projects/${projectId}`,
+    {
+      method: "DELETE",
+    },
+    token,
+  );
+}
