@@ -11,6 +11,11 @@ const quizInclude = {
           avatarUrl: true,
         },
       },
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
     },
   },
   questions: true,

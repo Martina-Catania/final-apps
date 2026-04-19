@@ -5,7 +5,7 @@ import {
   requestJson,
 } from "./api-request";
 import type { AuthUser } from "./auth-api";
-import type { ProjectType } from "./project-api";
+import type { ProjectTag, ProjectType } from "./project-api";
 
 export type ProfileUser = {
   id: number;
@@ -22,6 +22,7 @@ export type ProfileProject = {
   updatedAt: string;
   quizId: number | null;
   deckId: number | null;
+  tags: ProjectTag[];
 };
 
 export type UserProfileSummary = {

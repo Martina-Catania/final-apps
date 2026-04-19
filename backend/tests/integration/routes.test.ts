@@ -312,4 +312,229 @@ describe("api routes", () => {
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
   });
+
+  it("rejects search requests without an authorization token", async () => {
+    const app = createApp(asAppContext(mockCtx));
+
+    const response = await request(app)
+      .get("/api/search")
+      .query({ q: "ali" });
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe("Authorization token is required");
+  });
+
+  it("validates search query params", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    const token = generateAuthToken(9);
+
+    const response = await request(app)
+      .get("/api/search")
+      .set("Authorization", `Bearer ${token}`)
+      .query({ q: "   " });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("q or tagIds is required");
+  });
+
+  it("returns project results for tags-only search", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    const token = generateAuthToken(9);
+
+    mockCtx.mocks.project.count.mockResolvedValue(1 as never);
+    mockCtx.mocks.project.findMany.mockResolvedValue([
+      {
+        id: 22,
+        type: "QUIZ",
+        title: "Algorithms Basics",
+        timesPlayed: 47,
+        createdAt: new Date("2026-04-10T10:00:00.000Z"),
+        updatedAt: new Date("2026-04-10T10:00:00.000Z"),
+        user: {
+          id: 5,
+          username: "creator",
+          avatarUrl: null,
+        },
+        quiz: {
+          id: 30,
+        },
+        deck: null,
+        tags: [
+          {
+            tag: {
+              id: 6,
+              name: "math",
+            },
+          },
+        ],
+      },
+    ] as never);
+
+    const response = await request(app)
+      .get("/api/search")
+      .set("Authorization", `Bearer ${token}`)
+      .query({ tagIds: "6" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.query).toBe("");
+    expect(response.body.users).toEqual([]);
+    expect(response.body.projects).toHaveLength(1);
+    expect(response.body.projects[0].tags).toEqual([{ id: 6, name: "math" }]);
+    expect(mockCtx.mocks.user.findMany).not.toHaveBeenCalled();
+
+    expect(mockCtx.mocks.project.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          tags: {
+            some: {
+              tagId: {
+                in: [6],
+              },
+            },
+          },
+        },
+      }),
+    );
+  });
+
+  it("returns ranked users and paginated projects for search results", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    const token = generateAuthToken(9);
+
+    mockCtx.mocks.user.findMany.mockResolvedValue([
+      {
+        id: 1,
+        username: "Malik",
+        avatarUrl: null,
+        _count: {
+          followers: 1,
+          following: 2,
+          projects: 3,
+        },
+      },
+      {
+        id: 2,
+        username: "Alina",
+        avatarUrl: null,
+        _count: {
+          followers: 4,
+          following: 5,
+          projects: 6,
+        },
+      },
+      {
+        id: 3,
+        username: "alice",
+        avatarUrl: null,
+        _count: {
+          followers: 7,
+          following: 8,
+          projects: 9,
+        },
+      },
+    ] as never);
+
+    mockCtx.mocks.project.count.mockResolvedValue(2 as never);
+    mockCtx.mocks.project.findMany.mockResolvedValue([
+      {
+        id: 22,
+        type: "QUIZ",
+        title: "Algorithms Basics",
+        timesPlayed: 47,
+        createdAt: new Date("2026-04-10T10:00:00.000Z"),
+        updatedAt: new Date("2026-04-10T10:00:00.000Z"),
+        user: {
+          id: 5,
+          username: "creator",
+          avatarUrl: null,
+        },
+        quiz: {
+          id: 30,
+        },
+        deck: null,
+        tags: [],
+      },
+    ] as never);
+
+    const response = await request(app)
+      .get("/api/search")
+      .set("Authorization", `Bearer ${token}`)
+      .query({
+        q: "ali",
+        tagIds: "3",
+        usersPage: "2",
+        usersLimit: "1",
+        projectsPage: "2",
+        projectsLimit: "1",
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.query).toBe("ali");
+
+    expect(response.body.users).toHaveLength(1);
+    expect(response.body.users[0]).toMatchObject({
+      id: 2,
+      username: "Alina",
+      followerCount: 4,
+      followingCount: 5,
+      projectCount: 6,
+    });
+
+    expect(response.body.usersPagination).toMatchObject({
+      page: 2,
+      limit: 1,
+      total: 3,
+      totalPages: 3,
+      hasNextPage: true,
+      hasPreviousPage: true,
+    });
+
+    expect(response.body.projects).toHaveLength(1);
+    expect(response.body.projects[0]).toMatchObject({
+      id: 22,
+      title: "Algorithms Basics",
+      timesPlayed: 47,
+      quizId: 30,
+      deckId: null,
+    });
+
+    expect(response.body.projectsPagination).toMatchObject({
+      page: 2,
+      limit: 1,
+      total: 2,
+      totalPages: 2,
+      hasNextPage: false,
+      hasPreviousPage: true,
+    });
+
+    expect(mockCtx.mocks.project.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          title: {
+            contains: "ali",
+          },
+          tags: {
+            some: {
+              tagId: {
+                in: [3],
+              },
+            },
+          },
+        },
+        orderBy: [
+          {
+            timesPlayed: "desc",
+          },
+          {
+            createdAt: "desc",
+          },
+          {
+            id: "desc",
+          },
+        ],
+        skip: 1,
+        take: 1,
+      }),
+    );
+  });
 });

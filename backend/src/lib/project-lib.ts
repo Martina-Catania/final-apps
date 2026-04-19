@@ -30,6 +30,11 @@ const followedProjectInclude = {
       id: true,
     },
   },
+  tags: {
+    include: {
+      tag: true,
+    },
+  },
 };
 
 export function listProjects(ctx: AppContext) {

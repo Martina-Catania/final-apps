@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,10 +13,11 @@ import {
 import { Accordion, Button } from "../../../../components";
 import { AppTextInput } from "../../../../components/TextInput";
 import { useAuth } from "../../../../context/auth-context";
-import { useThemeTokens } from "../../../../hooks";
+import { useProjectTagEditor, useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
 import { updateProjectRequest } from "../../../../utils/project-api";
+import { uniqueFlatTags } from "../../../../utils/tag-utils";
 import {
   createQuizQuestionRequest,
   deleteQuizQuestionRequest,
@@ -86,6 +88,21 @@ export default function QuizEditPage() {
   const [questionsError, setQuestionsError] = useState<string | null>(null);
   const [questionErrors, setQuestionErrors] = useState<Record<string, QuestionFieldErrors>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const {
+    tagInput,
+    selectedTags,
+    suggestedTags,
+    tagsError,
+    handleTagInputChange,
+    selectSuggestedTag,
+    handleAddTag,
+    removeSelectedTag,
+    initializeFromProjectTags,
+    clearTagState,
+    clearTagsError,
+    syncProjectTags,
+  } = useProjectTagEditor({ token: token ?? undefined });
 
   const addQuestion = () => {
     setQuestions((current) => [...current, createQuestionDraft(nextQuestionIndex)]);
@@ -207,6 +224,7 @@ export default function QuizEditPage() {
         setQuizTitle("");
         setInitialQuestionIds([]);
         setQuestions([]);
+        clearTagState();
         setNextQuestionIndex(1);
         return;
       }
@@ -215,6 +233,8 @@ export default function QuizEditPage() {
       setCreatorUserId(payload.project.userId);
       setQuizTitle(payload.project.title);
       setInitialQuestionIds(payload.questions.map((item) => item.id));
+      const projectTags = uniqueFlatTags(payload.project.tags.map((projectTag) => projectTag.tag));
+      initializeFromProjectTags(projectTags);
 
       const mappedQuestions: QuestionDraft[] = payload.questions.map((item, index) => ({
         key: `existing-${item.id}-${index + 1}`,
@@ -237,10 +257,11 @@ export default function QuizEditPage() {
       setLoadError(getApiErrorMessage(error, "Unable to load quiz"));
       setCreatorUserId(null);
       setQuestions([]);
+      clearTagState();
     } finally {
       setIsLoading(false);
     }
-  }, [quizId, token, user]);
+  }, [clearTagState, initializeFromProjectTags, quizId, token, user]);
 
   useEffect(() => {
     void loadQuiz();
@@ -248,6 +269,7 @@ export default function QuizEditPage() {
 
   const handleSaveQuiz = async () => {
     setSubmitError(null);
+    clearTagsError();
 
     if (!token || !user) {
       setSubmitError("You must be signed in to edit quizzes");
@@ -278,6 +300,8 @@ export default function QuizEditPage() {
         },
         token,
       );
+
+      await syncProjectTags(projectId);
 
       const remainingQuestionIds = new Set(initialQuestionIds);
 
@@ -446,6 +470,97 @@ export default function QuizEditPage() {
               errorText={titleError ?? undefined}
               helperText="Rename your quiz."
             />
+
+            <View style={{ gap: spacing.sm }}>
+              <AppTextInput
+                label="Project tags"
+                onChangeText={handleTagInputChange}
+                onSubmitEditing={() => {
+                  void handleAddTag();
+                }}
+                placeholder="Type a tag name"
+                value={tagInput}
+                errorText={tagsError ?? undefined}
+                helperText="Add existing tags or create new ones. Matching is case-insensitive."
+              />
+
+              {suggestedTags.length > 0 ? (
+                <View style={[styles.rowWrap, { gap: spacing.xs }]}>
+                  {suggestedTags.map((tag) => (
+                    <Pressable
+                      accessibilityRole="button"
+                      key={`quiz-edit-suggested-tag-${tag.id}`}
+                      onPress={() => {
+                        selectSuggestedTag(tag);
+                      }}
+                      style={({ pressed }) => [
+                        styles.tagPill,
+                        {
+                          backgroundColor: colors.surfaceMuted,
+                          borderColor: colors.border,
+                          borderRadius: radius.pill,
+                          opacity: pressed ? 0.8 : 1,
+                          paddingHorizontal: spacing.sm,
+                          paddingVertical: spacing.xs,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: colors.textSecondary,
+                          fontSize: typography.secondary.sm,
+                          fontWeight: typography.weights.medium,
+                        }}
+                      >
+                        {tag.name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
+
+              {selectedTags.length > 0 ? (
+                <View style={[styles.rowWrap, { gap: spacing.xs }]}>
+                  {selectedTags.map((tag) => (
+                    <Pressable
+                      accessibilityRole="button"
+                      key={`quiz-edit-selected-tag-${tag.id}`}
+                      onPress={() => removeSelectedTag(tag.id)}
+                      style={({ pressed }) => [
+                        styles.tagPill,
+                        {
+                          backgroundColor: colors.secondaryMuted,
+                          borderColor: colors.secondary,
+                          borderRadius: radius.pill,
+                          opacity: pressed ? 0.8 : 1,
+                          paddingHorizontal: spacing.sm,
+                          paddingVertical: spacing.xs,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: colors.textPrimary,
+                          fontSize: typography.secondary.sm,
+                          fontWeight: typography.weights.semibold,
+                        }}
+                      >
+                        {tag.name}  x
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: typography.secondary.sm,
+                  }}
+                >
+                  No tags selected yet.
+                </Text>
+              )}
+            </View>
 
             <View style={{ gap: spacing.sm }}>
               <View style={[styles.rowBetween, { gap: spacing.sm }]}>
@@ -622,5 +737,8 @@ const styles = StyleSheet.create({
   rowWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
+  },
+  tagPill: {
+    borderWidth: 1,
   },
 });

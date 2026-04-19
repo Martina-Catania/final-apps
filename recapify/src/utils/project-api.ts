@@ -8,12 +8,22 @@ export type ProjectCreator = {
   avatarUrl: string | null;
 };
 
+export type ProjectTag = {
+  projectId: number;
+  tagId: number;
+  tag: {
+    id: number;
+    name: string;
+  };
+};
+
 export type Project = {
   id: number;
   type: ProjectType;
   title: string;
   userId: number;
   user?: ProjectCreator;
+  tags: ProjectTag[];
   timesPlayed: number;
   createdAt: string;
   updatedAt: string;

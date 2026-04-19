@@ -11,6 +11,10 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 import { optionalString, parseIntParam, requireString } from "../utils/http.js";
 
+function normalizeTagName(value: string) {
+  return value.toLocaleLowerCase();
+}
+
 export function createTagRouter(ctx: AppContext) {
   const tagRouter = Router();
 
@@ -39,7 +43,7 @@ export function createTagRouter(ctx: AppContext) {
   tagRouter.post(
     "/",
     asyncHandler(async (req, res) => {
-      const name = requireString(req.body.name, "name");
+      const name = normalizeTagName(requireString(req.body.name, "name"));
       const tag = await createTag({ name }, ctx);
       res.status(201).json(tag);
     }),
@@ -49,11 +53,12 @@ export function createTagRouter(ctx: AppContext) {
     "/:id",
     asyncHandler(async (req, res) => {
       const id = parseIntParam(req.params.id, "id");
+      const name = optionalString(req.body.name, "name");
 
       const tag = await updateTag(
         id,
         {
-          name: optionalString(req.body.name, "name"),
+          name: typeof name === "string" ? normalizeTagName(name) : undefined,
         },
         ctx,
       );

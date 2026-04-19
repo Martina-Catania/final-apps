@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { Button, ProfileCard } from "../../../components";
+import { Button, ProfileCard, ProjectTagPills } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
 import { useThemeTokens } from "../../../hooks";
 import {
@@ -21,6 +21,7 @@ import {
 } from "../../../utils/user-api";
 import { getApiHostUrl } from "../../../utils/api-config";
 import { SafeAreaPage } from "../../../screens/safe-area-page";
+import { projectTagsToFlatTags } from "../../../utils/tag-utils";
 
 function parseUserId(value: string | string[] | undefined): number | null {
   const firstValue = Array.isArray(value) ? value[0] : value;
@@ -349,6 +350,8 @@ export default function ProfilePage() {
                     >
                       {project.type} · played {project.timesPlayed} time{project.timesPlayed === 1 ? "" : "s"}
                     </Text>
+
+                    <ProjectTagPills tags={projectTagsToFlatTags(project.tags)} />
 
                     <Text
                       style={{

@@ -10,6 +10,14 @@ type ProfileProject = {
   updatedAt: Date;
   quizId: number | null;
   deckId: number | null;
+  tags: {
+    projectId: number;
+    tagId: number;
+    tag: {
+      id: number;
+      name: string;
+    };
+  }[];
 };
 
 export type UserProfileSummary = {
@@ -90,6 +98,18 @@ export async function getUserProfileSummary(
               id: true,
             },
           },
+          tags: {
+            select: {
+              projectId: true,
+              tagId: true,
+              tag: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
         },
       }),
       profileUserId === viewerUserId
@@ -122,6 +142,7 @@ export async function getUserProfileSummary(
       updatedAt: project.updatedAt,
       quizId: project.quiz?.id ?? null,
       deckId: project.deck?.id ?? null,
+      tags: project.tags,
     })),
   };
 }

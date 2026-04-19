@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,7 +12,7 @@ import {
 import { Accordion, Button } from "../../../components";
 import { AppTextInput } from "../../../components/TextInput";
 import { useAuth } from "../../../context/auth-context";
-import { useThemeTokens } from "../../../hooks";
+import { useProjectTagEditor, useThemeTokens } from "../../../hooks";
 import { SafeAreaPage } from "../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../utils/api-request";
 import {
@@ -57,6 +58,18 @@ export default function FlashcardCreatePage() {
   const [flashcardErrors, setFlashcardErrors] = useState<Record<string, FlashcardFieldErrors>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    tagInput,
+    selectedTags,
+    suggestedTags,
+    tagsError,
+    handleTagInputChange,
+    selectSuggestedTag,
+    handleAddTag,
+    removeSelectedTag,
+    clearTagsError,
+    syncProjectTags,
+  } = useProjectTagEditor({ token: token ?? undefined });
 
   const addFlashcard = () => {
     setFlashcards((current) => [...current, createFlashcardDraft(nextFlashcardIndex)]);
@@ -142,6 +155,7 @@ export default function FlashcardCreatePage() {
 
   const handleSaveFlashcards = async () => {
     setSubmitError(null);
+    clearTagsError();
 
     if (!token || !user?.id) {
       setSubmitError("You must be signed in to create flashcards");
@@ -163,6 +177,8 @@ export default function FlashcardCreatePage() {
         },
         token,
       );
+
+      await syncProjectTags(project.id);
 
       const deck = await createDeckRequest(project.id, token);
 
@@ -250,6 +266,95 @@ export default function FlashcardCreatePage() {
               errorText={titleError ?? undefined}
               helperText="Name your flashcard set."
             />
+
+            <View style={{ gap: spacing.sm }}>
+              <AppTextInput
+                label="Project tags"
+                onChangeText={handleTagInputChange}
+                onSubmitEditing={() => {
+                  void handleAddTag();
+                }}
+                placeholder="Type a tag name"
+                value={tagInput}
+                errorText={tagsError ?? undefined}
+                helperText="Add existing tags or create new ones. Matching is case-insensitive."
+              />
+
+              {suggestedTags.length > 0 ? (
+                <View style={[styles.rowWrap, { gap: spacing.xs }]}>
+                  {suggestedTags.map((tag) => (
+                    <Pressable
+                      accessibilityRole="button"
+                      key={`deck-suggested-tag-${tag.id}`}
+                      onPress={() => selectSuggestedTag(tag)}
+                      style={({ pressed }) => [
+                        styles.tagPill,
+                        {
+                          backgroundColor: colors.surfaceMuted,
+                          borderColor: colors.border,
+                          borderRadius: radius.pill,
+                          opacity: pressed ? 0.8 : 1,
+                          paddingHorizontal: spacing.sm,
+                          paddingVertical: spacing.xs,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: colors.textSecondary,
+                          fontSize: typography.secondary.sm,
+                          fontWeight: typography.weights.medium,
+                        }}
+                      >
+                        {tag.name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
+
+              {selectedTags.length > 0 ? (
+                <View style={[styles.rowWrap, { gap: spacing.xs }]}>
+                  {selectedTags.map((tag) => (
+                    <Pressable
+                      accessibilityRole="button"
+                      key={`deck-selected-tag-${tag.id}`}
+                      onPress={() => removeSelectedTag(tag.id)}
+                      style={({ pressed }) => [
+                        styles.tagPill,
+                        {
+                          backgroundColor: colors.secondaryMuted,
+                          borderColor: colors.secondary,
+                          borderRadius: radius.pill,
+                          opacity: pressed ? 0.8 : 1,
+                          paddingHorizontal: spacing.sm,
+                          paddingVertical: spacing.xs,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: colors.textPrimary,
+                          fontSize: typography.secondary.sm,
+                          fontWeight: typography.weights.semibold,
+                        }}
+                      >
+                        {tag.name}  x
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: typography.secondary.sm,
+                  }}
+                >
+                  No tags selected yet.
+                </Text>
+              )}
+            </View>
 
             <View style={{ gap: spacing.sm }}>
               <View style={[styles.rowBetween, { gap: spacing.sm }]}>
@@ -386,5 +491,8 @@ const styles = StyleSheet.create({
   rowWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
+  },
+  tagPill: {
+    borderWidth: 1,
   },
 });

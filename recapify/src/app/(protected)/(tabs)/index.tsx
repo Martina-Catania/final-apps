@@ -33,6 +33,7 @@ import {
   listQuizzesRequest,
   type Quiz,
 } from "../../../utils/quiz-api";
+import { projectTagsToFlatTags, type FlatTag } from "../../../utils/tag-utils";
 
 type HomeCarouselItem = {
   id: string;
@@ -40,6 +41,7 @@ type HomeCarouselItem = {
   targetType: "quiz" | "flashcard";
   title: string;
   description: string;
+  tags: FlatTag[];
   iconName: "help-circle-outline" | "library-outline";
   accentColor: string;
 };
@@ -148,6 +150,7 @@ export default function Index() {
         targetType: "quiz",
         title: quiz.project.title,
         description: `By ${creatorLabel} · ${questionCount} ${questionLabel} ready to practice`,
+        tags: projectTagsToFlatTags(quiz.project.tags),
         iconName: "help-circle-outline",
         accentColor: colors.primary,
       };
@@ -166,6 +169,7 @@ export default function Index() {
         targetType: "flashcard",
         title: deck.project.title,
         description: `By ${creatorLabel} · ${cardCount} ${cardLabel} ready to study`,
+        tags: projectTagsToFlatTags(deck.project.tags),
         iconName: "library-outline",
         accentColor: colors.success,
       };
@@ -184,6 +188,7 @@ export default function Index() {
             targetType: "quiz",
             title: project.title,
             description: `By ${creatorLabel}`,
+            tags: projectTagsToFlatTags(project.tags),
             iconName: "help-circle-outline",
             accentColor: colors.warning,
           },
@@ -198,6 +203,7 @@ export default function Index() {
             targetType: "flashcard",
             title: project.title,
             description: `By ${creatorLabel}`,
+            tags: projectTagsToFlatTags(project.tags),
             iconName: "library-outline",
             accentColor: colors.secondary,
           },

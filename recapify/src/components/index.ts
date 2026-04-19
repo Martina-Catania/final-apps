@@ -15,5 +15,6 @@ export * from "./DrawerPanel";
 export * from "./FileUploadField";
 export * from "./Pagination";
 export * from "./ProfileCard";
+export * from "./ProjectTagPills";
 export * from "./RefreshableScroll";
 export * from "./Skeleton";

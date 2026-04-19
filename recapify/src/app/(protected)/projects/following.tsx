@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 
-import { Button } from "../../../components";
+import { Button, ProjectTagPills } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
 import {
   usePullToRefresh,
@@ -22,6 +22,7 @@ import {
   listFollowingProjectsRequest,
   type FollowingProject,
 } from "../../../utils/project-api";
+import { projectTagsToFlatTags, type FlatTag } from "../../../utils/tag-utils";
 
 type FollowedProjectListItem = {
   id: number;
@@ -29,6 +30,7 @@ type FollowedProjectListItem = {
   targetType: "quiz" | "flashcard";
   title: string;
   creatorName: string;
+  tags: FlatTag[];
 };
 
 function getCreatorLabel(username: string | null | undefined) {
@@ -51,6 +53,7 @@ function mapFollowingProject(project: FollowingProject): FollowedProjectListItem
       targetType: "quiz",
       title: project.title,
       creatorName,
+      tags: projectTagsToFlatTags(project.tags),
     };
   }
 
@@ -61,6 +64,7 @@ function mapFollowingProject(project: FollowingProject): FollowedProjectListItem
       targetType: "flashcard",
       title: project.title,
       creatorName,
+      tags: projectTagsToFlatTags(project.tags),
     };
   }
 
@@ -310,6 +314,9 @@ export default function FollowingProjectsPage() {
                     • By {project.creatorName}
                   </Text>
                 </Text>
+
+                <ProjectTagPills tags={project.tags} />
+
                 <Button
                   fullWidth
                   iconName={project.targetType === "quiz" ? "help-circle-outline" : "library-outline"}

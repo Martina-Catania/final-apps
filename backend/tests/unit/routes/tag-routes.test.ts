@@ -14,8 +14,14 @@ describe("tag-routes", () => {
 
     expect((await request(app).get("/tags")).status).toBe(200);
     expect((await request(app).get("/tags/2")).status).toBe(404);
-    expect((await request(app).patch("/tags/2").send({ name: "next" })).status).toBe(200);
+    expect((await request(app).patch("/tags/2").send({ name: "NeXt" })).status).toBe(200);
     expect((await request(app).delete("/tags/2")).status).toBe(200);
+
+    expect(mocks.tag.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ name: "next" }),
+      }),
+    );
   });
 
   it("creates a tag", async () => {
@@ -24,7 +30,7 @@ describe("tag-routes", () => {
 
     mocks.tag.create.mockResolvedValue({ id: 4, name: "typescript" } as never);
 
-    const response = await request(app).post("/tags").send({ name: "typescript" });
+    const response = await request(app).post("/tags").send({ name: "TypeScript" });
 
     expect(response.status).toBe(201);
     expect(mocks.tag.create).toHaveBeenCalledWith({

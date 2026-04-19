@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 
-import { Button } from "../../../components";
+import { Button, ProjectTagPills } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
 import {
   usePullToRefresh,
@@ -20,6 +20,7 @@ import { SafeAreaPage } from "../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../utils/api-request";
 import { listDecksRequest } from "../../../utils/deck-api";
 import { listQuizzesRequest } from "../../../utils/quiz-api";
+import { projectTagsToFlatTags, type FlatTag } from "../../../utils/tag-utils";
 
 type SelectedType = "quiz" | "flashcard";
 
@@ -28,6 +29,7 @@ type ProjectListItem = {
   title: string;
   summary: string;
   creatorName: string;
+  tags: FlatTag[];
 };
 
 function getCreatorLabel(username: string | null | undefined) {
@@ -86,6 +88,7 @@ export default function ProjectsByTypePage() {
               title: quiz.project.title,
               summary: `${questionCount} ${questionLabel}`,
               creatorName: getCreatorLabel(quiz.project.user?.username),
+              tags: projectTagsToFlatTags(quiz.project.tags),
             };
           }),
         );
@@ -105,6 +108,7 @@ export default function ProjectsByTypePage() {
             title: deck.project.title,
             summary: `${cardCount} ${cardLabel}`,
             creatorName: getCreatorLabel(deck.project.user?.username),
+            tags: projectTagsToFlatTags(deck.project.tags),
           };
         }),
       );
@@ -346,6 +350,9 @@ export default function ProjectsByTypePage() {
                 >
                   By {project.creatorName}
                 </Text>
+
+                <ProjectTagPills tags={project.tags} />
+
                 <Text
                   style={{
                     color: colors.textSecondary,

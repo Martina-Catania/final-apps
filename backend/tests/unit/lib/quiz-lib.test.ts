@@ -26,6 +26,11 @@ describe("quiz-lib", () => {
             avatarUrl: true,
           },
         },
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
       },
     },
     questions: true,
