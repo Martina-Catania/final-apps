@@ -6,6 +6,7 @@ import {
   getProjectById,
   incrementProjectTimesPlayed,
   listProjects,
+  listProjectsByFollowing,
   updateProject,
 } from "../../../src/lib/project-lib.js";
 
@@ -16,6 +17,26 @@ const projectInclude = {
   tags: {
     include: {
       tag: true,
+    },
+  },
+};
+
+const followedProjectInclude = {
+  user: {
+    select: {
+      id: true,
+      username: true,
+      avatarUrl: true,
+    },
+  },
+  quiz: {
+    select: {
+      id: true,
+    },
+  },
+  deck: {
+    select: {
+      id: true,
     },
   },
 };
@@ -51,6 +72,28 @@ describe("project-lib", () => {
     expect(project.findUnique).toHaveBeenCalledWith({
       where: { id: 9 },
       include: projectInclude,
+    });
+  });
+
+  it("lists quiz and flashcard projects from followed users", () => {
+    const { ctx, project } = createCtx();
+    listProjectsByFollowing(12, ctx);
+
+    expect(project.findMany).toHaveBeenCalledWith({
+      where: {
+        type: {
+          in: ["QUIZ", "DECK"],
+        },
+        user: {
+          followers: {
+            some: {
+              followerId: 12,
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      include: followedProjectInclude,
     });
   });
 

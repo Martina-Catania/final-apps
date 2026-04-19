@@ -19,6 +19,11 @@ export type Project = {
   updatedAt: string;
 };
 
+export type FollowingProject = Project & {
+  quiz: { id: number } | null;
+  deck: { id: number } | null;
+};
+
 export type CreateProjectInput = {
   type: ProjectType;
   title: string;
@@ -72,6 +77,16 @@ export function deleteProjectRequest(projectId: number, token?: string) {
     `/projects/${projectId}`,
     {
       method: "DELETE",
+    },
+    token,
+  );
+}
+
+export function listFollowingProjectsRequest(token: string) {
+  return requestJson<FollowingProject[]>(
+    "/projects/following",
+    {
+      method: "GET",
     },
     token,
   );

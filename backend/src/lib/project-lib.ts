@@ -12,8 +12,47 @@ const projectInclude = {
   },
 };
 
+const followedProjectInclude = {
+  user: {
+    select: {
+      id: true,
+      username: true,
+      avatarUrl: true,
+    },
+  },
+  quiz: {
+    select: {
+      id: true,
+    },
+  },
+  deck: {
+    select: {
+      id: true,
+    },
+  },
+};
+
 export function listProjects(ctx: AppContext) {
   return ctx.prisma.project.findMany({ orderBy: { id: "asc" }, include: projectInclude });
+}
+
+export function listProjectsByFollowing(userId: number, ctx: AppContext) {
+  return ctx.prisma.project.findMany({
+    where: {
+      type: {
+        in: ["QUIZ", "DECK"],
+      },
+      user: {
+        followers: {
+          some: {
+            followerId: userId,
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    include: followedProjectInclude,
+  });
 }
 
 export function getProjectById(id: number, ctx: AppContext) {

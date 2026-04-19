@@ -7,6 +7,7 @@ import {
   getProjectById,
   incrementProjectTimesPlayed,
   listProjects,
+  listProjectsByFollowing,
   updateProject,
 } from "../lib/project-lib.js";
 import { createProjectTag, deleteProjectTag } from "../lib/project-tag-lib.js";
@@ -28,6 +29,16 @@ export function createProjectRouter(ctx: AppContext) {
     "/",
     asyncHandler(async (_req, res) => {
       const projects = await listProjects(ctx);
+      res.json(projects);
+    }),
+  );
+
+  projectRouter.get(
+    "/following",
+    requireAuth,
+    asyncHandler(async (_req, res) => {
+      const authUserId = getAuthUserId(res);
+      const projects = await listProjectsByFollowing(authUserId, ctx);
       res.json(projects);
     }),
   );

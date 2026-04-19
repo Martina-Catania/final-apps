@@ -27,7 +27,18 @@ type ProjectListItem = {
   id: number;
   title: string;
   summary: string;
+  creatorName: string;
 };
+
+function getCreatorLabel(username: string | null | undefined) {
+  const trimmedUsername = username?.trim();
+
+  if (!trimmedUsername) {
+    return "unknown creator";
+  }
+
+  return trimmedUsername;
+}
 
 function parseSelectedType(value: string | string[] | undefined): SelectedType | null {
   const rawValue = Array.isArray(value) ? value[0] : value;
@@ -74,6 +85,7 @@ export default function ProjectsByTypePage() {
               id: quiz.id,
               title: quiz.project.title,
               summary: `${questionCount} ${questionLabel}`,
+              creatorName: getCreatorLabel(quiz.project.user?.username),
             };
           }),
         );
@@ -92,6 +104,7 @@ export default function ProjectsByTypePage() {
             id: deck.id,
             title: deck.project.title,
             summary: `${cardCount} ${cardLabel}`,
+            creatorName: getCreatorLabel(deck.project.user?.username),
           };
         }),
       );
@@ -324,6 +337,14 @@ export default function ProjectsByTypePage() {
                   }}
                 >
                   {project.title}
+                </Text>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: typography.secondary.md,
+                  }}
+                >
+                  By {project.creatorName}
                 </Text>
                 <Text
                   style={{

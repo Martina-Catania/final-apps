@@ -57,6 +57,56 @@ describe("project-routes", () => {
     });
   });
 
+  it("lists projects from followed users for authenticated requests", async () => {
+    const { ctx, mocks } = createRouteMockContext();
+    const app = createRouteApp("/projects", createProjectRouter(ctx));
+    const token = generateAuthToken(7);
+
+    mocks.project.findMany.mockResolvedValue([
+      {
+        id: 21,
+        type: "QUIZ",
+        title: "History Sprint",
+      },
+    ] as never);
+
+    const response = await request(app)
+      .get("/projects/following")
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([
+      {
+        id: 21,
+        type: "QUIZ",
+        title: "History Sprint",
+      },
+    ]);
+    expect(mocks.project.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          user: {
+            followers: {
+              some: {
+                followerId: 7,
+              },
+            },
+          },
+        }),
+      }),
+    );
+  });
+
+  it("requires authentication to list projects from followed users", async () => {
+    const { ctx } = createRouteMockContext();
+    const app = createRouteApp("/projects", createProjectRouter(ctx));
+
+    const response = await request(app).get("/projects/following");
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe("Authorization token is required");
+  });
+
   it("returns a project by id when found", async () => {
     const { ctx, mocks } = createRouteMockContext();
     const app = createRouteApp("/projects", createProjectRouter(ctx));
