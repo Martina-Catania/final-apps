@@ -132,7 +132,7 @@ export default function FollowingProjectsPage() {
   );
 
   const pageSubtitle = useMemo(
-    () => "Catch up on quiz and flashcard projects from creators you follow.",
+    () => "Catch up on projects from creators you follow!",
     [],
   );
 

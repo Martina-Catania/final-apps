@@ -321,7 +321,7 @@ export default function Index() {
                 fontSize: typography.secondary.md,
               }}
             >
-              Follow more creators to see their quiz and flashcard projects here.
+              Follow more creators to see their projects here.
             </Text>
           </View>
         ) : null}
