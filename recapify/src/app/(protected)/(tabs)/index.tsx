@@ -183,7 +183,7 @@ export default function Index() {
             entityId: project.quiz.id,
             targetType: "quiz",
             title: project.title,
-            description: `By ${creatorLabel} · Quiz project`,
+            description: `By ${creatorLabel}`,
             iconName: "help-circle-outline",
             accentColor: colors.warning,
           },
@@ -197,7 +197,7 @@ export default function Index() {
             entityId: project.deck.id,
             targetType: "flashcard",
             title: project.title,
-            description: `By ${creatorLabel} · Flashcard project`,
+            description: `By ${creatorLabel}`,
             iconName: "library-outline",
             accentColor: colors.secondary,
           },
@@ -276,6 +276,13 @@ export default function Index() {
           >
             From People You Follow
           </Text>
+
+          <Button
+            iconName="arrow-forward-outline"
+            label="See more"
+            onPress={() => router.push("../projects/following")}
+            variant="secondary"
+          />
         </View>
 
         {isLoadingFollowingProjects ? (
