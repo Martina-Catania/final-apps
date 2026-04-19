@@ -192,7 +192,7 @@ export default function FlashcardDetailPage() {
     try {
       await deleteProjectRequest(deck.projectId, token ?? undefined);
       setIsDeleteConfirmOpen(false);
-      router.replace("../..");
+      router.back();
     } catch (error) {
       setDeleteErrorMessage(getApiErrorMessage(error, "Unable to delete project"));
       setIsDeleteConfirmOpen(false);

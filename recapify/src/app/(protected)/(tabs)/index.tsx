@@ -149,7 +149,7 @@ export default function Index() {
             fontWeight: typography.weights.bold,
           }}
         >
-          Welcome back{user?.username ? `, ${user.username}` : ""}
+          Welcome back{user?.username ? `, ${user.username}!` : ""}
         </Text>
         <Text
           style={{

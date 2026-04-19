@@ -241,7 +241,7 @@ export default function QuizDetailPage() {
     try {
       await deleteProjectRequest(quiz.projectId, token ?? undefined);
       setIsDeleteConfirmOpen(false);
-      router.replace("../..");
+      router.back();
     } catch (error) {
       setDeleteErrorMessage(getApiErrorMessage(error, "Unable to delete project"));
       setIsDeleteConfirmOpen(false);
