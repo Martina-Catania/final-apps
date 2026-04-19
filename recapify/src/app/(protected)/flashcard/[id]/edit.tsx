@@ -340,9 +340,9 @@ export default function FlashcardEditPage() {
           <View style={{ gap: spacing.sm }}>
             <Button
               fullWidth
-              iconName="arrow-back-outline"
-              label="Back"
-              onPress={() => router.back()}
+              iconName="home-outline"
+              label="Back to home"
+              onPress={() => router.replace("../..")}
               variant="default"
             />
             <Button
