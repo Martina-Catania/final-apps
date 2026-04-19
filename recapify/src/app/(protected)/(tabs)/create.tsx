@@ -148,14 +148,14 @@ export default function CreatePage() {
             fontSize: typography.secondary.md,
           }}
         >
-          Flashcards are coming soon.
+          Create a flashcard set with front and back cards.
         </Text>
         <Button
-          disabled
           fullWidth
           iconName="library-outline"
-          label="Create flashcards (coming soon)"
-          variant="disabled"
+          label="Create flashcards"
+          onPress={() => router.push("/flashcard/create")}
+          variant="primary"
         />
       </View>
     </ScrollView>

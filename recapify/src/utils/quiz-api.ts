@@ -40,6 +40,20 @@ export type Quiz = {
   questions: QuizQuestion[];
 };
 
+export type Flashcard = {
+  id: number;
+  front: string;
+  back: string;
+  deckId: number;
+};
+
+export type Deck = {
+  id: number;
+  projectId: number;
+  project: Project;
+  flashcards: Flashcard[];
+};
+
 export type CreateQuizProjectInput = {
   title: string;
   userId: number;
@@ -52,6 +66,17 @@ export type CreateQuizQuestionInput = {
   decoy1: string;
   decoy2: string;
   decoy3: string;
+};
+
+export type CreateFlashcardProjectInput = {
+  title: string;
+  userId: number;
+};
+
+export type CreateFlashcardInput = {
+  deckId: number;
+  front: string;
+  back: string;
 };
 
 export type UpdateProjectInput = {
@@ -67,6 +92,12 @@ export type UpdateQuizQuestionInput = {
   decoy1?: string;
   decoy2?: string;
   decoy3?: string;
+};
+
+export type UpdateFlashcardInput = {
+  deckId?: number;
+  front?: string;
+  back?: string;
 };
 
 export class QuizApiError extends Error {
@@ -150,6 +181,94 @@ export function createQuizRequest(projectId: number, token?: string) {
     {
       method: "POST",
       body: JSON.stringify({ projectId }),
+    },
+    token,
+  );
+}
+
+export function createFlashcardProjectRequest(
+  input: CreateFlashcardProjectInput,
+  token?: string,
+) {
+  return requestJson<Project>(
+    "/projects",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        type: "DECK",
+        title: input.title,
+        userId: input.userId,
+      }),
+    },
+    token,
+  );
+}
+
+export function createDeckRequest(projectId: number, token?: string) {
+  return requestJson<Deck>(
+    "/decks",
+    {
+      method: "POST",
+      body: JSON.stringify({ projectId }),
+    },
+    token,
+  );
+}
+
+export function listDecksRequest(token?: string) {
+  return requestJson<Deck[]>(
+    "/decks",
+    {
+      method: "GET",
+    },
+    token,
+  );
+}
+
+export function getDeckByIdRequest(deckId: number, token?: string) {
+  return requestJson<Deck>(
+    `/decks/${deckId}`,
+    {
+      method: "GET",
+    },
+    token,
+  );
+}
+
+export function createFlashcardRequest(
+  input: CreateFlashcardInput,
+  token?: string,
+) {
+  return requestJson<Flashcard>(
+    "/flashcards",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+    token,
+  );
+}
+
+export function updateFlashcardRequest(
+  flashcardId: number,
+  input: UpdateFlashcardInput,
+  token?: string,
+) {
+  return requestJson<Flashcard>(
+    `/flashcards/${flashcardId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    },
+    token,
+  );
+}
+
+export function deleteFlashcardRequest(flashcardId: number, token?: string) {
+  return requestJson<Flashcard>(
+    `/flashcards/${flashcardId}`,
+    {
+      method: "DELETE",
     },
     token,
   );

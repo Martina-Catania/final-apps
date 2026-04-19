@@ -53,7 +53,10 @@ function resolveAvatarUri(avatarUrl: string | null) {
 }
 
 function canOpenProject(project: ProfileProject) {
-  return project.type === "QUIZ" && typeof project.quizId === "number" && project.quizId > 0;
+  const hasQuizId = typeof project.quizId === "number" && project.quizId > 0;
+  const hasDeckId = typeof project.deckId === "number" && project.deckId > 0;
+
+  return (project.type === "QUIZ" && hasQuizId) || (project.type === "DECK" && hasDeckId);
 }
 
 export default function ProfilePage() {
@@ -124,16 +127,28 @@ export default function ProfilePage() {
   };
 
   const openProject = (project: ProfileProject) => {
-    if (!canOpenProject(project) || !project.quizId) {
+    if (!canOpenProject(project)) {
       return;
     }
 
-    router.push({
-      pathname: "/quiz/[id]",
-      params: {
-        id: String(project.quizId),
-      },
-    });
+    if (project.type === "QUIZ" && project.quizId) {
+      router.push({
+        pathname: "/quiz/[id]",
+        params: {
+          id: String(project.quizId),
+        },
+      });
+      return;
+    }
+
+    if (project.type === "DECK" && project.deckId) {
+      router.push({
+        pathname: "/flashcard/[id]",
+        params: {
+          id: String(project.deckId),
+        },
+      });
+    }
   };
 
   if (isLoading) {
@@ -295,6 +310,7 @@ export default function ProfilePage() {
             <View style={{ gap: spacing.sm }}>
               {profile.projects.map((project) => {
                 const isQuizProject = project.type === "QUIZ";
+                const isDeckProject = project.type === "DECK";
                 const isOpenable = canOpenProject(project);
 
                 return (
@@ -343,6 +359,8 @@ export default function ProfilePage() {
                         ? "Open project"
                         : isQuizProject
                           ? "Quiz not linked yet"
+                          : isDeckProject
+                            ? "Flashcard set not linked yet"
                           : "Open view not available yet"}
                     </Text>
                   </Pressable>

@@ -100,6 +100,7 @@ describe("user-routes", () => {
         createdAt: new Date("2026-04-18T10:00:00.000Z"),
         updatedAt: new Date("2026-04-18T10:00:00.000Z"),
         quiz: { id: 4 },
+        deck: null,
       },
     ] as never);
     mocks.follow.findUnique.mockResolvedValue({ followerId: 5 } as never);
@@ -114,6 +115,14 @@ describe("user-routes", () => {
     expect(response.body.stats.followingCount).toBe(4);
     expect(response.body.stats.projectCount).toBe(2);
     expect(response.body.isFollowing).toBe(true);
+    expect(response.body.projects[0]).toEqual(
+      expect.objectContaining({
+        id: 18,
+        type: "QUIZ",
+        quizId: 4,
+        deckId: null,
+      }),
+    );
   });
 
   it("creates and deletes authenticated follow relation", async () => {

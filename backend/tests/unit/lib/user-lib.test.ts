@@ -98,6 +98,17 @@ describe("user-lib", () => {
         createdAt: new Date("2026-04-10T10:00:00.000Z"),
         updatedAt: new Date("2026-04-10T10:00:00.000Z"),
         quiz: { id: 22 },
+        deck: null,
+      },
+      {
+        id: 12,
+        type: "DECK",
+        title: "Chemistry Cards",
+        views: 8,
+        createdAt: new Date("2026-04-11T10:00:00.000Z"),
+        updatedAt: new Date("2026-04-11T10:00:00.000Z"),
+        quiz: null,
+        deck: { id: 31 },
       },
     ] as never);
     follow.findUnique.mockResolvedValue({ followerId: 7 } as never);
@@ -125,6 +136,17 @@ describe("user-lib", () => {
           createdAt: new Date("2026-04-10T10:00:00.000Z"),
           updatedAt: new Date("2026-04-10T10:00:00.000Z"),
           quizId: 22,
+          deckId: null,
+        },
+        {
+          id: 12,
+          type: "DECK",
+          title: "Chemistry Cards",
+          views: 8,
+          createdAt: new Date("2026-04-11T10:00:00.000Z"),
+          updatedAt: new Date("2026-04-11T10:00:00.000Z"),
+          quizId: null,
+          deckId: 31,
         },
       ],
     });

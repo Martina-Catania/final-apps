@@ -9,6 +9,7 @@ type ProfileProject = {
   createdAt: Date;
   updatedAt: Date;
   quizId: number | null;
+  deckId: number | null;
 };
 
 export type UserProfileSummary = {
@@ -84,6 +85,11 @@ export async function getUserProfileSummary(
               id: true,
             },
           },
+          deck: {
+            select: {
+              id: true,
+            },
+          },
         },
       }),
       profileUserId === viewerUserId
@@ -115,6 +121,7 @@ export async function getUserProfileSummary(
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
       quizId: project.quiz?.id ?? null,
+      deckId: project.deck?.id ?? null,
     })),
   };
 }

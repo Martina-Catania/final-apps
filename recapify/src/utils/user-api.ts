@@ -21,6 +21,7 @@ export type ProfileProject = {
   createdAt: string;
   updatedAt: string;
   quizId: number | null;
+  deckId: number | null;
 };
 
 export type UserProfileSummary = {
