@@ -27,7 +27,7 @@ import { projectTagsToFlatTags, type FlatTag } from "../../../utils/tag-utils";
 type FollowedProjectListItem = {
   id: number;
   entityId: number;
-  targetType: "quiz" | "flashcard";
+  targetType: "quiz" | "flashcard" | "summary";
   title: string;
   creatorName: string;
   tags: FlatTag[];
@@ -62,6 +62,17 @@ function mapFollowingProject(project: FollowingProject): FollowedProjectListItem
       id: project.id,
       entityId: project.deck.id,
       targetType: "flashcard",
+      title: project.title,
+      creatorName,
+      tags: projectTagsToFlatTags(project.tags),
+    };
+  }
+
+  if (project.type === "SUMMARY" && project.summary) {
+    return {
+      id: project.id,
+      entityId: project.summary.id,
+      targetType: "summary",
       title: project.title,
       creatorName,
       tags: projectTagsToFlatTags(project.tags),
@@ -125,8 +136,18 @@ export default function FollowingProjectsPage() {
         return;
       }
 
+      if (project.targetType === "flashcard") {
+        router.push({
+          pathname: "../flashcard/[id]",
+          params: {
+            id: String(project.entityId),
+          },
+        });
+        return;
+      }
+
       router.push({
-        pathname: "../flashcard/[id]",
+        pathname: "../summary/[id]",
         params: {
           id: String(project.entityId),
         },
@@ -319,8 +340,20 @@ export default function FollowingProjectsPage() {
 
                 <Button
                   fullWidth
-                  iconName={project.targetType === "quiz" ? "help-circle-outline" : "library-outline"}
-                  label={project.targetType === "quiz" ? "Open quiz" : "Open flashcards"}
+                  iconName={
+                    project.targetType === "quiz"
+                      ? "help-circle-outline"
+                      : project.targetType === "flashcard"
+                        ? "library-outline"
+                        : "document-text-outline"
+                  }
+                  label={
+                    project.targetType === "quiz"
+                      ? "Open quiz"
+                      : project.targetType === "flashcard"
+                        ? "Open flashcards"
+                        : "Open summary"
+                  }
                   onPress={() => openProject(project)}
                   variant="secondary"
                 />

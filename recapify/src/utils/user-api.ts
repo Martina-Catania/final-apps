@@ -21,6 +21,7 @@ export type ProfileProject = {
   createdAt: string;
   updatedAt: string;
   quizId: number | null;
+  summaryId: number | null;
   deckId: number | null;
   tags: ProjectTag[];
 };

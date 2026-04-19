@@ -63,9 +63,14 @@ function resolveAvatarUri(avatarUrl: string | null) {
 
 function canOpenProject(project: SearchProject) {
   const hasQuizId = typeof project.quizId === "number" && project.quizId > 0;
+  const hasSummaryId = typeof project.summaryId === "number" && project.summaryId > 0;
   const hasDeckId = typeof project.deckId === "number" && project.deckId > 0;
 
-  return (project.type === "QUIZ" && hasQuizId) || (project.type === "DECK" && hasDeckId);
+  return (
+    (project.type === "QUIZ" && hasQuizId)
+    || (project.type === "SUMMARY" && hasSummaryId)
+    || (project.type === "DECK" && hasDeckId)
+  );
 }
 
 function getProjectOpenLabel(project: SearchProject) {
@@ -77,7 +82,7 @@ function getProjectOpenLabel(project: SearchProject) {
     return "Open flashcards";
   }
 
-  return "Summary project";
+  return "Open summary";
 }
 
 function formatViewCount(timesPlayed: number) {
@@ -249,6 +254,16 @@ export default function SearchPage() {
           pathname: "/flashcard/[id]",
           params: {
             id: String(project.deckId),
+          },
+        });
+        return;
+      }
+
+      if (project.type === "SUMMARY" && project.summaryId) {
+        router.push({
+          pathname: "../../summary/[id]",
+          params: {
+            id: String(project.summaryId),
           },
         });
       }
@@ -551,8 +566,14 @@ export default function SearchPage() {
                     <Button
                       disabled={!isOpenable}
                       fullWidth
-                      iconName={project.type === "QUIZ" ? "help-circle-outline" : "library-outline"}
-                      label={isOpenable ? getProjectOpenLabel(project) : "Summary project (coming soon)"}
+                      iconName={
+                        project.type === "QUIZ"
+                          ? "help-circle-outline"
+                          : project.type === "DECK"
+                            ? "library-outline"
+                            : "document-text-outline"
+                      }
+                      label={isOpenable ? getProjectOpenLabel(project) : "Project not linked yet"}
                       onPress={() => {
                         if (!isOpenable) {
                           return;

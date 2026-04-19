@@ -55,9 +55,14 @@ function resolveAvatarUri(avatarUrl: string | null) {
 
 function canOpenProject(project: ProfileProject) {
   const hasQuizId = typeof project.quizId === "number" && project.quizId > 0;
+  const hasSummaryId = typeof project.summaryId === "number" && project.summaryId > 0;
   const hasDeckId = typeof project.deckId === "number" && project.deckId > 0;
 
-  return (project.type === "QUIZ" && hasQuizId) || (project.type === "DECK" && hasDeckId);
+  return (
+    (project.type === "QUIZ" && hasQuizId)
+    || (project.type === "SUMMARY" && hasSummaryId)
+    || (project.type === "DECK" && hasDeckId)
+  );
 }
 
 export default function ProfilePage() {
@@ -149,6 +154,16 @@ export default function ProfilePage() {
         pathname: "/flashcard/[id]",
         params: {
           id: String(project.deckId),
+        },
+      });
+      return;
+    }
+
+    if (project.type === "SUMMARY" && project.summaryId) {
+      router.push({
+        pathname: "../summary/[id]",
+        params: {
+          id: String(project.summaryId),
         },
       });
     }
@@ -313,6 +328,7 @@ export default function ProfilePage() {
             <View style={{ gap: spacing.sm }}>
               {profile.projects.map((project) => {
                 const isQuizProject = project.type === "QUIZ";
+                const isSummaryProject = project.type === "SUMMARY";
                 const isDeckProject = project.type === "DECK";
                 const isOpenable = canOpenProject(project);
 
@@ -364,6 +380,8 @@ export default function ProfilePage() {
                         ? "Open project"
                         : isQuizProject
                           ? "Quiz not linked yet"
+                          : isSummaryProject
+                            ? "Summary not linked yet"
                           : isDeckProject
                             ? "Flashcard set not linked yet"
                           : "Open view not available yet"}

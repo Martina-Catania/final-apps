@@ -30,6 +30,7 @@ export type Project = {
 };
 
 export type FollowingProject = Project & {
+  summary: { id: number } | null;
   quiz: { id: number } | null;
   deck: { id: number } | null;
 };

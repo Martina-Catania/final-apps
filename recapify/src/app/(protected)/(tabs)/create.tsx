@@ -110,14 +110,14 @@ export default function CreatePage() {
             fontSize: typography.secondary.md,
           }}
         >
-          Summaries are coming soon.
+          Create a rich markdown summary with native formatting support.
         </Text>
         <Button
-          disabled
           fullWidth
           iconName="document-text-outline"
-          label="Create summary (coming soon)"
-          variant="disabled"
+          label="Create summary"
+          onPress={() => router.push("../summary/create")}
+          variant="primary"
         />
       </View>
 

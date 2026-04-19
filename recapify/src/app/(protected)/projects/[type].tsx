@@ -20,9 +20,10 @@ import { SafeAreaPage } from "../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../utils/api-request";
 import { listDecksRequest } from "../../../utils/deck-api";
 import { listQuizzesRequest } from "../../../utils/quiz-api";
+import { listSummariesRequest } from "../../../utils/summary-api";
 import { projectTagsToFlatTags, type FlatTag } from "../../../utils/tag-utils";
 
-type SelectedType = "quiz" | "flashcard";
+type SelectedType = "quiz" | "flashcard" | "summary";
 
 type ProjectListItem = {
   id: number;
@@ -45,7 +46,7 @@ function getCreatorLabel(username: string | null | undefined) {
 function parseSelectedType(value: string | string[] | undefined): SelectedType | null {
   const rawValue = Array.isArray(value) ? value[0] : value;
 
-  if (rawValue === "quiz" || rawValue === "flashcard") {
+  if (rawValue === "quiz" || rawValue === "flashcard" || rawValue === "summary") {
     return rawValue;
   }
 
@@ -96,19 +97,40 @@ export default function ProjectsByTypePage() {
         return;
       }
 
-      const payload = await listDecksRequest(token ?? undefined);
+      if (selectedType === "flashcard") {
+        const payload = await listDecksRequest(token ?? undefined);
+
+        setProjects(
+          payload.map((deck) => {
+            const cardCount = deck.flashcards.length;
+            const cardLabel = cardCount === 1 ? "card" : "cards";
+
+            return {
+              id: deck.id,
+              title: deck.project.title,
+              summary: `${cardCount} ${cardLabel}`,
+              creatorName: getCreatorLabel(deck.project.user?.username),
+              tags: projectTagsToFlatTags(deck.project.tags),
+            };
+          }),
+        );
+
+        return;
+      }
+
+      const payload = await listSummariesRequest(token ?? undefined);
 
       setProjects(
-        payload.map((deck) => {
-          const cardCount = deck.flashcards.length;
-          const cardLabel = cardCount === 1 ? "card" : "cards";
+        payload.map((summary) => {
+          const contentLength = summary.content.trim().length;
+          const contentLabel = contentLength === 1 ? "character" : "characters";
 
           return {
-            id: deck.id,
-            title: deck.project.title,
-            summary: `${cardCount} ${cardLabel}`,
-            creatorName: getCreatorLabel(deck.project.user?.username),
-            tags: projectTagsToFlatTags(deck.project.tags),
+            id: summary.id,
+            title: summary.project.title,
+            summary: `${contentLength} ${contentLabel}`,
+            creatorName: getCreatorLabel(summary.project.user?.username),
+            tags: projectTagsToFlatTags(summary.project.tags),
           };
         }),
       );
@@ -116,7 +138,9 @@ export default function ProjectsByTypePage() {
       const fallbackMessage =
         selectedType === "quiz"
           ? "Unable to load quiz projects"
-          : "Unable to load flashcard projects";
+          : selectedType === "flashcard"
+            ? "Unable to load flashcard projects"
+            : "Unable to load summary projects";
 
       setErrorMessage(getApiErrorMessage(error, fallbackMessage));
       setProjects([]);
@@ -136,6 +160,8 @@ export default function ProjectsByTypePage() {
       ? "All Quiz Projects"
       : selectedType === "flashcard"
         ? "All Flashcard Projects"
+        : selectedType === "summary"
+          ? "All Summary Projects"
         : "Projects";
 
   const subtitle =
@@ -143,12 +169,16 @@ export default function ProjectsByTypePage() {
       ? "See every quiz project and jump into practice quickly."
       : selectedType === "flashcard"
         ? "See every flashcard project and start studying right away."
+        : selectedType === "summary"
+          ? "See every summary project and jump into read mode."
         : "Invalid project type.";
 
   const emptyMessage =
     selectedType === "quiz"
       ? "No quiz projects were found."
-      : "No flashcard projects were found.";
+      : selectedType === "flashcard"
+        ? "No flashcard projects were found."
+        : "No summary projects were found.";
 
   const handleBack = useCallback(() => {
     router.back();
@@ -169,6 +199,16 @@ export default function ProjectsByTypePage() {
       if (selectedType === "flashcard") {
         router.push({
           pathname: "../flashcard/[id]",
+          params: {
+            id: String(projectId),
+          },
+        });
+        return;
+      }
+
+      if (selectedType === "summary") {
+        router.push({
+          pathname: "../summary/[id]",
           params: {
             id: String(projectId),
           },
@@ -363,8 +403,20 @@ export default function ProjectsByTypePage() {
                 </Text>
                 <Button
                   fullWidth
-                  iconName={selectedType === "quiz" ? "help-circle-outline" : "library-outline"}
-                  label={selectedType === "quiz" ? "Open quiz" : "Open flashcards"}
+                  iconName={
+                    selectedType === "quiz"
+                      ? "help-circle-outline"
+                      : selectedType === "flashcard"
+                        ? "library-outline"
+                        : "document-text-outline"
+                  }
+                  label={
+                    selectedType === "quiz"
+                      ? "Open quiz"
+                      : selectedType === "flashcard"
+                        ? "Open flashcards"
+                        : "Open summary"
+                  }
                   onPress={() => openProject(project.id)}
                   variant="secondary"
                 />

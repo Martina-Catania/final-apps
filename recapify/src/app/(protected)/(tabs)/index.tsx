@@ -33,16 +33,20 @@ import {
   listQuizzesRequest,
   type Quiz,
 } from "../../../utils/quiz-api";
+import {
+  listSummariesRequest,
+  type Summary,
+} from "../../../utils/summary-api";
 import { projectTagsToFlatTags, type FlatTag } from "../../../utils/tag-utils";
 
 type HomeCarouselItem = {
   id: string;
   entityId: number;
-  targetType: "quiz" | "flashcard";
+  targetType: "quiz" | "flashcard" | "summary";
   title: string;
   description: string;
   tags: FlatTag[];
-  iconName: "help-circle-outline" | "library-outline";
+  iconName: "help-circle-outline" | "library-outline" | "document-text-outline";
   accentColor: string;
 };
 
@@ -67,6 +71,9 @@ export default function Index() {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [isLoadingDecks, setIsLoadingDecks] = useState(true);
   const [deckError, setDeckError] = useState<string | null>(null);
+  const [summaries, setSummaries] = useState<Summary[]>([]);
+  const [isLoadingSummaries, setIsLoadingSummaries] = useState(true);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
   const [followingProjects, setFollowingProjects] = useState<FollowingProject[]>([]);
   const [isLoadingFollowingProjects, setIsLoadingFollowingProjects] = useState(true);
   const [followingProjectsError, setFollowingProjectsError] = useState<string | null>(null);
@@ -102,6 +109,21 @@ export default function Index() {
       }
     };
 
+    const loadSummaries = async () => {
+      setIsLoadingSummaries(true);
+      setSummaryError(null);
+
+      try {
+        const payload = await listSummariesRequest(token ?? undefined);
+        setSummaries(payload);
+      } catch (error) {
+        setSummaryError(getApiErrorMessage(error, "Unable to load summaries"));
+        setSummaries([]);
+      } finally {
+        setIsLoadingSummaries(false);
+      }
+    };
+
     const loadFollowingProjects = async () => {
       setIsLoadingFollowingProjects(true);
       setFollowingProjectsError(null);
@@ -125,7 +147,7 @@ export default function Index() {
       }
     };
 
-    await Promise.all([loadQuizzes(), loadDecks(), loadFollowingProjects()]);
+    await Promise.all([loadQuizzes(), loadDecks(), loadSummaries(), loadFollowingProjects()]);
   }, [token]);
 
   const { refreshing, onRefresh } = usePullToRefresh(loadData);
@@ -176,6 +198,25 @@ export default function Index() {
     });
   }, [colors.success, decks]);
 
+  const summaryCarouselItems = useMemo<HomeCarouselItem[]>(() => {
+    return summaries.map((summary) => {
+      const creatorLabel = getCreatorLabel(summary.project.user?.username);
+      const contentLength = summary.content.trim().length;
+      const contentLabel = contentLength === 1 ? "character" : "characters";
+
+      return {
+        id: String(summary.id),
+        entityId: summary.id,
+        targetType: "summary",
+        title: summary.project.title,
+        description: `By ${creatorLabel} · ${contentLength} ${contentLabel}`,
+        tags: projectTagsToFlatTags(summary.project.tags),
+        iconName: "document-text-outline",
+        accentColor: colors.warning,
+      };
+    });
+  }, [colors.warning, summaries]);
+
   const followingCarouselItems = useMemo<HomeCarouselItem[]>(() => {
     return followingProjects.flatMap<HomeCarouselItem>((project) => {
       const creatorLabel = getCreatorLabel(project.user?.username);
@@ -210,15 +251,38 @@ export default function Index() {
         ];
       }
 
+      if (project.type === "SUMMARY" && project.summary) {
+        return [
+          {
+            id: `followed-summary-${project.id}`,
+            entityId: project.summary.id,
+            targetType: "summary",
+            title: project.title,
+            description: `By ${creatorLabel}`,
+            tags: projectTagsToFlatTags(project.tags),
+            iconName: "document-text-outline",
+            accentColor: colors.primaryMuted,
+          },
+        ];
+      }
+
       return [];
     });
-  }, [colors.secondary, colors.warning, followingProjects]);
+  }, [colors.primaryMuted, colors.secondary, colors.warning, followingProjects]);
 
   const openCarouselItem = useCallback(
     (item: HomeCarouselItem) => {
       if (item.targetType === "quiz") {
         router.push({
           pathname: "/quiz/[id]",
+          params: { id: String(item.entityId) },
+        });
+        return;
+      }
+
+      if (item.targetType === "summary") {
+        router.push({
+          pathname: "../summary/[id]",
           params: { id: String(item.entityId) },
         });
         return;
@@ -263,7 +327,7 @@ export default function Index() {
             fontSize: typography.secondary.md,
           }}
         >
-          Jump into your latest quizzes and flashcards, or discover what creators you follow are building.
+          Jump into your latest quizzes, summaries, and flashcards, or discover what creators you follow are building.
         </Text>
       </Card>
       <Card
@@ -440,6 +504,101 @@ export default function Index() {
               }
 
               openCarouselItem(selectedQuiz);
+            }}
+          />
+        ) : null}
+      </Card>
+
+      <Card
+        style={{
+          gap: spacing.md,
+          padding: spacing.lg,
+        }}
+      >
+        <View style={[styles.sectionHeader, { gap: spacing.sm }]}>
+          <Text
+            style={{
+              color: colors.textPrimary,
+              fontSize: typography.primary.sm,
+              fontWeight: typography.weights.bold,
+            }}
+          >
+            Summary Showcase
+          </Text>
+
+          <Button
+            iconName="arrow-forward-outline"
+            label="See more"
+            onPress={() =>
+              router.push({
+                pathname: "../projects/[type]",
+                params: { type: "summary" },
+              })
+            }
+            variant="secondary"
+          />
+        </View>
+
+        {isLoadingSummaries ? (
+          <View style={{ gap: spacing.sm }}>
+            <SkeletonCard />
+            <SkeletonCard />
+          </View>
+        ) : null}
+
+        {!isLoadingSummaries && summaryError ? (
+          <View style={{ gap: spacing.sm }}>
+            <Text
+              style={{
+                color: colors.danger,
+                fontSize: typography.secondary.md,
+              }}
+            >
+              {summaryError}
+            </Text>
+            <Button
+              iconName="refresh-outline"
+              label="Try again"
+              onPress={() => {
+                void onRefresh();
+              }}
+              variant="default"
+            />
+          </View>
+        ) : null}
+
+        {!isLoadingSummaries && !summaryError && summaryCarouselItems.length === 0 ? (
+          <View style={{ gap: spacing.sm }}>
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: typography.secondary.md,
+              }}
+            >
+              No summaries yet. Create your first summary to get started.
+            </Text>
+            <Button
+              iconName="add-circle-outline"
+              label="Create summary"
+              onPress={() => router.push("../summary/create")}
+              variant="primary"
+            />
+          </View>
+        ) : null}
+
+        {!isLoadingSummaries && !summaryError && summaryCarouselItems.length > 0 ? (
+          <Carousel
+            items={summaryCarouselItems}
+            onItemPress={(item) => {
+              const selectedSummary = summaryCarouselItems.find(
+                (candidate) => candidate.id === item.id,
+              );
+
+              if (!selectedSummary) {
+                return;
+              }
+
+              openCarouselItem(selectedSummary);
             }}
           />
         ) : null}

@@ -32,6 +32,7 @@ export type SearchProject = {
     avatarUrl: string | null;
   };
   quizId: number | null;
+  summaryId: number | null;
   deckId: number | null;
   tags: {
     id: number;
