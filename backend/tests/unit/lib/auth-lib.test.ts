@@ -105,6 +105,27 @@ describe("auth-lib", () => {
     });
   });
 
+  it("rejects registration when email format is invalid", async () => {
+    const { ctx, user } = createCtx();
+
+    await expect(
+      registerUser(
+        {
+          email: "invalid-email",
+          username: "new_user",
+          password: "StrongPass1",
+        },
+        ctx,
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: "Please provide a valid email address",
+    });
+
+    expect(user.findUnique).not.toHaveBeenCalled();
+    expect(user.create).not.toHaveBeenCalled();
+  });
+
   it("rejects registration when email already exists", async () => {
     const { ctx, user } = createCtx();
     user.findUnique.mockResolvedValueOnce({ id: 1 } as never);

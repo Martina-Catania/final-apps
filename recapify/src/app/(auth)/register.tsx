@@ -21,6 +21,8 @@ function getErrorMessage(error: unknown): string {
   return getApiErrorMessage(error, "Unable to register");
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function RegisterPage() {
   const { colors, spacing, typography } = useThemeTokens();
   const { register } = useAuth();
@@ -59,6 +61,13 @@ export default function RegisterPage() {
   const handleRegister = async () => {
     setErrorMessage(null);
 
+    const normalizedEmail = email.trim();
+
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      setErrorMessage("Please enter a valid email address");
+      return;
+    }
+
     if (password !== repeatPassword) {
       setErrorMessage("Passwords do not match");
       return;
@@ -74,7 +83,7 @@ export default function RegisterPage() {
       }
 
       await register({
-        email: email.trim(),
+        email: normalizedEmail,
         username: username.trim(),
         password,
       });

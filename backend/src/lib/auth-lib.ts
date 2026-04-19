@@ -46,9 +46,15 @@ type ChangePasswordInput = {
   newPassword: string;
 };
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function registerUser(input: RegisterInput, ctx: AppContext): Promise<AuthPayload> {
-  const email = input.email.toLowerCase();
+  const email = input.email.trim().toLowerCase();
   const username = input.username;
+
+  if (!EMAIL_REGEX.test(email)) {
+    throw new ApiError(400, "Please provide a valid email address");
+  }
 
   const existingByEmail = await ctx.prisma.user.findUnique({
     where: { email },
