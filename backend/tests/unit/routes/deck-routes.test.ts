@@ -4,6 +4,21 @@ import { createDeckRouter } from "../../../src/routes/deck-routes.js";
 import { createRouteApp, createRouteMockContext } from "./helpers.js";
 
 describe("deck-routes", () => {
+  const deckInclude = {
+    project: {
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    },
+    flashcards: true,
+  };
+
   it("lists decks and handles get/create-not-found/update/delete", async () => {
     const { ctx, mocks } = createRouteMockContext();
     const app = createRouteApp("/decks", createDeckRouter(ctx));
@@ -33,7 +48,7 @@ describe("deck-routes", () => {
     expect(response.status).toBe(201);
     expect(mocks.deck.create).toHaveBeenCalledWith({
       data: { projectId: 7 },
-      include: { project: true, flashcards: true },
+      include: deckInclude,
     });
   });
 

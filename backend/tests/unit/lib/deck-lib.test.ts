@@ -2,6 +2,21 @@ import { jest } from "@jest/globals";
 import type { AppContext } from "../../../src/context.js";
 import { createDeck, deleteDeck, getDeckById, listDecks, updateDeck } from "../../../src/lib/deck-lib.js";
 
+const deckInclude = {
+  project: {
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          avatarUrl: true,
+        },
+      },
+    },
+  },
+  flashcards: true,
+};
+
 function createCtx() {
   const deck = {
     findMany: jest.fn(),
@@ -22,7 +37,7 @@ describe("deck-lib", () => {
 
     expect(deck.findMany).toHaveBeenCalledWith({
       orderBy: { id: "asc" },
-      include: { project: true, flashcards: true },
+      include: deckInclude,
     });
   });
 
@@ -32,7 +47,7 @@ describe("deck-lib", () => {
 
     expect(deck.findUnique).toHaveBeenCalledWith({
       where: { id: 4 },
-      include: { project: true, flashcards: true },
+      include: deckInclude,
     });
   });
 
@@ -43,7 +58,7 @@ describe("deck-lib", () => {
 
     expect(deck.create).toHaveBeenCalledWith({
       data,
-      include: { project: true, flashcards: true },
+      include: deckInclude,
     });
   });
 
@@ -55,7 +70,7 @@ describe("deck-lib", () => {
     expect(deck.update).toHaveBeenCalledWith({
       where: { id: 7 },
       data,
-      include: { project: true, flashcards: true },
+      include: deckInclude,
     });
   });
 
@@ -65,7 +80,7 @@ describe("deck-lib", () => {
 
     expect(deck.delete).toHaveBeenCalledWith({
       where: { id: 3 },
-      include: { project: true, flashcards: true },
+      include: deckInclude,
     });
   });
 });
