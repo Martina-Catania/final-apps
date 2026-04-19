@@ -33,6 +33,7 @@ import {
   listQuizzesRequest,
   type Quiz,
 } from "../../../utils/quiz-api";
+import { richTextToPlainText } from "../../../utils/rich-text";
 import {
   listSummariesRequest,
   type Summary,
@@ -201,7 +202,7 @@ export default function Index() {
   const summaryCarouselItems = useMemo<HomeCarouselItem[]>(() => {
     return summaries.map((summary) => {
       const creatorLabel = getCreatorLabel(summary.project.user?.username);
-      const contentLength = summary.content.trim().length;
+      const contentLength = richTextToPlainText(summary.content).length;
       const contentLabel = contentLength === 1 ? "character" : "characters";
 
       return {

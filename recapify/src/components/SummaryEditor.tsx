@@ -1,47 +1,69 @@
 import { type ReactElement, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
-  type TextStyle,
+  type StyleProp,
+  type ViewStyle,
   View,
 } from "react-native";
 import { useThemeTokens } from "../hooks";
 
-type NativeMarkdownInputRef = {
-  setValue: (markdown: string) => void;
-  toggleBold: () => void;
-  toggleItalic: () => void;
-  toggleUnderline: () => void;
+type NativeRichEditorRef = {
+  setContentHTML: (html: string) => void;
 };
 
-type NativeMarkdownInputProps = {
-  defaultValue?: string;
-  editable?: boolean;
-  multiline?: boolean;
-  onChangeMarkdown?: (markdown: string) => void;
-  placeholder?: string;
-  placeholderTextColor?: string;
-  markdownStyle?: {
-    strong?: { color?: string };
-    em?: { color?: string };
-    link?: { color?: string; underline?: boolean };
+type NativeRichEditorProps = {
+  disabled?: boolean;
+  editorStyle?: {
+    backgroundColor?: string;
+    caretColor?: string;
+    color?: string;
+    contentCSSText?: string;
+    cssText?: string;
+    placeholderColor?: string;
   };
-  style?: TextStyle;
+  initialContentHTML?: string;
+  initialHeight?: number;
+  onChange?: (html: string) => void;
+  placeholder?: string;
+  useContainer?: boolean;
 };
 
-type NativeMarkdownInputComponent = (props: NativeMarkdownInputProps & { ref?: unknown }) => ReactElement;
+type NativeRichToolbarProps = {
+  actions?: string[];
+  disabled?: boolean;
+  editor?: { current: NativeRichEditorRef | null };
+  getEditor?: () => NativeRichEditorRef | null;
+  iconTint?: string;
+  selectedIconTint?: string;
+  style?: StyleProp<ViewStyle>;
+};
 
-let NativeMarkdownInput: NativeMarkdownInputComponent | null = null;
+type NativeRichTextModule = {
+  actions: {
+    insertBulletsList: string;
+    insertLink: string;
+    insertOrderedList: string;
+    redo: string;
+    setBold: string;
+    setItalic: string;
+    setUnderline: string;
+    undo: string;
+  };
+  RichEditor: (props: NativeRichEditorProps & { ref?: unknown }) => ReactElement;
+  RichToolbar: (props: NativeRichToolbarProps) => ReactElement;
+};
+
+let nativeRichTextModule: NativeRichTextModule | null = null;
 
 if (Platform.OS !== "web") {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    NativeMarkdownInput = require("react-native-enriched-markdown").EnrichedMarkdownInput as NativeMarkdownInputComponent;
+    nativeRichTextModule = require("react-native-pell-rich-editor") as NativeRichTextModule;
   } catch {
-    NativeMarkdownInput = null;
+    nativeRichTextModule = null;
   }
 }
 
@@ -69,52 +91,53 @@ export function SummaryEditor({
   const { colors, radius, spacing, typography } = useThemeTokens();
   const hasError = Boolean(errorText);
 
-  const nativeInputRef = useRef<NativeMarkdownInputRef | null>(null);
-  const lastKnownMarkdownRef = useRef(value);
+  const nativeInputRef = useRef<NativeRichEditorRef | null>(null);
+  const lastKnownHtmlRef = useRef(value);
+  const editorHeight = Math.max(minHeight - spacing.md * 2, 120);
 
-  const isRichInputAvailable = Platform.OS !== "web" && NativeMarkdownInput !== null;
+  const isRichInputAvailable = Platform.OS !== "web" && nativeRichTextModule !== null;
+
+  const NativeRichEditor = nativeRichTextModule?.RichEditor ?? null;
+  const NativeRichToolbar = nativeRichTextModule?.RichToolbar ?? null;
 
   useEffect(() => {
     if (!isRichInputAvailable || !nativeInputRef.current) {
       return;
     }
 
-    if (value === lastKnownMarkdownRef.current) {
+    if (value === lastKnownHtmlRef.current) {
       return;
     }
 
-    nativeInputRef.current.setValue(value);
-    lastKnownMarkdownRef.current = value;
+    nativeInputRef.current.setContentHTML(value);
+    lastKnownHtmlRef.current = value;
   }, [isRichInputAvailable, value]);
 
-  const handleNativeMarkdownChange = useCallback(
-    (nextMarkdown: string) => {
-      lastKnownMarkdownRef.current = nextMarkdown;
-      onChangeValue(nextMarkdown);
+  const handleNativeRichChange = useCallback(
+    (nextHtml: string) => {
+      lastKnownHtmlRef.current = nextHtml;
+      onChangeValue(nextHtml);
     },
     [onChangeValue],
   );
 
-  const toolbarItems = useMemo(
-    () => [
-      {
-        key: "bold",
-        label: "Bold",
-        onPress: () => nativeInputRef.current?.toggleBold(),
-      },
-      {
-        key: "italic",
-        label: "Italic",
-        onPress: () => nativeInputRef.current?.toggleItalic(),
-      },
-      {
-        key: "underline",
-        label: "Underline",
-        onPress: () => nativeInputRef.current?.toggleUnderline(),
-      },
-    ],
-    [],
-  );
+  const toolbarActions = useMemo(() => {
+    if (!nativeRichTextModule) {
+      return [];
+    }
+
+    const { actions } = nativeRichTextModule;
+    return [
+      actions.setBold,
+      actions.setItalic,
+      actions.setUnderline,
+      actions.insertBulletsList,
+      actions.insertOrderedList,
+      actions.insertLink,
+      actions.undo,
+      actions.redo,
+    ];
+  }, []);
 
   return (
     <View style={{ gap: spacing.xs }}>
@@ -130,7 +153,7 @@ export function SummaryEditor({
         </Text>
       ) : null}
 
-      {isRichInputAvailable && NativeMarkdownInput ? (
+      {isRichInputAvailable && NativeRichEditor && NativeRichToolbar ? (
         <View style={{ gap: spacing.sm }}>
           <View
             style={[
@@ -144,62 +167,43 @@ export function SummaryEditor({
               },
             ]}
           >
-            <NativeMarkdownInput
-              defaultValue={value}
-              editable={editable}
-              markdownStyle={{
-                strong: { color: colors.primary },
-                em: { color: colors.secondary },
-                link: {
-                  color: colors.primary,
-                  underline: true,
-                },
-              }}
-              multiline
-              onChangeMarkdown={handleNativeMarkdownChange}
-              placeholder={placeholder}
-              placeholderTextColor={colors.textSecondary}
-              ref={nativeInputRef as unknown as undefined}
-              style={{
+                      <NativeRichToolbar
+                          actions={toolbarActions}
+                          disabled={!editable}
+                          editor={nativeInputRef}
+                          getEditor={() => nativeInputRef.current}
+                          iconTint={colors.textSecondary}
+                          selectedIconTint={colors.primary}
+                          style={[
+                              styles.toolbar,
+                              {
+                                  backgroundColor: colors.surfaceMuted,
+                                  borderColor: colors.border,
+                                  borderRadius: radius.sm,
+                                  minHeight: spacing.lg * 2,
+                              },
+                          ]}
+                      />
+            <NativeRichEditor
+              disabled={!editable}
+              editorStyle={{
+                backgroundColor: colors.surface,
+                caretColor: colors.primary,
                 color: colors.textPrimary,
-                fontSize: typography.secondary.lg,
-                minHeight: minHeight - spacing.md * 2,
-                textAlignVertical: "top",
+                contentCSSText: `font-size: ${typography.secondary.lg}px; line-height: ${Math.round(typography.secondary.lg * 1.5)}px; color: ${colors.textPrimary};`,
+                cssText: `a { color: ${colors.primary}; text-decoration: underline; }`,
+                placeholderColor: colors.textSecondary,
               }}
+              initialContentHTML={value}
+              initialHeight={editorHeight}
+              onChange={handleNativeRichChange}
+              placeholder={placeholder}
+              ref={nativeInputRef as unknown as undefined}
+              useContainer={false}
             />
           </View>
 
-          <View style={[styles.toolbarRow, { gap: spacing.xs }]}> 
-            {toolbarItems.map((item) => (
-              <Pressable
-                accessibilityRole="button"
-                disabled={!editable}
-                key={item.key}
-                onPress={item.onPress}
-                style={({ pressed }) => [
-                  styles.toolbarButton,
-                  {
-                    backgroundColor: colors.surfaceMuted,
-                    borderColor: colors.border,
-                    borderRadius: radius.sm,
-                    opacity: !editable ? 0.6 : pressed ? 0.8 : 1,
-                    paddingHorizontal: spacing.sm,
-                    paddingVertical: spacing.xs,
-                  },
-                ]}
-              >
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.secondary.sm,
-                    fontWeight: typography.weights.medium,
-                  }}
-                >
-                  {item.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+         
         </View>
       ) : (
         <View
@@ -260,11 +264,7 @@ const styles = StyleSheet.create({
   editorContainer: {
     borderWidth: 1,
   },
-  toolbarButton: {
+  toolbar: {
     borderWidth: 1,
-  },
-  toolbarRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
   },
 });

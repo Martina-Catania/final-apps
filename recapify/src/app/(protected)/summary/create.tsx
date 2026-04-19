@@ -16,6 +16,7 @@ import { useProjectTagEditor, useThemeTokens } from "../../../hooks";
 import { SafeAreaPage } from "../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../utils/api-request";
 import { createProjectRequest } from "../../../utils/project-api";
+import { isRichTextEmpty } from "../../../utils/rich-text";
 import { createSummaryRequest } from "../../../utils/summary-api";
 
 function wait(ms: number) {
@@ -59,7 +60,7 @@ export default function SummaryCreatePage() {
       setTitleError(null);
     }
 
-    if (!summaryContent.trim()) {
+    if (isRichTextEmpty(summaryContent)) {
       setContentError("Summary content is required");
       isValid = false;
     } else {
@@ -276,7 +277,7 @@ export default function SummaryCreatePage() {
               errorText={contentError ?? undefined}
               helperText={
                 Platform.OS === "web"
-                  ? "Using fallback editor.."
+                  ? "Using plain text fallback on web."
                   : "Use the formatting controls for richer summary notes."
               }
               label="Summary content"
@@ -286,7 +287,7 @@ export default function SummaryCreatePage() {
                   setContentError(null);
                 }
               }}
-              placeholder="Write your summary content in markdown..."
+              placeholder="Write your summary content..."
               value={summaryContent}
             />
 

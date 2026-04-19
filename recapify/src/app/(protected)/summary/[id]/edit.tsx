@@ -17,6 +17,7 @@ import { useProjectTagEditor, useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
 import { updateProjectRequest } from "../../../../utils/project-api";
+import { isRichTextEmpty } from "../../../../utils/rich-text";
 import {
   getSummaryByIdRequest,
   updateSummaryRequest,
@@ -83,7 +84,7 @@ export default function SummaryEditPage() {
       setTitleError(null);
     }
 
-    if (!summaryContent.trim()) {
+    if (isRichTextEmpty(summaryContent)) {
       setContentError("Summary content is required");
       isValid = false;
     } else {
@@ -421,7 +422,7 @@ export default function SummaryEditPage() {
               errorText={contentError ?? undefined}
               helperText={
                 Platform.OS === "web"
-                  ? "Using fallback editor."
+                  ? "Using plain text fallback on web."
                   : "Use the formatting controls for richer summary notes."
               }
               label="Summary content"
