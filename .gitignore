@@ -52,8 +52,3 @@ copilot-instructions.md
 
 #coverage reports
 coverage/
-
-# runtime uploads
-backend/uploads/
-
-
