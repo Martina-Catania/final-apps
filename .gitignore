@@ -56,6 +56,4 @@ coverage/
 # runtime uploads
 backend/uploads/
 
-# local sqlite database
-backend/dev.db
 
