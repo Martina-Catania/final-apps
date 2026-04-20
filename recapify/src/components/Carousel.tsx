@@ -70,6 +70,9 @@ export const Carousel = ({ items, onItemPress }: CarouselProps) => {
     useCarousel<CarouselItem>(items.length);
   const { colors, iconSizes, spacing, typography } = useThemeTokens();
 
+  const ITEM_WIDTH = Math.round(screenWidth * 0.75);
+  const SIDE_PADDING = Math.round((screenWidth - ITEM_WIDTH) / 2);
+
   return (
     <View style={[styles.container, { gap: spacing.md }]}> 
       <FlatList
@@ -78,8 +81,9 @@ export const Carousel = ({ items, onItemPress }: CarouselProps) => {
         keyExtractor={(item) => item.id}
         onMomentumScrollEnd={updateActiveIndex}
         ref={listRef}
+        contentContainerStyle={{ paddingHorizontal: SIDE_PADDING }}
         renderItem={({ item }) => (
-          <View style={{ width: screenWidth }}>
+          <View style={{ width: ITEM_WIDTH }}>
             <PressableCard
               accessibilityRole={onItemPress ? "button" : undefined}
               disabled={!onItemPress}
@@ -89,12 +93,12 @@ export const Carousel = ({ items, onItemPress }: CarouselProps) => {
                 styles.card,
                 {
                   gap: spacing.sm,
-                  marginHorizontal: spacing.lg + spacing.sm,
+                  marginHorizontal: spacing.sm,
                   padding: spacing.lg,
                 },
               ]}
             >
-              <View style={[styles.titleRow, { gap: spacing.sm }]}>
+              <View style={[styles.titleRow, { gap: spacing.sm }]}> 
                 {item.iconName ? (
                   <Ionicons
                     color={item.accentColor ?? colors.primary}

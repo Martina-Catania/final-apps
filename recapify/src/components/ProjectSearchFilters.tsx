@@ -65,15 +65,16 @@ export function ProjectSearchFilters<TProjectType extends string = string>({
   const { colors, spacing, typography } = useThemeTokens();
 
   return (
-    <Card
-      style={[
-        {
-          gap: spacing.md,
-          padding: spacing.md,
-        },
-        style,
-      ]}
-    >
+      <Card
+          style={[
+              {
+                  gap: spacing.md,
+                  padding: spacing.md,
+                  marginTop: spacing.xs,
+              },
+              style,
+          ]}
+      >
       <AppTextInput
         label={queryLabel}
         leftIcon="search-outline"

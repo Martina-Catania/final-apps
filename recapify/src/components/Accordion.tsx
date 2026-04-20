@@ -12,13 +12,6 @@ import {
 
 import { useThemeTokens } from "../hooks";
 
-if (
-  Platform.OS === "android" &&
-  typeof UIManager.setLayoutAnimationEnabledExperimental === "function"
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
 type AccordionProps = {
   title: string;
   children: ReactNode;
