@@ -207,10 +207,13 @@ export default function SummaryPlayPage() {
   return (
     <SafeAreaPage backgroundColor={colors.background}>
       <ScrollView
-        contentContainerStyle={{
-          gap: spacing.lg,
-          padding: spacing.lg,
-        }}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            gap: spacing.lg,
+            padding: spacing.lg,
+          },
+        ]}
       >
         <View
           style={[
@@ -247,24 +250,16 @@ export default function SummaryPlayPage() {
                   fontSize: typography.secondary.md,
                 }}
               >
-                Summary
+                Read mode
               </Text>
             </View>
-          </View>
-
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: typography.secondary.md,
-            }}
-          >
-            Read mode
-          </Text>
+          </View>        
         </View>
 
         <View
           style={[
             styles.card,
+            hasSummaryContent ? styles.scrollContent : null,
             {
               backgroundColor: colors.surface,
               borderColor: colors.border,
@@ -279,6 +274,7 @@ export default function SummaryPlayPage() {
               fontSize={typography.secondary.md}
               linkColor={colors.primary}
               markdown={summary.content}
+              style={styles.scrollContent}
               textColor={colors.textPrimary}
             />
           ) : (
@@ -397,5 +393,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     flexDirection: "row",
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
 });

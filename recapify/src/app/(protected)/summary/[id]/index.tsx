@@ -12,13 +12,13 @@ import {
   AppModal,
   Button,
   ProjectTagPills,
-  SummaryMarkdownView,
 } from "../../../../components";
 import { useAuth } from "../../../../context/auth-context";
 import { useSafeNavigation, useThemeTokens } from "../../../../hooks";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
 import { deleteProjectRequest } from "../../../../utils/project-api";
+import { richTextToPlainText } from "../../../../utils/rich-text";
 import {
   getSummaryByIdRequest,
   type Summary,
@@ -34,6 +34,8 @@ type SummaryActionItem = {
   destructive?: boolean;
   disabled?: boolean;
 };
+
+const SUMMARY_PREVIEW_MAX_LENGTH = 280;
 
 function parseSummaryId(value: string | string[] | undefined): number | null {
   const firstValue = Array.isArray(value) ? value[0] : value;
@@ -68,6 +70,20 @@ function parseOptionalParam(value: string | string[] | undefined): string | null
 
   const trimmed = decoded.trim();
   return trimmed ? trimmed : null;
+}
+
+function getSummaryPreview(value: string) {
+  const plainText = richTextToPlainText(value).replace(/\s+/g, " ").trim();
+
+  if (!plainText) {
+    return "No summary text was provided for this entry.";
+  }
+
+  if (plainText.length <= SUMMARY_PREVIEW_MAX_LENGTH) {
+    return `${plainText}...`;
+  }
+
+  return `${plainText.slice(0, SUMMARY_PREVIEW_MAX_LENGTH).trimEnd()}...`;
 }
 
 export default function SummaryDetailPage() {
@@ -121,6 +137,7 @@ export default function SummaryDetailPage() {
   }, [loadSummary]);
 
   const creatorUsername = summary?.project.user?.username;
+  const summaryPreview = summary ? getSummaryPreview(summary.content) : "";
   const creatorLabel = summary
     ? creatorUsername
       ? `@${creatorUsername}`
@@ -436,12 +453,15 @@ export default function SummaryDetailPage() {
           >
             <ProjectTagPills tags={projectTagsToFlatTags(summary.project.tags)} />
 
-            <SummaryMarkdownView
-              fontSize={typography.secondary.md}
-              linkColor={colors.primary}
-              markdown={summary.content}
-              textColor={colors.textPrimary}
-            />
+            <Text
+              style={{
+                color: colors.textPrimary,
+                fontSize: typography.secondary.md,
+                lineHeight: Math.round(typography.secondary.md * 1.5),
+              }}
+            >
+              {summaryPreview}
+            </Text>
           </View>
         </ScrollView>
 
