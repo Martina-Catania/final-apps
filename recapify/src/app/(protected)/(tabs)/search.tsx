@@ -18,24 +18,24 @@ import {
   Card,
   ProfileCard,
   ProjectTagPills,
-} from "../../../../components";
-import { useAuth } from "../../../../context/auth-context";
+} from "../../../components";
+import { useAuth } from "../../../context/auth-context";
 import {
   useProjectDetailNavigation,
   usePullToRefresh,
   useRefreshControlProps,
   useThemeTokens,
-} from "../../../../hooks";
-import { getApiHostUrl } from "../../../../utils/api-config";
-import { getApiErrorMessage } from "../../../../utils/api-request";
-import { listTagsRequest } from "../../../../utils/tag-api";
-import { uniqueFlatTags, type FlatTag } from "../../../../utils/tag-utils";
+} from "../../../hooks";
+import { getApiHostUrl } from "../../../utils/api-config";
+import { getApiErrorMessage } from "../../../utils/api-request";
+import { listTagsRequest } from "../../../utils/tag-api";
+import { uniqueFlatTags, type FlatTag } from "../../../utils/tag-utils";
 import {
   searchRequest,
   type SearchPagination,
   type SearchProject,
   type SearchUser,
-} from "../../../../utils/search-api";
+} from "../../../utils/search-api";
 
 const DEFAULT_USERS_LIMIT = 5;
 const DEFAULT_PROJECTS_LIMIT = 20;
