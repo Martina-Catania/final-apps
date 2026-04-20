@@ -353,7 +353,20 @@ describe("api routes", () => {
       .query({ q: "   " });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe("q or tagIds is required");
+    expect(response.body.error).toBe("q, tagIds or projectTypes is required");
+  });
+
+  it("validates project type filters in search query params", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    const token = generateAuthToken(9);
+
+    const response = await request(app)
+      .get("/api/search")
+      .set("Authorization", `Bearer ${token}`)
+      .query({ projectTypes: "ARTICLE" });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("projectTypes must be one of: SUMMARY, QUIZ, DECK");
   });
 
   it("returns project results for tags-only search", async () => {
@@ -410,6 +423,60 @@ describe("api routes", () => {
                 in: [6],
               },
             },
+          },
+        },
+      }),
+    );
+  });
+
+  it("returns project results for project-type-only search", async () => {
+    const app = createApp(asAppContext(mockCtx));
+    const token = generateAuthToken(9);
+
+    mockCtx.mocks.project.count.mockResolvedValue(1 as never);
+    mockCtx.mocks.project.findMany.mockResolvedValue([
+      {
+        id: 31,
+        type: "DECK",
+        title: "Biology Cards",
+        timesPlayed: 12,
+        createdAt: new Date("2026-04-12T10:00:00.000Z"),
+        updatedAt: new Date("2026-04-12T10:00:00.000Z"),
+        user: {
+          id: 5,
+          username: "creator",
+          avatarUrl: null,
+        },
+        quiz: null,
+        summary: null,
+        deck: {
+          id: 44,
+        },
+        tags: [],
+      },
+    ] as never);
+
+    const response = await request(app)
+      .get("/api/search")
+      .set("Authorization", `Bearer ${token}`)
+      .query({ projectTypes: "DECK" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.query).toBe("");
+    expect(response.body.users).toEqual([]);
+    expect(response.body.projects).toHaveLength(1);
+    expect(response.body.projects[0]).toMatchObject({
+      id: 31,
+      type: "DECK",
+      deckId: 44,
+    });
+    expect(mockCtx.mocks.user.findMany).not.toHaveBeenCalled();
+
+    expect(mockCtx.mocks.project.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          type: {
+            in: ["DECK"],
           },
         },
       }),

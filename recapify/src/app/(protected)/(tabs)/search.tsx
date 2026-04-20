@@ -39,6 +39,24 @@ import {
 
 const API_HOST = getApiHostUrl();
 
+const PROJECT_TYPE_FILTER_OPTIONS: {
+  value: SearchProject["type"];
+  label: string;
+}[] = [
+  {
+    value: "QUIZ",
+    label: "Quiz",
+  },
+  {
+    value: "SUMMARY",
+    label: "Summary",
+  },
+  {
+    value: "DECK",
+    label: "Flashcards",
+  },
+];
+
 function resolveAvatarUri(avatarUrl: string | null) {
   if (!avatarUrl) {
     return undefined;
@@ -94,6 +112,7 @@ export default function SearchPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [availableTags, setAvailableTags] = useState<FlatTag[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+  const [selectedProjectTypes, setSelectedProjectTypes] = useState<SearchProject["type"][]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(false);
 
   const resetSearchState = useCallback(() => {
@@ -132,6 +151,16 @@ export default function SearchPage() {
     });
   }, []);
 
+  const toggleProjectTypeFilter = useCallback((projectType: SearchProject["type"]) => {
+    setSelectedProjectTypes((current) => {
+      if (current.includes(projectType)) {
+        return current.filter((value) => value !== projectType);
+      }
+
+      return [...current, projectType];
+    });
+  }, []);
+
   const runSearch = useCallback(
     async (rawQuery: string) => {
       if (!token) {
@@ -142,8 +171,8 @@ export default function SearchPage() {
 
       const nextQuery = rawQuery.trim();
 
-      if (!nextQuery && selectedTagIds.length === 0) {
-        setErrorMessage("Enter a project title or username, or choose at least one tag.");
+      if (!nextQuery && selectedTagIds.length === 0 && selectedProjectTypes.length === 0) {
+        setErrorMessage("Enter a project title or username, or choose at least one tag or project type.");
         resetSearchState();
         return;
       }
@@ -157,6 +186,7 @@ export default function SearchPage() {
           {
             query: nextQuery || undefined,
             tagIds: selectedTagIds,
+            projectTypes: selectedProjectTypes,
           },
           token,
         );
@@ -171,13 +201,13 @@ export default function SearchPage() {
         setIsLoading(false);
       }
     },
-    [resetSearchState, selectedTagIds, token],
+    [resetSearchState, selectedProjectTypes, selectedTagIds, token],
   );
 
   const handleRefresh = useCallback(async () => {
     const queryToRefresh = lastQuery || query.trim();
 
-    if (hasSearched && (queryToRefresh || selectedTagIds.length > 0)) {
+    if (hasSearched && (queryToRefresh || selectedTagIds.length > 0 || selectedProjectTypes.length > 0)) {
       await runSearch(queryToRefresh);
       return;
     }
@@ -186,7 +216,15 @@ export default function SearchPage() {
     setLastQuery("");
     setErrorMessage(null);
     resetSearchState();
-  }, [hasSearched, lastQuery, query, resetSearchState, runSearch, selectedTagIds.length]);
+  }, [
+    hasSearched,
+    lastQuery,
+    query,
+    resetSearchState,
+    runSearch,
+    selectedProjectTypes.length,
+    selectedTagIds.length,
+  ]);
 
   useEffect(() => {
     void loadTags();
@@ -327,6 +365,64 @@ export default function SearchPage() {
                 })}
               </ScrollView>
             ) : null}
+
+          </View>
+
+          <View style={{ gap: spacing.xs }}>
+            <Text
+              style={{
+                color: colors.textPrimary,
+                fontSize: typography.secondary.md,
+                fontWeight: typography.weights.semibold,
+              }}
+            >
+              Filter by project type
+            </Text>
+
+            <ScrollView
+              contentContainerStyle={{
+                gap: spacing.xs,
+                paddingRight: spacing.xs,
+              }}
+              horizontal
+              keyboardShouldPersistTaps="handled"
+              showsHorizontalScrollIndicator={false}
+            >
+              {PROJECT_TYPE_FILTER_OPTIONS.map((option) => {
+                const isSelected = selectedProjectTypes.includes(option.value);
+
+                return (
+                  <Pressable
+                    accessibilityRole="button"
+                    key={`search-project-type-filter-${option.value}`}
+                    onPress={() => toggleProjectTypeFilter(option.value)}
+                    style={({ pressed }) => [
+                      styles.filterPill,
+                      {
+                        backgroundColor: isSelected ? colors.secondaryMuted : colors.surface,
+                        borderColor: isSelected ? colors.secondary : colors.border,
+                        borderRadius: 999,
+                        opacity: pressed ? 0.82 : 1,
+                        paddingHorizontal: spacing.sm,
+                        paddingVertical: spacing.xs,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={{
+                        color: isSelected ? colors.textPrimary : colors.textSecondary,
+                        fontSize: typography.secondary.sm,
+                        fontWeight: isSelected
+                          ? typography.weights.semibold
+                          : typography.weights.medium,
+                      }}
+                    >
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
 
           </View>
 

@@ -43,6 +43,7 @@ export type SearchProjectResult = {
 export type SearchCatalogInput = {
   query?: string;
   tagIds: number[];
+  projectTypes: ProjectType[];
   usersPage: number;
   usersLimit: number;
   projectsPage: number;
@@ -137,6 +138,7 @@ async function searchUsers(
 async function searchProjects(
   query: string | undefined,
   tagIds: number[],
+  projectTypes: ProjectType[],
   page: number,
   limit: number,
   ctx: AppContext,
@@ -157,6 +159,12 @@ async function searchProjects(
           in: tagIds,
         },
       },
+    };
+  }
+
+  if (projectTypes.length > 0) {
+    whereClause.type = {
+      in: projectTypes,
     };
   }
 
@@ -245,6 +253,7 @@ export async function searchCatalog(
   const {
     query,
     tagIds,
+    projectTypes,
     usersPage,
     usersLimit,
     projectsPage,
@@ -255,7 +264,7 @@ export async function searchCatalog(
     typeof query === "string" && query.length > 0
       ? searchUsers(query, usersPage, usersLimit, ctx)
       : Promise.resolve({ users: [], total: 0 }),
-    searchProjects(query, tagIds, projectsPage, projectsLimit, ctx),
+    searchProjects(query, tagIds, projectTypes, projectsPage, projectsLimit, ctx),
   ]);
 
   return {

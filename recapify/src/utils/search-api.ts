@@ -51,6 +51,7 @@ export type SearchResponse = {
 export type SearchRequestInput = {
   query?: string;
   tagIds?: number[];
+  projectTypes?: ProjectType[];
   usersPage?: number;
   usersLimit?: number;
   projectsPage?: number;
@@ -75,6 +76,22 @@ function addListQueryParam(params: URLSearchParams, key: string, values: number[
   }
 }
 
+function addEnumListQueryParam<T extends string>(
+  params: URLSearchParams,
+  key: string,
+  values: T[] | undefined,
+) {
+  if (!Array.isArray(values)) {
+    return;
+  }
+
+  const uniqueValues = [...new Set(values.filter((value) => typeof value === "string" && value.length > 0))];
+
+  for (const value of uniqueValues) {
+    params.append(key, value);
+  }
+}
+
 export function searchRequest(input: SearchRequestInput, token: string) {
   const params = new URLSearchParams();
 
@@ -84,6 +101,7 @@ export function searchRequest(input: SearchRequestInput, token: string) {
   }
 
   addListQueryParam(params, "tagIds", input.tagIds);
+  addEnumListQueryParam(params, "projectTypes", input.projectTypes);
 
   addQueryParam(params, "usersPage", input.usersPage);
   addQueryParam(params, "usersLimit", input.usersLimit);
