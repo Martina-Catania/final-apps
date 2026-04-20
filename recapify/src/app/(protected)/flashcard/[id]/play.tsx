@@ -86,6 +86,7 @@ export default function FlashcardPlayPage() {
 
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
+  const [hasFlippedCurrentCard, setHasFlippedCurrentCard] = useState(false);
   const [knownCardsCount, setKnownCardsCount] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -134,6 +135,7 @@ export default function FlashcardPlayPage() {
       setDeckFlashcards(payload.flashcards);
       setCurrentCardIndex(0);
       setIsAnswerVisible(false);
+      setHasFlippedCurrentCard(false);
       setKnownCardsCount(0);
       setRoundKey(0);
       resetFlipAnimation();
@@ -190,6 +192,7 @@ export default function FlashcardPlayPage() {
       return;
     }
 
+    setHasFlippedCurrentCard(true);
     setIsAnswerVisible((current) => {
       const next = !current;
       runFlipAnimation(next);
@@ -225,7 +228,7 @@ export default function FlashcardPlayPage() {
   );
 
   const handleRateCard = (isKnown: boolean) => {
-    if (!currentCard || !isAnswerVisible) {
+    if (!currentCard || !hasFlippedCurrentCard) {
       return;
     }
 
@@ -234,6 +237,7 @@ export default function FlashcardPlayPage() {
     }
 
     setIsAnswerVisible(false);
+    setHasFlippedCurrentCard(false);
     setCurrentCardIndex((current) => current + 1);
     resetFlipAnimation();
   };
@@ -242,6 +246,7 @@ export default function FlashcardPlayPage() {
     setRoundKey((current) => current + 1);
     setCurrentCardIndex(0);
     setIsAnswerVisible(false);
+    setHasFlippedCurrentCard(false);
     setKnownCardsCount(0);
     resetFlipAnimation();
   };
@@ -639,7 +644,7 @@ export default function FlashcardPlayPage() {
             </Animated.View>
           </GestureDetector>
 
-          {!isAnswerVisible ? (
+          {!hasFlippedCurrentCard ? (
             <Button
               fullWidth
               iconName="eye-outline"
