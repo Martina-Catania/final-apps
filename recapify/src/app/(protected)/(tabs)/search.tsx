@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -32,25 +32,11 @@ import { listTagsRequest } from "../../../utils/tag-api";
 import { uniqueFlatTags, type FlatTag } from "../../../utils/tag-utils";
 import {
   searchRequest,
-  type SearchPagination,
   type SearchProject,
   type SearchUser,
 } from "../../../utils/search-api";
 
-const DEFAULT_USERS_LIMIT = 5;
-const DEFAULT_PROJECTS_LIMIT = 20;
 const API_HOST = getApiHostUrl();
-
-function createInitialPagination(limit: number): SearchPagination {
-  return {
-    page: 1,
-    limit,
-    total: 0,
-    totalPages: 1,
-    hasNextPage: false,
-    hasPreviousPage: false,
-  };
-}
 
 function resolveAvatarUri(avatarUrl: string | null) {
   if (!avatarUrl) {
@@ -103,12 +89,6 @@ export default function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [users, setUsers] = useState<SearchUser[]>([]);
   const [projects, setProjects] = useState<SearchProject[]>([]);
-  const [usersPagination, setUsersPagination] = useState<SearchPagination>(() =>
-    createInitialPagination(DEFAULT_USERS_LIMIT),
-  );
-  const [projectsPagination, setProjectsPagination] = useState<SearchPagination>(() =>
-    createInitialPagination(DEFAULT_PROJECTS_LIMIT),
-  );
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [availableTags, setAvailableTags] = useState<FlatTag[]>([]);
@@ -119,8 +99,6 @@ export default function SearchPage() {
     setHasSearched(false);
     setUsers([]);
     setProjects([]);
-    setUsersPagination(createInitialPagination(DEFAULT_USERS_LIMIT));
-    setProjectsPagination(createInitialPagination(DEFAULT_PROJECTS_LIMIT));
   }, []);
 
   const loadTags = useCallback(async () => {
@@ -178,10 +156,6 @@ export default function SearchPage() {
           {
             query: nextQuery || undefined,
             tagIds: selectedTagIds,
-            usersPage: 1,
-            usersLimit: DEFAULT_USERS_LIMIT,
-            projectsPage: 1,
-            projectsLimit: DEFAULT_PROJECTS_LIMIT,
           },
           token,
         );
@@ -189,8 +163,6 @@ export default function SearchPage() {
         setLastQuery(payload.query);
         setUsers(payload.users);
         setProjects(payload.projects);
-        setUsersPagination(payload.usersPagination);
-        setProjectsPagination(payload.projectsPagination);
       } catch (error) {
         setErrorMessage(getApiErrorMessage(error, "Unable to search right now"));
         resetSearchState();
@@ -225,10 +197,6 @@ export default function SearchPage() {
     refreshing,
   });
 
-  const hasOverflowResults =
-    usersPagination.total > DEFAULT_USERS_LIMIT ||
-    projectsPagination.total > DEFAULT_PROJECTS_LIMIT;
-
   const openUserProfile = useCallback(
     (userId: number) => {
       router.push({
@@ -251,11 +219,6 @@ export default function SearchPage() {
       });
     },
     [openApiProjectDetail],
-  );
-
-  const projectResultsTitle = useMemo(
-    () => `Matching projects (${projectsPagination.total})`,
-    [projectsPagination.total],
   );
 
   return (
@@ -438,7 +401,7 @@ export default function SearchPage() {
               fontWeight: typography.weights.bold,
             }}
           >
-            Matching users ({usersPagination.total})
+            Matching users ({users.length})
           </Text>
 
           {users.length === 0 ? (
@@ -500,7 +463,7 @@ export default function SearchPage() {
               fontWeight: typography.weights.bold,
             }}
           >
-            {projectResultsTitle}
+            Matching projects ({projects.length})
           </Text>
 
           {projects.length === 0 ? (
@@ -580,35 +543,6 @@ export default function SearchPage() {
         </Card>
       ) : null}
 
-        {!isLoading && !errorMessage && hasSearched && hasOverflowResults ? (
-        <Button
-          fullWidth
-          iconName="layers-outline"
-          label="See all results"
-          onPress={() => {
-            const effectiveQuery = lastQuery || query.trim();
-
-            if (!effectiveQuery && selectedTagIds.length === 0) {
-              return;
-            }
-
-            const params: { q?: string; tagIds?: string } = {};
-            if (effectiveQuery) {
-              params.q = effectiveQuery;
-            }
-
-            if (selectedTagIds.length > 0) {
-              params.tagIds = selectedTagIds.join(",");
-            }
-
-            router.push({
-              pathname: "./results",
-              params,
-            });
-          }}
-          variant="primary"
-        />
-        ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
