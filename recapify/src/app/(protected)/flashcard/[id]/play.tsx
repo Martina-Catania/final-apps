@@ -474,6 +474,46 @@ export default function FlashcardPlayPage() {
           padding: spacing.lg,
         }}
       >
+                <View
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                      borderRadius: radius.md,
+                      gap: spacing.sm,
+                      padding: spacing.lg,
+                    },
+                  ]}
+                >
+                  <View style={[styles.headerRow, { gap: spacing.sm }]}>
+                    <Button
+                      iconName="arrow-back-outline"
+                      label="Back"
+                      onPress={goBackOnStack}
+                      variant="icon"
+                    />
+                    <View style={{ flex: 1, gap: spacing.xxs }}>
+                      <Text
+                        style={{
+                          color: colors.textPrimary,
+                          fontSize: typography.primary.lg,
+                          fontWeight: typography.weights.bold,
+                        }}
+                      >
+                        {deckTitle}
+                      </Text>
+                      <Text
+                        style={{
+                          color: colors.textSecondary,
+                          fontSize: typography.secondary.md,
+                        }}
+                      >
+                        Play
+                      </Text>
+                    </View>
+                  </View>
+                </View>
         <View
           style={[
             styles.card,
@@ -653,6 +693,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     maxWidth: 760,
     width: "100%",
+  },
+  headerRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
   },
   rowBetween: {
     alignItems: "center",
