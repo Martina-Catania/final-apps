@@ -373,7 +373,6 @@ export default function SettingsPage() {
           >
             <Avatar
               avatarUri={previewAvatarUri}
-              name={username || user?.username || "Current user"}
               onPress={handleOpenAvatarActionSheet}
             />
 

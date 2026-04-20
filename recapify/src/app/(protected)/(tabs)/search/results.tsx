@@ -36,7 +36,7 @@ import {
   type SearchUser,
 } from "../../../../utils/search-api";
 
-const DEFAULT_USERS_LIMIT = 10;
+const DEFAULT_USERS_LIMIT = 5;
 const DEFAULT_PROJECTS_LIMIT = 20;
 const API_HOST = getApiHostUrl();
 
