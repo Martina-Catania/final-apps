@@ -13,6 +13,7 @@ import {
 } from "react-native";
 
 import {
+  Accordion,
   AppTextInput,
   Button,
   Card,
@@ -388,21 +389,10 @@ export default function SearchPage() {
       ) : null}
 
         {!isLoading && !errorMessage && hasSearched ? (
-        <Card
-          style={{
-            gap: spacing.md,
-            padding: spacing.md,
-          }}
-        >
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: typography.primary.sm,
-              fontWeight: typography.weights.bold,
-            }}
+          <Accordion
+            title={`Matching users (${users.length})`}
+            defaultExpanded={users.length > 0}
           >
-            Matching users ({users.length})
-          </Text>
 
           {users.length === 0 ? (
             <Text
@@ -446,7 +436,7 @@ export default function SearchPage() {
               ))}
             </ScrollView>
           )}
-        </Card>
+        </Accordion>
       ) : null}
 
       {!isLoading && !errorMessage && hasSearched ? (
