@@ -28,14 +28,12 @@ export function createAuthRouter(ctx: AppContext) {
       const email = requireString(req.body.email, "email");
       const username = requireString(req.body.username, "username");
       const password = requireString(req.body.password, "password");
-      const timetable = optionalString(req.body.timetable, "timetable");
 
       const result = await registerUser(
         {
           email,
           username,
           password,
-          timetable,
         },
         ctx,
       );

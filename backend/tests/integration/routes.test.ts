@@ -95,7 +95,6 @@ describe("api routes", () => {
       email: "gamma@example.com",
       username: "gamma_user",
       hashedPassword: "gamma_hash",
-      timetable: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     } as never);
@@ -191,7 +190,6 @@ describe("api routes", () => {
       id: 11,
       email: "new@example.com",
       username: "new_user",
-      timetable: null,
     } as never);
 
     const response = await request(app).post("/api/auth/register").send({
@@ -229,7 +227,6 @@ describe("api routes", () => {
       id: 5,
       email: "demo@example.com",
       username: "demo",
-      timetable: null,
       hashedPassword,
     } as never);
 
@@ -264,7 +261,6 @@ describe("api routes", () => {
       id: 7,
       email: "auth@example.com",
       username: "auth_user",
-      timetable: null,
     } as never);
 
     const response = await request(app)
@@ -294,7 +290,6 @@ describe("api routes", () => {
       email: "auth@example.com",
       username: "updated_user",
       avatarUrl: null,
-      timetable: null,
     } as never);
 
     const response = await request(app)

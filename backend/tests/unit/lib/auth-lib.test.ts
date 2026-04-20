@@ -66,7 +66,6 @@ describe("auth-lib", () => {
       email: "new@example.com",
       username: "new_user",
       avatarUrl: null,
-      timetable: null,
     } as never);
 
     const result = await registerUser(
@@ -91,7 +90,6 @@ describe("auth-lib", () => {
         data: expect.objectContaining({
           email: "new@example.com",
           username: "new_user",
-          timetable: undefined,
         }),
       }),
     );
@@ -101,7 +99,6 @@ describe("auth-lib", () => {
       email: "new@example.com",
       username: "new_user",
       avatarUrl: null,
-      timetable: null,
     });
   });
 
@@ -202,7 +199,6 @@ describe("auth-lib", () => {
       email: "demo@example.com",
       username: "demo_user",
       avatarUrl: null,
-      timetable: null,
       hashedPassword,
     } as never);
 
@@ -224,7 +220,6 @@ describe("auth-lib", () => {
       email: "demo@example.com",
       username: "demo_user",
       avatarUrl: null,
-      timetable: null,
     });
     expect(typeof result.token).toBe("string");
   });
@@ -256,7 +251,6 @@ describe("auth-lib", () => {
       email: "demo@example.com",
       username: "demo_user",
       avatarUrl: null,
-      timetable: null,
       hashedPassword,
     } as never);
 
@@ -281,7 +275,6 @@ describe("auth-lib", () => {
       email: "auth@example.com",
       username: "auth_user",
       avatarUrl: null,
-      timetable: null,
     } as never);
 
     const result = await getCurrentAuthUser(7, ctx);
@@ -293,7 +286,6 @@ describe("auth-lib", () => {
         email: true,
         username: true,
         avatarUrl: true,
-        timetable: true,
       },
     });
     expect(result).toEqual({
@@ -301,7 +293,6 @@ describe("auth-lib", () => {
       email: "auth@example.com",
       username: "auth_user",
       avatarUrl: null,
-      timetable: null,
     });
   });
 
@@ -324,7 +315,6 @@ describe("auth-lib", () => {
       email: "auth@example.com",
       username: "renamed_user",
       avatarUrl: null,
-      timetable: null,
     } as never);
 
     const result = await updateCurrentAuthUserProfile(
@@ -349,7 +339,6 @@ describe("auth-lib", () => {
         email: true,
         username: true,
         avatarUrl: true,
-        timetable: true,
       },
     });
     expect(result).toEqual({
@@ -357,7 +346,6 @@ describe("auth-lib", () => {
       email: "auth@example.com",
       username: "renamed_user",
       avatarUrl: null,
-      timetable: null,
     });
   });
 
@@ -447,7 +435,6 @@ describe("auth-lib", () => {
       email: "auth@example.com",
       username: "auth_user",
       avatarUrl: "/uploads/avatars/avatar-1.jpg",
-      timetable: null,
     } as never);
 
     const result = await updateCurrentAuthUserAvatar(
@@ -466,7 +453,6 @@ describe("auth-lib", () => {
         email: true,
         username: true,
         avatarUrl: true,
-        timetable: true,
       },
     });
     expect(result.avatarUrl).toBe("/uploads/avatars/avatar-1.jpg");

@@ -9,7 +9,6 @@ const authUserSelect = {
   email: true,
   username: true,
   avatarUrl: true,
-  timetable: true,
 } as const;
 
 type AuthUser = {
@@ -17,7 +16,6 @@ type AuthUser = {
   email: string;
   username: string;
   avatarUrl: string | null;
-  timetable: string | null;
 };
 
 type AuthPayload = {
@@ -29,7 +27,6 @@ type RegisterInput = {
   email: string;
   username: string;
   password: string;
-  timetable?: string;
 };
 
 type LoginInput = {
@@ -85,7 +82,6 @@ export async function registerUser(input: RegisterInput, ctx: AppContext): Promi
       email,
       username,
       hashedPassword,
-      timetable: input.timetable,
     },
     select: authUserSelect,
   });

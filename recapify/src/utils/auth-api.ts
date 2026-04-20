@@ -5,7 +5,6 @@ export type AuthUser = {
   email: string;
   username: string;
   avatarUrl: string | null;
-  timetable: string | null;
 };
 
 export type AuthPayload = {
@@ -17,7 +16,6 @@ export type RegisterInput = {
   email: string;
   username: string;
   password: string;
-  timetable?: string;
 };
 
 export function registerRequest(input: RegisterInput) {
