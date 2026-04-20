@@ -158,6 +158,6 @@ npm run lint
 1. Confirm Node/npm/Expo versions.
 2. Create `backend/.env` with valid values.
 3. Run backend install + Prisma generate.
-4. Start backend (`npm run dev`).
+4. Start backend (`npm run start`).
 5. Optionally create `recapify/.env` API overrides.
 6. Run recapify install and start (`npm run web` or `npm run start`).
