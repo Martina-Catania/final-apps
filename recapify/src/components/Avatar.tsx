@@ -4,13 +4,12 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useThemeTokens } from "../hooks";
 
 type AvatarProps = {
-  name: string;
   avatarUri?: string;
   size?: number;
   onPress?: () => void;
 };
 
-export const Avatar = ({ name, avatarUri, size = 72, onPress }: AvatarProps) => {
+export const Avatar = ({ avatarUri, size = 72, onPress }: AvatarProps) => {
   const { colors, spacing, typography } = useThemeTokens();
 
   const avatarNode = (
@@ -50,17 +49,6 @@ export const Avatar = ({ name, avatarUri, size = 72, onPress }: AvatarProps) => 
       ) : (
         avatarNode
       )}
-
-      <Text
-        style={{
-          color: colors.textPrimary,
-          flex: 1,
-          fontSize: typography.primary.sm,
-          fontWeight: typography.weights.bold,
-        }}
-      >
-        {name}
-      </Text>
     </View>
   );
 };

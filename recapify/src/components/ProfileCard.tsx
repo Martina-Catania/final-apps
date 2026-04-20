@@ -40,16 +40,21 @@ export const ProfileCard = ({
         },
       ]}
     >
-      <View style={{ gap: spacing.xxs }}>
-        <Avatar avatarUri={avatarUri} name={username} />
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          gap: spacing.sm,
+        }}
+      >
+        <Avatar avatarUri={avatarUri} />
         <Text
           style={{
-            color: colors.textSecondary,
-            fontSize: typography.secondary.md,
-            marginLeft: 84,
+            color: colors.textPrimary,
+            fontSize: typography.primary.xl,
           }}
         >
-          @{username}
+          {username}
         </Text>
       </View>
 

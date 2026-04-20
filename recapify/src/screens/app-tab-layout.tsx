@@ -221,7 +221,7 @@ export function AppTabLayout({
                   fontWeight: typography.weights.bold,
                 }}
               >
-                @{user?.username ?? "unknown"}
+                {user?.username ?? "unknown"}
               </Text>
               <Text
                 style={{

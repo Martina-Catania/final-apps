@@ -547,7 +547,7 @@ export default function SearchPage() {
                         fontSize: typography.secondary.md,
                       }}
                     >
-                      {project.type} · By @{project.user.username} · {formatViewCount(project.timesPlayed)}
+                      {project.type} · By {project.user.username} · {formatViewCount(project.timesPlayed)}
                     </Text>
 
                     <ProjectTagPills tags={project.tags} />
