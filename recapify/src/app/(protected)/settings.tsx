@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -9,10 +9,12 @@ import {
 } from "react-native";
 import {
   Accordion,
+  AppActionSheet,
+  AppModal,
+  AppTextInput,
   Avatar,
   Button,
   FileUploadField,
-  AppTextInput,
   type UploadedFile,
 } from "../../components";
 import { useAuth } from "../../context/auth-context";
@@ -40,6 +42,15 @@ function resolveAvatarUri(avatarUrl: string | null) {
   return `${API_HOST}${avatarUrl}`;
 }
 
+type AvatarActionValue = "upload-file" | "use-camera";
+
+type AvatarActionItem = {
+  label: string;
+  value: AvatarActionValue;
+  iconName?: "cloud-upload-outline" | "camera-outline";
+  disabled?: boolean;
+};
+
 export default function SettingsPage() {
   const { goBack } = useSafeNavigation();
   const { token, user, refreshUser } = useAuth();
@@ -63,6 +74,8 @@ export default function SettingsPage() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isAvatarActionSheetOpen, setIsAvatarActionSheetOpen] = useState(false);
+  const [isAvatarUploadModalOpen, setIsAvatarUploadModalOpen] = useState(false);
 
   useEffect(() => {
     setUsername(user?.username ?? "");
@@ -75,6 +88,48 @@ export default function SettingsPage() {
 
     return resolveAvatarUri(user?.avatarUrl ?? null);
   }, [selectedAvatar?.uri, user?.avatarUrl]);
+
+  const handleOpenAvatarActionSheet = useCallback(() => {
+    setErrorMessage(null);
+    setAvatarMessage(null);
+    setIsAvatarActionSheetOpen(true);
+  }, []);
+
+  const handleCloseAvatarActionSheet = useCallback(() => {
+    setIsAvatarActionSheetOpen(false);
+  }, []);
+
+  const handleCloseAvatarUploadModal = useCallback(() => {
+    if (isUploadingAvatar) {
+      return;
+    }
+
+    setIsAvatarUploadModalOpen(false);
+  }, [isUploadingAvatar]);
+
+  const avatarActionItems = useMemo<AvatarActionItem[]>(
+    () => [
+      {
+        label: "Upload from file",
+        value: "upload-file",
+        iconName: "cloud-upload-outline",
+        disabled: isUploadingAvatar,
+      },
+      {
+        label: "Use camera (Coming soon)",
+        value: "use-camera",
+        iconName: "camera-outline",
+        disabled: true,
+      },
+    ],
+    [isUploadingAvatar],
+  );
+
+  const handleSelectAvatarAction = useCallback((value: AvatarActionValue) => {
+    if (value === "upload-file") {
+      setIsAvatarUploadModalOpen(true);
+    }
+  }, []);
 
   const handleSaveProfile = async () => {
     if (!token) {
@@ -131,6 +186,7 @@ export default function SettingsPage() {
 
       await refreshUser();
       setSelectedAvatar(null);
+      setIsAvatarUploadModalOpen(false);
       setAvatarMessage("Avatar updated");
     } catch (error) {
       setErrorMessage(getUserApiErrorMessage(error, "Unable to upload avatar"));
@@ -195,7 +251,7 @@ export default function SettingsPage() {
           }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.rowBetween, { gap: spacing.sm }]}> 
+          <View style={[styles.rowBetween, { gap: spacing.sm }]}>
             <Button
               iconName="arrow-back-outline"
               label="Back"
@@ -237,7 +293,20 @@ export default function SettingsPage() {
               },
             ]}
           >
-            <Avatar avatarUri={previewAvatarUri} name={username || user?.username || "Current user"} />
+            <Avatar
+              avatarUri={previewAvatarUri}
+              name={username || user?.username || "Current user"}
+              onPress={handleOpenAvatarActionSheet}
+            />
+
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: typography.secondary.sm,
+              }}
+            >
+              Tap your avatar to update your profile picture.
+            </Text>
 
             {errorMessage ? (
               <Text
@@ -306,29 +375,6 @@ export default function SettingsPage() {
             </View>
           </Accordion>
 
-          <Accordion title="Profile picture">
-            <View style={{ gap: spacing.md }}>
-              <FileUploadField
-                allowedTypes={["image/*"]}
-                clearButtonLabel="Clear image"
-                helperText="Pick a JPEG, PNG, WEBP, or GIF image (max 5MB)."
-                label="Upload avatar"
-                onFileSelected={setSelectedAvatar}
-                pickButtonLabel="Pick image"
-              />
-              <Button
-                disabled={isUploadingAvatar || !selectedAvatar}
-                fullWidth
-                iconName="cloud-upload-outline"
-                label={isUploadingAvatar ? "Uploading..." : "Upload avatar"}
-                onPress={() => {
-                  void handleUploadAvatar();
-                }}
-                variant="primary"
-              />
-            </View>
-          </Accordion>
-
           <Accordion title="Password">
             <View style={{ gap: spacing.md }}>
               <AppTextInput
@@ -374,6 +420,51 @@ export default function SettingsPage() {
             </View>
           </Accordion>
         </ScrollView>
+
+        <AppActionSheet<AvatarActionValue>
+          isOpen={isAvatarActionSheetOpen}
+          items={avatarActionItems}
+          onClose={handleCloseAvatarActionSheet}
+          onSelect={handleSelectAvatarAction}
+          title="Change profile picture"
+        />
+
+        <AppModal
+          description="Pick a JPEG, PNG, WEBP, or GIF image (max 5MB)."
+          onClose={handleCloseAvatarUploadModal}
+          title="Upload profile picture"
+          visible={isAvatarUploadModalOpen}
+        >
+          <View style={{ gap: spacing.md }}>
+            <FileUploadField
+              allowedTypes={["image/*"]}
+              clearButtonLabel="Clear image"
+              helperText="Pick a JPEG, PNG, WEBP, or GIF image (max 5MB)."
+              label="Upload avatar"
+              onFileSelected={setSelectedAvatar}
+              pickButtonLabel="Pick image"
+            />
+
+            <View style={[styles.modalActions, { gap: spacing.sm }]}>
+              <Button
+                disabled={isUploadingAvatar}
+                iconName="close-outline"
+                label="Cancel"
+                onPress={handleCloseAvatarUploadModal}
+                variant="default"
+              />
+              <Button
+                disabled={isUploadingAvatar || !selectedAvatar}
+                iconName="cloud-upload-outline"
+                label={isUploadingAvatar ? "Uploading..." : "Upload avatar"}
+                onPress={() => {
+                  void handleUploadAvatar();
+                }}
+                variant="primary"
+              />
+            </View>
+          </View>
+        </AppModal>
       </KeyboardAvoidingView>
     </SafeAreaPage>
   );
@@ -393,5 +484,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  modalActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
   },
 });
