@@ -22,31 +22,16 @@ import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
 import { updateProjectRequest } from "../../../../utils/project-api";
 import { isRichTextEmpty } from "../../../../utils/rich-text";
+import { parsePositiveRouteId } from "../../../../utils/route-id";
 import {
   getSummaryByIdRequest,
   updateSummaryRequest,
 } from "../../../../utils/summary-api";
 import { uniqueFlatTags } from "../../../../utils/tag-utils";
 
-function parseSummaryId(value: string | string[] | undefined): number | null {
-  const firstValue = Array.isArray(value) ? value[0] : value;
-
-  if (!firstValue) {
-    return null;
-  }
-
-  const parsed = Number.parseInt(firstValue, 10);
-
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return parsed;
-}
-
 export default function SummaryEditPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
-  const summaryId = useMemo(() => parseSummaryId(id), [id]);
+  const summaryId = useMemo(() => parsePositiveRouteId(id), [id]);
   const router = useRouter();
   const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();

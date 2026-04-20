@@ -19,7 +19,12 @@ import {
 } from "../../../components";
 import { AppTextInput } from "../../../components/TextInput";
 import { useAuth } from "../../../context/auth-context";
-import { useProjectTagEditor, useSafeNavigation, useThemeTokens } from "../../../hooks";
+import {
+  useCollectionDraft,
+  useProjectTagEditor,
+  useSafeNavigation,
+  useThemeTokens,
+} from "../../../hooks";
 import { SafeAreaPage } from "../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../utils/api-request";
 import {
@@ -59,13 +64,22 @@ export default function FlashcardCreatePage() {
   const { colors, spacing } = useThemeTokens();
 
   const [deckTitle, setDeckTitle] = useState("");
-  const [flashcards, setFlashcards] = useState<FlashcardDraft[]>([createFlashcardDraft(1)]);
-  const [nextFlashcardIndex, setNextFlashcardIndex] = useState(2);
   const [titleError, setTitleError] = useState<string | null>(null);
   const [flashcardsError, setFlashcardsError] = useState<string | null>(null);
-  const [flashcardErrors, setFlashcardErrors] = useState<Record<string, FlashcardFieldErrors>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    addItem: addFlashcard,
+    errors: flashcardErrors,
+    items: flashcards,
+    removeItem: removeFlashcard,
+    setErrors: setFlashcardErrors,
+    updateField: updateFlashcardField,
+  } = useCollectionDraft<FlashcardDraft, FlashcardField>({
+    createItem: createFlashcardDraft,
+    initialItems: [createFlashcardDraft(1)],
+    initialNextIndex: 2,
+  });
   const {
     tagInput,
     selectedTags,
@@ -78,46 +92,6 @@ export default function FlashcardCreatePage() {
     clearTagsError,
     syncProjectTags,
   } = useProjectTagEditor({ token: token ?? undefined });
-
-  const addFlashcard = () => {
-    setFlashcards((current) => [...current, createFlashcardDraft(nextFlashcardIndex)]);
-    setNextFlashcardIndex((current) => current + 1);
-  };
-
-  const removeFlashcard = (key: string) => {
-    setFlashcards((current) => current.filter((item) => item.key !== key));
-    setFlashcardErrors((current) => {
-      const next = { ...current };
-      delete next[key];
-      return next;
-    });
-  };
-
-  const updateFlashcardField = (
-    key: string,
-    field: FlashcardField,
-    value: string,
-  ) => {
-    setFlashcards((current) =>
-      current.map((item) => (item.key === key ? { ...item, [field]: value } : item)),
-    );
-
-    setFlashcardErrors((current) => {
-      const nextForFlashcard = current[key];
-
-      if (!nextForFlashcard || !nextForFlashcard[field]) {
-        return current;
-      }
-
-      return {
-        ...current,
-        [key]: {
-          ...nextForFlashcard,
-          [field]: undefined,
-        },
-      };
-    });
-  };
 
   const validate = () => {
     let isValid = true;

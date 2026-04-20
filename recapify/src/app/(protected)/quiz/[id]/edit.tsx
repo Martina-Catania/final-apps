@@ -19,11 +19,17 @@ import {
 } from "../../../../components";
 import { AppTextInput } from "../../../../components/TextInput";
 import { useAuth } from "../../../../context/auth-context";
-import { useProjectTagEditor, useSafeNavigation, useThemeTokens } from "../../../../hooks";
+import {
+  useCollectionDraft,
+  useProjectTagEditor,
+  useSafeNavigation,
+  useThemeTokens,
+} from "../../../../hooks";
 import { EditPageState } from "../../../../screens/edit-page-state";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
 import { updateProjectRequest } from "../../../../utils/project-api";
+import { parsePositiveRouteId } from "../../../../utils/route-id";
 import { uniqueFlatTags } from "../../../../utils/tag-utils";
 import {
   createQuizQuestionRequest,
@@ -46,22 +52,6 @@ type QuestionField = Exclude<keyof QuestionDraft, "key" | "questionId">;
 
 type QuestionFieldErrors = Partial<Record<QuestionField, string>>;
 
-function parseQuizId(value: string | string[] | undefined): number | null {
-  const firstValue = Array.isArray(value) ? value[0] : value;
-
-  if (!firstValue) {
-    return null;
-  }
-
-  const parsed = Number.parseInt(firstValue, 10);
-
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return parsed;
-}
-
 function createQuestionDraft(index: number): QuestionDraft {
   return {
     key: `new-${index}`,
@@ -76,7 +66,7 @@ function createQuestionDraft(index: number): QuestionDraft {
 
 export default function QuizEditPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
-  const quizId = useMemo(() => parseQuizId(id), [id]);
+  const quizId = useMemo(() => parsePositiveRouteId(id), [id]);
   const router = useRouter();
   const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
@@ -85,17 +75,28 @@ export default function QuizEditPage() {
   const [projectId, setProjectId] = useState<number | null>(null);
   const [creatorUserId, setCreatorUserId] = useState<number | null>(null);
   const [quizTitle, setQuizTitle] = useState("");
-  const [questions, setQuestions] = useState<QuestionDraft[]>([]);
   const [initialQuestionIds, setInitialQuestionIds] = useState<number[]>([]);
-  const [nextQuestionIndex, setNextQuestionIndex] = useState(1);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [titleError, setTitleError] = useState<string | null>(null);
   const [questionsError, setQuestionsError] = useState<string | null>(null);
-  const [questionErrors, setQuestionErrors] = useState<Record<string, QuestionFieldErrors>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const {
+    addItem: addQuestion,
+    errors: questionErrors,
+    items: questions,
+    removeItem: removeQuestion,
+    setErrors: setQuestionErrors,
+    setItems: setQuestions,
+    setNextIndex: setNextQuestionIndex,
+    updateField: updateQuestionField,
+  } = useCollectionDraft<QuestionDraft, QuestionField>({
+    createItem: createQuestionDraft,
+    initialItems: [],
+    initialNextIndex: 1,
+  });
 
   const {
     tagInput,
@@ -111,46 +112,6 @@ export default function QuizEditPage() {
     clearTagsError,
     syncProjectTags,
   } = useProjectTagEditor({ token: token ?? undefined });
-
-  const addQuestion = () => {
-    setQuestions((current) => [...current, createQuestionDraft(nextQuestionIndex)]);
-    setNextQuestionIndex((current) => current + 1);
-  };
-
-  const removeQuestion = (key: string) => {
-    setQuestions((current) => current.filter((item) => item.key !== key));
-    setQuestionErrors((current) => {
-      const next = { ...current };
-      delete next[key];
-      return next;
-    });
-  };
-
-  const updateQuestionField = (
-    key: string,
-    field: QuestionField,
-    value: string,
-  ) => {
-    setQuestions((current) =>
-      current.map((item) => (item.key === key ? { ...item, [field]: value } : item)),
-    );
-
-    setQuestionErrors((current) => {
-      const nextForQuestion = current[key];
-
-      if (!nextForQuestion || !nextForQuestion[field]) {
-        return current;
-      }
-
-      return {
-        ...current,
-        [key]: {
-          ...nextForQuestion,
-          [field]: undefined,
-        },
-      };
-    });
-  };
 
   const validate = () => {
     let isValid = true;
@@ -269,7 +230,15 @@ export default function QuizEditPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [clearTagState, initializeFromProjectTags, quizId, token, user]);
+  }, [
+    clearTagState,
+    initializeFromProjectTags,
+    quizId,
+    setNextQuestionIndex,
+    setQuestions,
+    token,
+    user,
+  ]);
 
   useEffect(() => {
     void loadQuiz();

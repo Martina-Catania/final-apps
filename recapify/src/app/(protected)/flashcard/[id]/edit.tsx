@@ -19,10 +19,16 @@ import {
 } from "../../../../components";
 import { AppTextInput } from "../../../../components/TextInput";
 import { useAuth } from "../../../../context/auth-context";
-import { useProjectTagEditor, useSafeNavigation, useThemeTokens } from "../../../../hooks";
+import {
+  useCollectionDraft,
+  useProjectTagEditor,
+  useSafeNavigation,
+  useThemeTokens,
+} from "../../../../hooks";
 import { EditPageState } from "../../../../screens/edit-page-state";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
+import { parsePositiveRouteId } from "../../../../utils/route-id";
 import { uniqueFlatTags } from "../../../../utils/tag-utils";
 import {
   createFlashcardRequest,
@@ -45,22 +51,6 @@ type FlashcardField = Exclude<keyof FlashcardDraft, "key" | "flashcardId">;
 
 type FlashcardFieldErrors = Partial<Record<FlashcardField, string>>;
 
-function parseDeckId(value: string | string[] | undefined): number | null {
-  const firstValue = Array.isArray(value) ? value[0] : value;
-
-  if (!firstValue) {
-    return null;
-  }
-
-  const parsed = Number.parseInt(firstValue, 10);
-
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return parsed;
-}
-
 function createFlashcardDraft(index: number): FlashcardDraft {
   return {
     key: `new-${index}`,
@@ -72,7 +62,7 @@ function createFlashcardDraft(index: number): FlashcardDraft {
 
 export default function FlashcardEditPage() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
-  const deckId = useMemo(() => parseDeckId(id), [id]);
+  const deckId = useMemo(() => parsePositiveRouteId(id), [id]);
   const router = useRouter();
   const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
@@ -81,17 +71,28 @@ export default function FlashcardEditPage() {
   const [projectId, setProjectId] = useState<number | null>(null);
   const [creatorUserId, setCreatorUserId] = useState<number | null>(null);
   const [deckTitle, setDeckTitle] = useState("");
-  const [flashcards, setFlashcards] = useState<FlashcardDraft[]>([]);
   const [initialFlashcardIds, setInitialFlashcardIds] = useState<number[]>([]);
-  const [nextFlashcardIndex, setNextFlashcardIndex] = useState(1);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [titleError, setTitleError] = useState<string | null>(null);
   const [flashcardsError, setFlashcardsError] = useState<string | null>(null);
-  const [flashcardErrors, setFlashcardErrors] = useState<Record<string, FlashcardFieldErrors>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const {
+    addItem: addFlashcard,
+    errors: flashcardErrors,
+    items: flashcards,
+    removeItem: removeFlashcard,
+    setErrors: setFlashcardErrors,
+    setItems: setFlashcards,
+    setNextIndex: setNextFlashcardIndex,
+    updateField: updateFlashcardField,
+  } = useCollectionDraft<FlashcardDraft, FlashcardField>({
+    createItem: createFlashcardDraft,
+    initialItems: [],
+    initialNextIndex: 1,
+  });
 
   const {
     tagInput,
@@ -107,46 +108,6 @@ export default function FlashcardEditPage() {
     clearTagsError,
     syncProjectTags,
   } = useProjectTagEditor({ token: token ?? undefined });
-
-  const addFlashcard = () => {
-    setFlashcards((current) => [...current, createFlashcardDraft(nextFlashcardIndex)]);
-    setNextFlashcardIndex((current) => current + 1);
-  };
-
-  const removeFlashcard = (key: string) => {
-    setFlashcards((current) => current.filter((item) => item.key !== key));
-    setFlashcardErrors((current) => {
-      const next = { ...current };
-      delete next[key];
-      return next;
-    });
-  };
-
-  const updateFlashcardField = (
-    key: string,
-    field: FlashcardField,
-    value: string,
-  ) => {
-    setFlashcards((current) =>
-      current.map((item) => (item.key === key ? { ...item, [field]: value } : item)),
-    );
-
-    setFlashcardErrors((current) => {
-      const nextForFlashcard = current[key];
-
-      if (!nextForFlashcard || !nextForFlashcard[field]) {
-        return current;
-      }
-
-      return {
-        ...current,
-        [key]: {
-          ...nextForFlashcard,
-          [field]: undefined,
-        },
-      };
-    });
-  };
 
   const validate = () => {
     let isValid = true;
@@ -250,7 +211,15 @@ export default function FlashcardEditPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [clearTagState, deckId, initializeFromProjectTags, token, user]);
+  }, [
+    clearTagState,
+    deckId,
+    initializeFromProjectTags,
+    setFlashcards,
+    setNextFlashcardIndex,
+    token,
+    user,
+  ]);
 
   useEffect(() => {
     void loadDeck();

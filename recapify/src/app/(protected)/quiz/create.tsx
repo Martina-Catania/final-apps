@@ -19,7 +19,12 @@ import {
 } from "../../../components";
 import { AppTextInput } from "../../../components/TextInput";
 import { useAuth } from "../../../context/auth-context";
-import { useProjectTagEditor, useSafeNavigation, useThemeTokens } from "../../../hooks";
+import {
+  useCollectionDraft,
+  useProjectTagEditor,
+  useSafeNavigation,
+  useThemeTokens,
+} from "../../../hooks";
 import { SafeAreaPage } from "../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../utils/api-request";
 import { createProjectRequest } from "../../../utils/project-api";
@@ -65,13 +70,22 @@ export default function QuizCreatePage() {
   const { colors, spacing } = useThemeTokens();
 
   const [quizTitle, setQuizTitle] = useState("");
-  const [questions, setQuestions] = useState<QuestionDraft[]>([createQuestionDraft(1)]);
-  const [nextQuestionIndex, setNextQuestionIndex] = useState(2);
   const [titleError, setTitleError] = useState<string | null>(null);
   const [questionsError, setQuestionsError] = useState<string | null>(null);
-  const [questionErrors, setQuestionErrors] = useState<Record<string, QuestionFieldErrors>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    addItem: addQuestion,
+    errors: questionErrors,
+    items: questions,
+    removeItem: removeQuestion,
+    setErrors: setQuestionErrors,
+    updateField: updateQuestionField,
+  } = useCollectionDraft<QuestionDraft, QuestionField>({
+    createItem: createQuestionDraft,
+    initialItems: [createQuestionDraft(1)],
+    initialNextIndex: 2,
+  });
   const {
     tagInput,
     selectedTags,
@@ -84,46 +98,6 @@ export default function QuizCreatePage() {
     clearTagsError,
     syncProjectTags,
   } = useProjectTagEditor({ token: token ?? undefined });
-
-  const addQuestion = () => {
-    setQuestions((current) => [...current, createQuestionDraft(nextQuestionIndex)]);
-    setNextQuestionIndex((current) => current + 1);
-  };
-
-  const removeQuestion = (key: string) => {
-    setQuestions((current) => current.filter((item) => item.key !== key));
-    setQuestionErrors((current) => {
-      const next = { ...current };
-      delete next[key];
-      return next;
-    });
-  };
-
-  const updateQuestionField = (
-    key: string,
-    field: QuestionField,
-    value: string,
-  ) => {
-    setQuestions((current) =>
-      current.map((item) => (item.key === key ? { ...item, [field]: value } : item)),
-    );
-
-    setQuestionErrors((current) => {
-      const nextForQuestion = current[key];
-
-      if (!nextForQuestion || !nextForQuestion[field]) {
-        return current;
-      }
-
-      return {
-        ...current,
-        [key]: {
-          ...nextForQuestion,
-          [field]: undefined,
-        },
-      };
-    });
-  };
 
   const validate = () => {
     let isValid = true;
