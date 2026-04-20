@@ -219,8 +219,6 @@ export default function SummaryCreatePage() {
 
             <View style={{ gap: spacing.sm }}>
               <AppTextInput
-                errorText={tagsError ?? undefined}
-                helperText="Add existing tags or create new ones. Matching is case-insensitive."
                 label="Project tags"
                 onChangeText={handleTagInputChange}
                 onSubmitEditing={() => {
@@ -228,6 +226,8 @@ export default function SummaryCreatePage() {
                 }}
                 placeholder="Type a tag name"
                 value={tagInput}
+                errorText={tagsError ?? undefined}
+                helperText="Add existing tags or create new ones."
               />
 
               {suggestedTags.length > 0 ? (
@@ -310,10 +310,11 @@ export default function SummaryCreatePage() {
               errorText={contentError ?? undefined}
               helperText={
                 Platform.OS === "web"
-                  ? "Optional if you upload a file. Using plain text fallback on web."
-                  : "Optional if you upload a file. Use formatting controls for richer notes."
+                  ? "Using plain text fallback on web."
+                  : "Use formatting controls for richer notes."
               }
               label="Summary content"
+              minHeight={320}
               onChangeValue={(value) => {
                 setSummaryContent(value);
                 if (contentError) {

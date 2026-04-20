@@ -332,8 +332,6 @@ export default function SummaryEditPage() {
 
             <View style={{ gap: spacing.sm }}>
               <AppTextInput
-                errorText={tagsError ?? undefined}
-                helperText="Add existing tags or create new ones. Matching is case-insensitive."
                 label="Project tags"
                 onChangeText={handleTagInputChange}
                 onSubmitEditing={() => {
@@ -341,6 +339,8 @@ export default function SummaryEditPage() {
                 }}
                 placeholder="Type a tag name"
                 value={tagInput}
+                errorText={tagsError ?? undefined}
+                helperText="Add existing tags or create new ones."
               />
 
               {suggestedTags.length > 0 ? (
@@ -427,6 +427,7 @@ export default function SummaryEditPage() {
                   : "Use the formatting controls for richer summary notes."
               }
               label="Summary content"
+              minHeight={320}
               onChangeValue={(value) => {
                 setSummaryContent(value);
                 if (contentError) {

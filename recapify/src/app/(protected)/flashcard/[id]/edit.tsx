@@ -460,7 +460,7 @@ export default function FlashcardEditPage() {
                 placeholder="Type a tag name"
                 value={tagInput}
                 errorText={tagsError ?? undefined}
-                helperText="Add existing tags or create new ones. Matching is case-insensitive."
+                helperText="Add existing tags or create new ones."
               />
 
               {suggestedTags.length > 0 ? (

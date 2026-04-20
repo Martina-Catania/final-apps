@@ -155,6 +155,23 @@ export function SummaryEditor({
 
       {isRichInputAvailable && NativeRichEditor && NativeRichToolbar ? (
         <View style={{ gap: spacing.sm }}>
+                      <NativeRichToolbar
+              actions={toolbarActions}
+              disabled={!editable}
+              editor={nativeInputRef}
+              getEditor={() => nativeInputRef.current}
+              iconTint={colors.textSecondary}
+              selectedIconTint={colors.primary}
+              style={[
+                styles.toolbar,
+                {
+                  backgroundColor: colors.surfaceMuted,
+                  borderColor: colors.border,
+                  borderRadius: radius.sm,
+                  minHeight: spacing.lg * 2,
+                },
+              ]}
+            />
           <View
             style={[
               styles.editorContainer,
@@ -167,23 +184,6 @@ export function SummaryEditor({
               },
             ]}
           >
-                      <NativeRichToolbar
-                          actions={toolbarActions}
-                          disabled={!editable}
-                          editor={nativeInputRef}
-                          getEditor={() => nativeInputRef.current}
-                          iconTint={colors.textSecondary}
-                          selectedIconTint={colors.primary}
-                          style={[
-                              styles.toolbar,
-                              {
-                                  backgroundColor: colors.surfaceMuted,
-                                  borderColor: colors.border,
-                                  borderRadius: radius.sm,
-                                  minHeight: spacing.lg * 2,
-                              },
-                          ]}
-                      />
             <NativeRichEditor
               disabled={!editable}
               editorStyle={{
