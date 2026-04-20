@@ -1,18 +1,26 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
-import { Accordion, Button, ProjectTagEditor } from "../../../../components";
+import {
+  Accordion,
+  Button,
+  FormActions,
+  FormCard,
+  FormHeader,
+  InlineErrorText,
+  ProjectTagEditor,
+  SectionHeader,
+} from "../../../../components";
 import { AppTextInput } from "../../../../components/TextInput";
 import { useAuth } from "../../../../context/auth-context";
 import { useProjectTagEditor, useSafeNavigation, useThemeTokens } from "../../../../hooks";
+import { EditPageState } from "../../../../screens/edit-page-state";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
 import { updateProjectRequest } from "../../../../utils/project-api";
@@ -72,7 +80,7 @@ export default function QuizEditPage() {
   const router = useRouter();
   const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
-  const { colors, spacing, typography, radius } = useThemeTokens();
+  const { colors, spacing } = useThemeTokens();
 
   const [projectId, setProjectId] = useState<number | null>(null);
   const [creatorUserId, setCreatorUserId] = useState<number | null>(null);
@@ -340,127 +348,51 @@ export default function QuizEditPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <SafeAreaPage backgroundColor={colors.background}>
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.primary} size="large" />
-        </View>
-      </SafeAreaPage>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <SafeAreaPage backgroundColor={colors.background}>
-        <View
-          style={[
-            styles.errorCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              borderRadius: radius.md,
-              gap: spacing.md,
-              margin: spacing.lg,
-              padding: spacing.lg,
-            },
-          ]}
-        >
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: typography.primary.md,
-              fontWeight: typography.weights.bold,
-            }}
-          >
-            Quiz could not be loaded
-          </Text>
-          <Text
-            style={{
-              color: colors.danger,
-              fontSize: typography.secondary.md,
-            }}
-          >
-            {loadError}
-          </Text>
-          <View style={{ gap: spacing.sm }}>
-            <Button
-              fullWidth
-              iconName="home-outline"
-              label="Back to home"
-              onPress={() => router.replace("/")}
-              variant="default"
-            />
-            <Button
-              fullWidth
-              iconName="refresh-outline"
-              label="Try again"
-              onPress={() => {
-                void loadQuiz();
-              }}
-              variant="primary"
-            />
-          </View>
-        </View>
-      </SafeAreaPage>
-    );
-  }
-
   return (
-    <SafeAreaPage backgroundColor={colors.background}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.keyboardAvoiding}
-      >
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContainer,
-            {
-              padding: spacing.lg,
-            },
-          ]}
-          keyboardShouldPersistTaps="handled"
+    <EditPageState
+      actions={[
+        {
+          iconName: "home-outline",
+          label: "Back to home",
+          onPress: () => {
+            router.replace("/");
+          },
+          variant: "default",
+        },
+        {
+          iconName: "refresh-outline",
+          label: "Try again",
+          onPress: () => {
+            void loadQuiz();
+          },
+          variant: "primary",
+        },
+      ]}
+      backgroundColor={colors.background}
+      errorTitle="Quiz could not be loaded"
+      isLoading={isLoading}
+      loadError={loadError}
+    >
+      <SafeAreaPage backgroundColor={colors.background}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.keyboardAvoiding}
         >
-          <View
-            style={[
-              styles.card,
+          <ScrollView
+            contentContainerStyle={[
+              styles.scrollContainer,
               {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.md,
-                gap: spacing.lg,
                 padding: spacing.lg,
               },
             ]}
+            keyboardShouldPersistTaps="handled"
           >
-            <View style={[styles.headerRow, { gap: spacing.sm }]}>
-              <Button
-                accessibilityLabel="Back"
-                iconName="arrow-back-outline"
-                onPress={() => goBack()}
-                variant="icon"
+            <FormCard maxWidth={760}>
+              <FormHeader
+                onBack={goBack}
+                subtitle="Update the quiz name and questions. Changes are only saved when you press Save changes."
+                title="Edit Quiz"
               />
-
-              <View style={[styles.headerText, { gap: spacing.xs }]}>
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.primary.md,
-                    fontWeight: typography.weights.bold,
-                  }}
-                >
-                  Edit Quiz
-                </Text>
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    fontSize: typography.secondary.md,
-                  }}
-                >
-                  Update the quiz name and questions. Changes are only saved when you press Save changes.
-                </Text>
-              </View>
-            </View>
 
             <AppTextInput
               label="Quiz name"
@@ -483,35 +415,15 @@ export default function QuizEditPage() {
               tagsError={tagsError}
             />
 
-            <View style={{ gap: spacing.sm }}>
-              <View style={[styles.rowBetween, { gap: spacing.sm }]}>
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.primary.sm,
-                    fontWeight: typography.weights.semibold,
-                  }}
-                >
-                  Questions
-                </Text>
-                <Button
-                  iconName="add-circle-outline"
-                  label="Add question"
-                  onPress={addQuestion}
-                  variant="secondary"
+              <View style={{ gap: spacing.sm }}>
+                <SectionHeader
+                  actionIconName="add-circle-outline"
+                  actionLabel="Add question"
+                  label="Questions"
+                  onActionPress={addQuestion}
                 />
-              </View>
 
-              {questionsError ? (
-                <Text
-                  style={{
-                    color: colors.danger,
-                    fontSize: typography.secondary.sm,
-                  }}
-                >
-                  {questionsError}
-                </Text>
-              ) : null}
+                <InlineErrorText message={questionsError} />
 
               <View style={{ gap: spacing.md }}>
                 {questions.map((item, index) => {
@@ -581,82 +493,34 @@ export default function QuizEditPage() {
               </View>
             </View>
 
-            {submitError ? (
-              <Text
-                style={{
-                  color: colors.danger,
-                  fontSize: typography.secondary.sm,
-                }}
-              >
-                {submitError}
-              </Text>
-            ) : null}
+              <InlineErrorText message={submitError} />
 
-            <View style={[styles.rowWrap, { gap: spacing.sm }]}>
-              <Button
+              <FormActions
                 disabled={isSubmitting}
-                fullWidth
-                iconName="save-outline"
-                label={isSubmitting ? "Saving changes..." : "Save changes"}
-                onPress={() => {
+                isPrimaryLoading={isSubmitting}
+                onPrimaryPress={() => {
                   void handleSaveQuiz();
                 }}
-                variant="primary"
+                onSecondaryPress={goBack}
+                primaryIconName="save-outline"
+                primaryLabel="Save changes"
+                primaryLoadingLabel="Saving changes..."
+                secondaryIconName="close-outline"
+                secondaryLabel="Cancel"
               />
-              <Button
-                disabled={isSubmitting}
-                fullWidth
-                iconName="close-outline"
-                label="Cancel"
-                onPress={() => goBack()}
-                variant="default"
-              />
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaPage>
+            </FormCard>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaPage>
+    </EditPageState>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
   keyboardAvoiding: {
     flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
-  },
-  centered: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-  },
-  card: {
-    alignSelf: "center",
-    borderWidth: 1,
-    maxWidth: 760,
-    width: "100%",
-  },
-  errorCard: {
-    borderWidth: 1,
-  },
-  headerRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-  },
-  headerText: {
-    flex: 1,
-  },
-  rowBetween: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  rowWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
   },
 });

@@ -1,18 +1,23 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
-  View,
 } from "react-native";
-import { Button, ProjectTagEditor, SummaryEditor } from "../../../../components";
+import {
+  FormActions,
+  FormCard,
+  FormHeader,
+  InlineErrorText,
+  ProjectTagEditor,
+  SummaryEditor,
+} from "../../../../components";
 import { AppTextInput } from "../../../../components/TextInput";
 import { useAuth } from "../../../../context/auth-context";
 import { useProjectTagEditor, useSafeNavigation, useThemeTokens } from "../../../../hooks";
+import { EditPageState } from "../../../../screens/edit-page-state";
 import { SafeAreaPage } from "../../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../../utils/api-request";
 import { updateProjectRequest } from "../../../../utils/project-api";
@@ -45,7 +50,7 @@ export default function SummaryEditPage() {
   const router = useRouter();
   const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
-  const { colors, spacing, typography, radius } = useThemeTokens();
+  const { colors, spacing } = useThemeTokens();
 
   const [projectId, setProjectId] = useState<number | null>(null);
   const [creatorUserId, setCreatorUserId] = useState<number | null>(null);
@@ -194,127 +199,49 @@ export default function SummaryEditPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <SafeAreaPage backgroundColor={colors.background}>
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.primary} size="large" />
-        </View>
-      </SafeAreaPage>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <SafeAreaPage backgroundColor={colors.background}>
-        <View
-          style={[
-            styles.errorCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              borderRadius: radius.md,
-              gap: spacing.md,
-              margin: spacing.lg,
-              padding: spacing.lg,
-            },
-          ]}
-        >
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: typography.primary.md,
-              fontWeight: typography.weights.bold,
-            }}
-          >
-            Summary could not be loaded
-          </Text>
-          <Text
-            style={{
-              color: colors.danger,
-              fontSize: typography.secondary.md,
-            }}
-          >
-            {loadError}
-          </Text>
-          <View style={{ gap: spacing.sm }}>
-            <Button
-              fullWidth
-              iconName="refresh-outline"
-              label="Try again"
-              onPress={() => {
-                void loadSummary();
-              }}
-              variant="primary"
-            />
-            <Button
-              fullWidth
-              iconName="arrow-back-outline"
-              label="Back"
-              onPress={() => goBack()}
-              variant="default"
-            />
-          </View>
-        </View>
-      </SafeAreaPage>
-    );
-  }
-
   return (
-    <SafeAreaPage backgroundColor={colors.background}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.keyboardAvoiding}
-      >
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContainer,
-            {
-              padding: spacing.lg,
-            },
-          ]}
-          keyboardShouldPersistTaps="handled"
+    <EditPageState
+      actions={[
+        {
+          iconName: "refresh-outline",
+          label: "Try again",
+          onPress: () => {
+            void loadSummary();
+          },
+          variant: "primary",
+        },
+        {
+          iconName: "arrow-back-outline",
+          label: "Back",
+          onPress: goBack,
+          variant: "default",
+        },
+      ]}
+      backgroundColor={colors.background}
+      errorTitle="Summary could not be loaded"
+      isLoading={isLoading}
+      loadError={loadError}
+    >
+      <SafeAreaPage backgroundColor={colors.background}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.keyboardAvoiding}
         >
-          <View
-            style={[
-              styles.card,
+          <ScrollView
+            contentContainerStyle={[
+              styles.scrollContainer,
               {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.md,
-                gap: spacing.lg,
                 padding: spacing.lg,
               },
             ]}
+            keyboardShouldPersistTaps="handled"
           >
-            <View style={[styles.headerRow, { gap: spacing.sm }]}> 
-              <Button
-                accessibilityLabel="Back"
-                iconName="arrow-back-outline"
-                onPress={() => goBack()}
-                variant="icon"
+            <FormCard>
+              <FormHeader
+                onBack={goBack}
+                subtitle="Update title and content for this summary."
+                title="Edit Summary"
               />
-
-              <View style={[styles.headerText, { gap: spacing.xs }]}> 
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.primary.md,
-                    fontWeight: typography.weights.bold,
-                  }}
-                >
-                  Edit Summary
-                </Text>
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    fontSize: typography.secondary.md,
-                  }}
-                >
-                  Update title and content for this summary.
-                </Text>
-              </View>
-            </View>
 
             <AppTextInput
               errorText={titleError ?? undefined}
@@ -359,53 +286,27 @@ export default function SummaryEditPage() {
               value={summaryContent}
             />
 
-            {submitError ? (
-              <Text
-                style={{
-                  color: colors.danger,
-                  fontSize: typography.secondary.md,
-                }}
-              >
-                {submitError}
-              </Text>
-            ) : null}
+              <InlineErrorText message={submitError} size="md" />
 
-            <Button
-              disabled={isSubmitting}
-              fullWidth
-              iconName={isSubmitting ? "hourglass-outline" : "save-outline"}
-              label={isSubmitting ? "Saving changes..." : "Save changes"}
-              onPress={() => {
-                void handleSaveSummary();
-              }}
-              variant="primary"
-            />
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaPage>
+              <FormActions
+                disabled={isSubmitting}
+                isPrimaryLoading={isSubmitting}
+                onPrimaryPress={() => {
+                  void handleSaveSummary();
+                }}
+                primaryIconName={isSubmitting ? "hourglass-outline" : "save-outline"}
+                primaryLabel="Save changes"
+                primaryLoadingLabel="Saving changes..."
+              />
+            </FormCard>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaPage>
+    </EditPageState>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-  },
-  centered: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-  },
-  errorCard: {
-    borderWidth: 1,
-  },
-  headerRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-  },
-  headerText: {
-    flex: 1,
-  },
   keyboardAvoiding: {
     flex: 1,
   },

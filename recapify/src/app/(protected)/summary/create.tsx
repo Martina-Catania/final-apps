@@ -5,12 +5,13 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
-  View,
 } from "react-native";
 import {
-  Button,
   FileUploadField,
+  FormActions,
+  FormCard,
+  FormHeader,
+  InlineErrorText,
   ProjectTagEditor,
   SummaryEditor,
   type UploadedFile,
@@ -34,7 +35,7 @@ export default function SummaryCreatePage() {
   const router = useRouter();
   const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
-  const { colors, spacing, typography, radius } = useThemeTokens();
+  const { colors, spacing } = useThemeTokens();
 
   const [projectTitle, setProjectTitle] = useState("");
   const [summaryContent, setSummaryContent] = useState("");
@@ -167,46 +168,12 @@ export default function SummaryCreatePage() {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.md,
-                gap: spacing.lg,
-                padding: spacing.lg,
-              },
-            ]}
-          >
-            <View style={[styles.headerRow, { gap: spacing.sm }]}>
-              <Button
-                accessibilityLabel="Back"
-                iconName="arrow-back-outline"
-                onPress={() => goBack()}
-                variant="icon"
-              />
-
-              <View style={[styles.headerText, { gap: spacing.xs }]}>
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.primary.md,
-                    fontWeight: typography.weights.bold,
-                  }}
-                >
-                  Create Summary
-                </Text>
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    fontSize: typography.secondary.md,
-                  }}
-                >
-                  Add a title plus either summary content or a source file.
-                </Text>
-              </View>
-            </View>
+          <FormCard>
+            <FormHeader
+              onBack={goBack}
+              subtitle="Add a title plus either summary content or a source file."
+              title="Create Summary"
+            />
 
             <AppTextInput
               errorText={titleError ?? undefined}
@@ -276,28 +243,19 @@ export default function SummaryCreatePage() {
               pickButtonLabel="Pick document"
             />
 
-            {submitError ? (
-              <Text
-                style={{
-                  color: colors.danger,
-                  fontSize: typography.secondary.md,
-                }}
-              >
-                {submitError}
-              </Text>
-            ) : null}
+            <InlineErrorText message={submitError} size="md" />
 
-            <Button
+            <FormActions
               disabled={isSubmitting || isUploadingSourceFile}
-              fullWidth
-              iconName={isSubmitting || isUploadingSourceFile ? "hourglass-outline" : "save-outline"}
-              label={isUploadingSourceFile ? "Uploading file..." : isSubmitting ? "Saving summary..." : "Save summary"}
-              onPress={() => {
+              isPrimaryLoading={isSubmitting || isUploadingSourceFile}
+              onPrimaryPress={() => {
                 void handleSaveSummary();
               }}
-              variant="primary"
+              primaryIconName={isSubmitting || isUploadingSourceFile ? "hourglass-outline" : "save-outline"}
+              primaryLabel="Save summary"
+              primaryLoadingLabel={isUploadingSourceFile ? "Uploading file..." : "Saving summary..."}
             />
-          </View>
+          </FormCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaPage>
@@ -305,16 +263,6 @@ export default function SummaryCreatePage() {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-  },
-  headerRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-  },
-  headerText: {
-    flex: 1,
-  },
   keyboardAvoiding: {
     flex: 1,
   },

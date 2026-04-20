@@ -5,10 +5,18 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
-import { Accordion, Button, ProjectTagEditor } from "../../../components";
+import {
+  Accordion,
+  Button,
+  FormActions,
+  FormCard,
+  FormHeader,
+  InlineErrorText,
+  ProjectTagEditor,
+  SectionHeader,
+} from "../../../components";
 import { AppTextInput } from "../../../components/TextInput";
 import { useAuth } from "../../../context/auth-context";
 import { useProjectTagEditor, useSafeNavigation, useThemeTokens } from "../../../hooks";
@@ -54,7 +62,7 @@ export default function QuizCreatePage() {
   const router = useRouter();
   const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
-  const { colors, spacing, typography, radius } = useThemeTokens();
+  const { colors, spacing } = useThemeTokens();
 
   const [quizTitle, setQuizTitle] = useState("");
   const [questions, setQuestions] = useState<QuestionDraft[]>([createQuestionDraft(1)]);
@@ -238,46 +246,12 @@ export default function QuizCreatePage() {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.md,
-                gap: spacing.lg,
-                padding: spacing.lg,
-              },
-            ]}
-          >
-            <View style={[styles.headerRow, { gap: spacing.sm }]}>
-              <Button
-                accessibilityLabel="Back"
-                iconName="arrow-back-outline"
-                onPress={() => goBack()}
-                variant="icon"
-              />
-
-              <View style={[styles.headerText, { gap: spacing.xs }]}>
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.primary.md,
-                    fontWeight: typography.weights.bold,
-                  }}
-                >
-                  Create Quiz
-                </Text>
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    fontSize: typography.secondary.md,
-                  }}
-                >
-                  Set a quiz name, add questions, and save everything in one step.
-                </Text>
-              </View>
-            </View>
+          <FormCard maxWidth={760}>
+            <FormHeader
+              onBack={goBack}
+              subtitle="Set a quiz name, add questions, and save everything in one step."
+              title="Create Quiz"
+            />
 
             <AppTextInput
               label="Quiz name"
@@ -301,34 +275,14 @@ export default function QuizCreatePage() {
             />
 
             <View style={{ gap: spacing.sm }}>
-              <View style={[styles.rowBetween, { gap: spacing.sm }]}>
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.primary.sm,
-                    fontWeight: typography.weights.semibold,
-                  }}
-                >
-                  Questions
-                </Text>
-                <Button
-                  iconName="add-circle-outline"
-                  label="Add question"
-                  onPress={addQuestion}
-                  variant="secondary"
-                />
-              </View>
+              <SectionHeader
+                actionIconName="add-circle-outline"
+                actionLabel="Add question"
+                label="Questions"
+                onActionPress={addQuestion}
+              />
 
-              {questionsError ? (
-                <Text
-                  style={{
-                    color: colors.danger,
-                    fontSize: typography.secondary.sm,
-                  }}
-                >
-                  {questionsError}
-                </Text>
-              ) : null}
+              <InlineErrorText message={questionsError} />
 
               <View style={{ gap: spacing.md }}>
                 {questions.map((item, index) => {
@@ -398,30 +352,19 @@ export default function QuizCreatePage() {
               </View>
             </View>
 
-            {submitError ? (
-              <Text
-                style={{
-                  color: colors.danger,
-                  fontSize: typography.secondary.sm,
-                }}
-              >
-                {submitError}
-              </Text>
-            ) : null}
+            <InlineErrorText message={submitError} />
 
-            <View style={[styles.rowWrap, { gap: spacing.sm }]}>
-              <Button
-                disabled={isSubmitting}
-                fullWidth
-                iconName="save-outline"
-                label={isSubmitting ? "Creating quiz..." : "Save quiz"}
-                onPress={() => {
-                  void handleSaveQuiz();
-                }}
-                variant="primary"
-              />
-            </View>
-          </View>
+            <FormActions
+              disabled={isSubmitting}
+              isPrimaryLoading={isSubmitting}
+              onPrimaryPress={() => {
+                void handleSaveQuiz();
+              }}
+              primaryIconName="save-outline"
+              primaryLabel="Save quiz"
+              primaryLoadingLabel="Creating quiz..."
+            />
+          </FormCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaPage>
@@ -437,27 +380,5 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-  },
-  card: {
-    alignSelf: "center",
-    borderWidth: 1,
-    maxWidth: 760,
-    width: "100%",
-  },
-  headerRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-  },
-  headerText: {
-    flex: 1,
-  },
-  rowBetween: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  rowWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
   },
 });

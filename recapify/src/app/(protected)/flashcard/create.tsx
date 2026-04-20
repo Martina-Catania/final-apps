@@ -5,10 +5,18 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
-import { Accordion, Button, ProjectTagEditor } from "../../../components";
+import {
+  Accordion,
+  Button,
+  FormActions,
+  FormCard,
+  FormHeader,
+  InlineErrorText,
+  ProjectTagEditor,
+  SectionHeader,
+} from "../../../components";
 import { AppTextInput } from "../../../components/TextInput";
 import { useAuth } from "../../../context/auth-context";
 import { useProjectTagEditor, useSafeNavigation, useThemeTokens } from "../../../hooks";
@@ -48,7 +56,7 @@ export default function FlashcardCreatePage() {
   const router = useRouter();
   const { goBack } = useSafeNavigation();
   const { token, user } = useAuth();
-  const { colors, spacing, typography, radius } = useThemeTokens();
+  const { colors, spacing } = useThemeTokens();
 
   const [deckTitle, setDeckTitle] = useState("");
   const [flashcards, setFlashcards] = useState<FlashcardDraft[]>([createFlashcardDraft(1)]);
@@ -217,46 +225,12 @@ export default function FlashcardCreatePage() {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radius.md,
-                gap: spacing.lg,
-                padding: spacing.lg,
-              },
-            ]}
-          >
-            <View style={[styles.headerRow, { gap: spacing.sm }]}>
-              <Button
-                accessibilityLabel="Back"
-                iconName="arrow-back-outline"
-                onPress={() => goBack()}
-                variant="icon"
-              />
-
-              <View style={[styles.headerText, { gap: spacing.xs }]}>
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.primary.md,
-                    fontWeight: typography.weights.bold,
-                  }}
-                >
-                  Create Flashcards
-                </Text>
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    fontSize: typography.secondary.md,
-                  }}
-                >
-                  Set a title, add cards with front and back sides, and save in one step.
-                </Text>
-              </View>
-            </View>
+          <FormCard maxWidth={760}>
+            <FormHeader
+              onBack={goBack}
+              subtitle="Set a title, add cards with front and back sides, and save in one step."
+              title="Create Flashcards"
+            />
 
             <AppTextInput
               label="Flashcard set name"
@@ -280,34 +254,14 @@ export default function FlashcardCreatePage() {
             />
 
             <View style={{ gap: spacing.sm }}>
-              <View style={[styles.rowBetween, { gap: spacing.sm }]}>
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: typography.primary.sm,
-                    fontWeight: typography.weights.semibold,
-                  }}
-                >
-                  Cards
-                </Text>
-                <Button
-                  iconName="add-circle-outline"
-                  label="Add card"
-                  onPress={addFlashcard}
-                  variant="secondary"
-                />
-              </View>
+              <SectionHeader
+                actionIconName="add-circle-outline"
+                actionLabel="Add card"
+                label="Cards"
+                onActionPress={addFlashcard}
+              />
 
-              {flashcardsError ? (
-                <Text
-                  style={{
-                    color: colors.danger,
-                    fontSize: typography.secondary.sm,
-                  }}
-                >
-                  {flashcardsError}
-                </Text>
-              ) : null}
+              <InlineErrorText message={flashcardsError} />
 
               <View style={{ gap: spacing.md }}>
                 {flashcards.map((item, index) => {
@@ -353,30 +307,19 @@ export default function FlashcardCreatePage() {
               </View>
             </View>
 
-            {submitError ? (
-              <Text
-                style={{
-                  color: colors.danger,
-                  fontSize: typography.secondary.sm,
-                }}
-              >
-                {submitError}
-              </Text>
-            ) : null}
+            <InlineErrorText message={submitError} />
 
-            <View style={[styles.rowWrap, { gap: spacing.sm }]}>
-              <Button
-                disabled={isSubmitting}
-                fullWidth
-                iconName="save-outline"
-                label={isSubmitting ? "Creating flashcards..." : "Save flashcards"}
-                onPress={() => {
-                  void handleSaveFlashcards();
-                }}
-                variant="primary"
-              />
-            </View>
-          </View>
+            <FormActions
+              disabled={isSubmitting}
+              isPrimaryLoading={isSubmitting}
+              onPrimaryPress={() => {
+                void handleSaveFlashcards();
+              }}
+              primaryIconName="save-outline"
+              primaryLabel="Save flashcards"
+              primaryLoadingLabel="Creating flashcards..."
+            />
+          </FormCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaPage>
@@ -392,27 +335,5 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-  },
-  card: {
-    alignSelf: "center",
-    borderWidth: 1,
-    maxWidth: 760,
-    width: "100%",
-  },
-  headerRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-  },
-  headerText: {
-    flex: 1,
-  },
-  rowBetween: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  rowWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
   },
 });
