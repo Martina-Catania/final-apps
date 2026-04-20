@@ -3,13 +3,18 @@ import { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { Button, FileUploadField, SummaryEditor, type UploadedFile } from "../../../components";
+import {
+  Button,
+  FileUploadField,
+  ProjectTagEditor,
+  SummaryEditor,
+  type UploadedFile,
+} from "../../../components";
 import { AppTextInput } from "../../../components/TextInput";
 import { useAuth } from "../../../context/auth-context";
 import { useProjectTagEditor, useSafeNavigation, useThemeTokens } from "../../../hooks";
@@ -217,94 +222,17 @@ export default function SummaryCreatePage() {
               value={projectTitle}
             />
 
-            <View style={{ gap: spacing.sm }}>
-              <AppTextInput
-                label="Project tags"
-                onChangeText={handleTagInputChange}
-                onSubmitEditing={() => {
-                  void handleAddTag();
-                }}
-                placeholder="Type a tag name"
-                value={tagInput}
-                errorText={tagsError ?? undefined}
-                helperText="Add existing tags or create new ones."
-              />
-
-              {suggestedTags.length > 0 ? (
-                <View style={[styles.rowWrap, { gap: spacing.xs }]}> 
-                  {suggestedTags.map((tag) => (
-                    <Pressable
-                      accessibilityRole="button"
-                      key={`summary-suggested-tag-${tag.id}`}
-                      onPress={() => selectSuggestedTag(tag)}
-                      style={({ pressed }) => [
-                        styles.tagPill,
-                        {
-                          backgroundColor: colors.surfaceMuted,
-                          borderColor: colors.border,
-                          borderRadius: radius.pill,
-                          opacity: pressed ? 0.8 : 1,
-                          paddingHorizontal: spacing.sm,
-                          paddingVertical: spacing.xs,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={{
-                          color: colors.textSecondary,
-                          fontSize: typography.secondary.sm,
-                          fontWeight: typography.weights.medium,
-                        }}
-                      >
-                        {tag.name}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : null}
-
-              {selectedTags.length > 0 ? (
-                <View style={[styles.rowWrap, { gap: spacing.xs }]}> 
-                  {selectedTags.map((tag) => (
-                    <Pressable
-                      accessibilityRole="button"
-                      key={`summary-selected-tag-${tag.id}`}
-                      onPress={() => removeSelectedTag(tag.id)}
-                      style={({ pressed }) => [
-                        styles.tagPill,
-                        {
-                          backgroundColor: colors.secondaryMuted,
-                          borderColor: colors.secondary,
-                          borderRadius: radius.pill,
-                          opacity: pressed ? 0.8 : 1,
-                          paddingHorizontal: spacing.sm,
-                          paddingVertical: spacing.xs,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={{
-                          color: colors.textPrimary,
-                          fontSize: typography.secondary.sm,
-                          fontWeight: typography.weights.semibold,
-                        }}
-                      >
-                        {tag.name}  x
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : (
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    fontSize: typography.secondary.sm,
-                  }}
-                >
-                  No tags selected yet.
-                </Text>
-              )}
-            </View>
+            <ProjectTagEditor
+              keyPrefix="summary"
+              onAddTag={handleAddTag}
+              onRemoveSelectedTag={removeSelectedTag}
+              onSelectSuggestedTag={selectSuggestedTag}
+              onTagInputChange={handleTagInputChange}
+              selectedTags={selectedTags}
+              suggestedTags={suggestedTags}
+              tagInput={tagInput}
+              tagsError={tagsError}
+            />
 
             <SummaryEditor
               errorText={contentError ?? undefined}
@@ -390,14 +318,7 @@ const styles = StyleSheet.create({
   keyboardAvoiding: {
     flex: 1,
   },
-  rowWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
   scrollContainer: {
     flexGrow: 1,
-  },
-  tagPill: {
-    borderWidth: 1,
   },
 });
