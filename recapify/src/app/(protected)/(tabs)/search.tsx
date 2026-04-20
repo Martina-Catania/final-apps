@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,23 +14,23 @@ import {
 
 import {
   Accordion,
-  AppTextInput,
   Button,
   Card,
+  ProjectSearchFilters,
   ProfileCard,
   ProjectTagPills,
 } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
 import {
   useProjectDetailNavigation,
+  useProjectSearchFilters,
   usePullToRefresh,
   useRefreshControlProps,
   useThemeTokens,
 } from "../../../hooks";
 import { getApiHostUrl } from "../../../utils/api-config";
 import { getApiErrorMessage } from "../../../utils/api-request";
-import { listTagsRequest } from "../../../utils/tag-api";
-import { uniqueFlatTags, type FlatTag } from "../../../utils/tag-utils";
+import { PROJECT_TYPE_FILTER_OPTIONS } from "../../../utils/project-search-filters";
 import {
   searchRequest,
   type SearchProject,
@@ -38,24 +38,6 @@ import {
 } from "../../../utils/search-api";
 
 const API_HOST = getApiHostUrl();
-
-const PROJECT_TYPE_FILTER_OPTIONS: {
-  value: SearchProject["type"];
-  label: string;
-}[] = [
-  {
-    value: "QUIZ",
-    label: "Quiz",
-  },
-  {
-    value: "SUMMARY",
-    label: "Summary",
-  },
-  {
-    value: "DECK",
-    label: "Flashcards",
-  },
-];
 
 function resolveAvatarUri(avatarUrl: string | null) {
   if (!avatarUrl) {
@@ -103,62 +85,31 @@ export default function SearchPage() {
   const { token } = useAuth();
   const { colors, spacing, typography } = useThemeTokens();
 
-  const [query, setQuery] = useState("");
   const [lastQuery, setLastQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [users, setUsers] = useState<SearchUser[]>([]);
   const [projects, setProjects] = useState<SearchProject[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [availableTags, setAvailableTags] = useState<FlatTag[]>([]);
-  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
-  const [selectedProjectTypes, setSelectedProjectTypes] = useState<SearchProject["type"][]>([]);
-  const [isLoadingTags, setIsLoadingTags] = useState(false);
+
+  const {
+    query,
+    setQuery,
+    availableTags,
+    isLoadingTags,
+    selectedTagIds,
+    selectedProjectTypes,
+    toggleTagFilter,
+    toggleProjectTypeFilter,
+  } = useProjectSearchFilters<SearchProject["type"]>({
+    token: token ?? undefined,
+    requireTokenForTags: true,
+  });
 
   const resetSearchState = useCallback(() => {
     setHasSearched(false);
     setUsers([]);
     setProjects([]);
-  }, []);
-
-  const loadTags = useCallback(async () => {
-    if (!token) {
-      setAvailableTags([]);
-      return;
-    }
-
-    setIsLoadingTags(true);
-
-    try {
-      const payload = await listTagsRequest(token);
-      setAvailableTags(
-        uniqueFlatTags(payload.map((tag) => ({ id: tag.id, name: tag.name }))),
-      );
-    } catch {
-      setAvailableTags([]);
-    } finally {
-      setIsLoadingTags(false);
-    }
-  }, [token]);
-
-  const toggleTagFilter = useCallback((tagId: number) => {
-    setSelectedTagIds((current) => {
-      if (current.includes(tagId)) {
-        return current.filter((id) => id !== tagId);
-      }
-
-      return [...current, tagId];
-    });
-  }, []);
-
-  const toggleProjectTypeFilter = useCallback((projectType: SearchProject["type"]) => {
-    setSelectedProjectTypes((current) => {
-      if (current.includes(projectType)) {
-        return current.filter((value) => value !== projectType);
-      }
-
-      return [...current, projectType];
-    });
   }, []);
 
   const runSearch = useCallback(
@@ -220,15 +171,12 @@ export default function SearchPage() {
     hasSearched,
     lastQuery,
     query,
+    setQuery,
     resetSearchState,
     runSearch,
     selectedProjectTypes.length,
     selectedTagIds.length,
   ]);
-
-  useEffect(() => {
-    void loadTags();
-  }, [loadTags]);
 
   const { refreshing, onRefresh } = usePullToRefresh(handleRefresh);
   const refreshControlProps = useRefreshControlProps({
@@ -271,171 +219,29 @@ export default function SearchPage() {
           padding: spacing.lg,
         }}
         keyboardShouldPersistTaps="handled"
+        stickyHeaderIndices={[0]}
         refreshControl={
           <RefreshControl {...refreshControlProps} />
         }
       >
-        <Card
-          style={{
-            gap: spacing.md,
-            padding: spacing.md,
+        <ProjectSearchFilters
+          query={query}
+          onQueryChange={setQuery}
+          onSubmit={() => {
+            void runSearch(query);
           }}
-        >
-          <AppTextInput
-            label="Search"
-            leftIcon="search-outline"
-            onChangeText={setQuery}
-            onSubmitEditing={() => {
-              void runSearch(query);
-            }}
-            placeholder="Type a username or project title"
-            returnKeyType="search"
-            value={query}
-          />
-
-          <View style={{ gap: spacing.xs }}>
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: typography.secondary.md,
-                fontWeight: typography.weights.semibold,
-              }}
-            >
-              Filter by tags
-            </Text>
-
-            {isLoadingTags ? (
-              <ActivityIndicator color={colors.primary} size="small" />
-            ) : null}
-
-            {!isLoadingTags && availableTags.length === 0 ? (
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: typography.secondary.sm,
-                }}
-              >
-                No tags available yet.
-              </Text>
-            ) : null}
-
-            {availableTags.length > 0 ? (
-              <ScrollView
-                contentContainerStyle={{
-                  gap: spacing.xs,
-                  paddingRight: spacing.xs,
-                }}
-                horizontal
-                keyboardShouldPersistTaps="handled"
-                showsHorizontalScrollIndicator={false}
-              >
-                {availableTags.map((tag) => {
-                  const isSelected = selectedTagIds.includes(tag.id);
-
-                  return (
-                    <Pressable
-                      accessibilityRole="button"
-                      key={`search-tag-filter-${tag.id}`}
-                      onPress={() => toggleTagFilter(tag.id)}
-                      style={({ pressed }) => [
-                        styles.filterPill,
-                        {
-                          backgroundColor: isSelected ? colors.secondaryMuted : colors.surface,
-                          borderColor: isSelected ? colors.secondary : colors.border,
-                          borderRadius: 999,
-                          opacity: pressed ? 0.82 : 1,
-                          paddingHorizontal: spacing.sm,
-                          paddingVertical: spacing.xs,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={{
-                          color: isSelected ? colors.textPrimary : colors.textSecondary,
-                          fontSize: typography.secondary.sm,
-                          fontWeight: isSelected
-                            ? typography.weights.semibold
-                            : typography.weights.medium,
-                        }}
-                      >
-                        {tag.name}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            ) : null}
-
-          </View>
-
-          <View style={{ gap: spacing.xs }}>
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: typography.secondary.md,
-                fontWeight: typography.weights.semibold,
-              }}
-            >
-              Filter by project type
-            </Text>
-
-            <ScrollView
-              contentContainerStyle={{
-                gap: spacing.xs,
-                paddingRight: spacing.xs,
-              }}
-              horizontal
-              keyboardShouldPersistTaps="handled"
-              showsHorizontalScrollIndicator={false}
-            >
-              {PROJECT_TYPE_FILTER_OPTIONS.map((option) => {
-                const isSelected = selectedProjectTypes.includes(option.value);
-
-                return (
-                  <Pressable
-                    accessibilityRole="button"
-                    key={`search-project-type-filter-${option.value}`}
-                    onPress={() => toggleProjectTypeFilter(option.value)}
-                    style={({ pressed }) => [
-                      styles.filterPill,
-                      {
-                        backgroundColor: isSelected ? colors.secondaryMuted : colors.surface,
-                        borderColor: isSelected ? colors.secondary : colors.border,
-                        borderRadius: 999,
-                        opacity: pressed ? 0.82 : 1,
-                        paddingHorizontal: spacing.sm,
-                        paddingVertical: spacing.xs,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={{
-                        color: isSelected ? colors.textPrimary : colors.textSecondary,
-                        fontSize: typography.secondary.sm,
-                        fontWeight: isSelected
-                          ? typography.weights.semibold
-                          : typography.weights.medium,
-                      }}
-                    >
-                      {option.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-
-          </View>
-
-          <Button
-            fullWidth
-            iconName="search-outline"
-            label={isLoading ? "Searching..." : "Search"}
-            onPress={() => {
-              void runSearch(query);
-            }}
-            variant="primary"
-          />
-        </Card>
+          queryPlaceholder="Type a username or project title"
+          showSearchButton
+          searchButtonLabel={isLoading ? "Searching..." : "Search"}
+          availableTags={availableTags}
+          selectedTagIds={selectedTagIds}
+          onToggleTag={toggleTagFilter}
+          isLoadingTags={isLoadingTags}
+          showProjectTypeFilters
+          projectTypeOptions={PROJECT_TYPE_FILTER_OPTIONS}
+          selectedProjectTypes={selectedProjectTypes}
+          onToggleProjectType={toggleProjectTypeFilter}
+        />
 
         {isLoading ? (
           <Card
@@ -637,9 +443,6 @@ export default function SearchPage() {
 const styles = StyleSheet.create({
   keyboardAvoiding: {
     flex: 1,
-  },
-  filterPill: {
-    borderWidth: 1,
   },
   projectCard: {
     borderWidth: 1,

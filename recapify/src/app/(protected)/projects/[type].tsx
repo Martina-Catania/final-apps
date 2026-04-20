@@ -9,10 +9,11 @@ import {
   View,
 } from "react-native";
 
-import { Button, ProjectTagPills } from "../../../components";
+import { Button, ProjectSearchFilters, ProjectTagPills } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
 import {
   useProjectDetailNavigation,
+  useProjectSearchFilters,
   usePullToRefresh,
   useRefreshControlProps,
   useSafeNavigation,
@@ -21,6 +22,8 @@ import {
 import { SafeAreaPage } from "../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../utils/api-request";
 import { listDecksRequest } from "../../../utils/deck-api";
+import type { ProjectType } from "../../../utils/project-api";
+import { filterProjectsBySearchFilters } from "../../../utils/project-search-filters";
 import { listQuizzesRequest } from "../../../utils/quiz-api";
 import { listSummariesRequest } from "../../../utils/summary-api";
 import { projectTagsToFlatTags, type FlatTag } from "../../../utils/tag-utils";
@@ -29,6 +32,7 @@ type SelectedType = "quiz" | "flashcard" | "summary";
 
 type ProjectListItem = {
   id: number;
+  type: ProjectType;
   title: string;
   summary: string;
   creatorName: string;
@@ -62,14 +66,24 @@ export default function ProjectsByTypePage() {
   const { goBack } = useSafeNavigation();
   const { token } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
+  const {
+    query,
+    setQuery,
+    availableTags,
+    isLoadingTags,
+    selectedTagIds,
+    toggleTagFilter,
+  } = useProjectSearchFilters({
+    token: token ?? undefined,
+  });
 
-  const [projects, setProjects] = useState<ProjectListItem[]>([]);
+  const [allProjects, setAllProjects] = useState<ProjectListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadProjects = useCallback(async () => {
     if (!selectedType) {
-      setProjects([]);
+      setAllProjects([]);
       setErrorMessage("Invalid project type");
       setIsLoading(false);
       return;
@@ -82,13 +96,14 @@ export default function ProjectsByTypePage() {
       if (selectedType === "quiz") {
         const payload = await listQuizzesRequest(token ?? undefined);
 
-        setProjects(
+        setAllProjects(
           payload.map((quiz) => {
             const questionCount = quiz.questions.length;
             const questionLabel = questionCount === 1 ? "question" : "questions";
 
             return {
               id: quiz.id,
+              type: "QUIZ",
               title: quiz.project.title,
               summary: `${questionCount} ${questionLabel}`,
               creatorName: getCreatorLabel(quiz.project.user?.username),
@@ -103,13 +118,14 @@ export default function ProjectsByTypePage() {
       if (selectedType === "flashcard") {
         const payload = await listDecksRequest(token ?? undefined);
 
-        setProjects(
+        setAllProjects(
           payload.map((deck) => {
             const cardCount = deck.flashcards.length;
             const cardLabel = cardCount === 1 ? "card" : "cards";
 
             return {
               id: deck.id,
+              type: "DECK",
               title: deck.project.title,
               summary: `${cardCount} ${cardLabel}`,
               creatorName: getCreatorLabel(deck.project.user?.username),
@@ -123,13 +139,14 @@ export default function ProjectsByTypePage() {
 
       const payload = await listSummariesRequest(token ?? undefined);
 
-      setProjects(
+      setAllProjects(
         payload.map((summary) => {
           const contentLength = summary.content.trim().length;
           const contentLabel = contentLength === 1 ? "character" : "characters";
 
           return {
             id: summary.id,
+            type: "SUMMARY",
             title: summary.project.title,
             summary: `${contentLength} ${contentLabel}`,
             creatorName: getCreatorLabel(summary.project.user?.username),
@@ -146,7 +163,7 @@ export default function ProjectsByTypePage() {
             : "Unable to load summary projects";
 
       setErrorMessage(getApiErrorMessage(error, fallbackMessage));
-      setProjects([]);
+      setAllProjects([]);
     } finally {
       setIsLoading(false);
     }
@@ -183,6 +200,14 @@ export default function ProjectsByTypePage() {
         ? "No flashcard projects were found."
         : "No summary projects were found.";
 
+  const filteredProjects = useMemo(
+    () => filterProjectsBySearchFilters(allProjects, {
+      query,
+      selectedTagIds,
+    }),
+    [allProjects, query, selectedTagIds],
+  );
+
   const handleBack = useCallback(() => {
     goBack();
   }, [goBack]);
@@ -212,6 +237,7 @@ export default function ProjectsByTypePage() {
           gap: spacing.lg,
           padding: spacing.lg,
         }}
+        stickyHeaderIndices={[1]}
         refreshControl={
           <RefreshControl {...refreshControlProps} />
         }
@@ -256,6 +282,16 @@ export default function ProjectsByTypePage() {
             {subtitle}
           </Text>
         </View>
+
+        <ProjectSearchFilters
+          query={query}
+          onQueryChange={setQuery}
+          queryPlaceholder="Type a project title"
+          availableTags={availableTags}
+          selectedTagIds={selectedTagIds}
+          onToggleTag={toggleTagFilter}
+          isLoadingTags={isLoadingTags}
+        />
 
         {isLoading ? (
           <View
@@ -316,7 +352,7 @@ export default function ProjectsByTypePage() {
           </View>
         ) : null}
 
-        {!isLoading && !errorMessage && projects.length === 0 ? (
+        {!isLoading && !errorMessage && filteredProjects.length === 0 ? (
           <View
             style={[
               styles.card,
@@ -335,14 +371,16 @@ export default function ProjectsByTypePage() {
                 fontSize: typography.secondary.md,
               }}
             >
-              {emptyMessage}
+              {allProjects.length === 0
+                ? emptyMessage
+                : "No projects matched the current filters."}
             </Text>
           </View>
         ) : null}
 
-        {!isLoading && !errorMessage && projects.length > 0 ? (
+        {!isLoading && !errorMessage && filteredProjects.length > 0 ? (
           <View style={{ gap: spacing.sm }}>
-            {projects.map((project) => (
+            {filteredProjects.map((project) => (
               <View
                 key={`${selectedType ?? "project"}-${project.id}`}
                 style={[

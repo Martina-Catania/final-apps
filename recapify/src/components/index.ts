@@ -20,6 +20,7 @@ export * from "./InlineErrorText";
 export * from "./Pagination";
 export * from "./ProfileCard";
 export * from "./ProjectTagEditor";
+export * from "./ProjectSearchFilters";
 export * from "./ProjectTagPills";
 export * from "./RefreshableScroll";
 export * from "./SectionHeader";

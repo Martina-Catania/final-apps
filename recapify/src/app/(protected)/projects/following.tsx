@@ -8,10 +8,11 @@ import {
   View,
 } from "react-native";
 
-import { Button, ProjectTagPills } from "../../../components";
+import { Button, ProjectSearchFilters, ProjectTagPills } from "../../../components";
 import { useAuth } from "../../../context/auth-context";
 import {
   useProjectDetailNavigation,
+  useProjectSearchFilters,
   usePullToRefresh,
   useRefreshControlProps,
   useSafeNavigation,
@@ -20,14 +21,20 @@ import {
 import { SafeAreaPage } from "../../../screens/safe-area-page";
 import { getApiErrorMessage } from "../../../utils/api-request";
 import {
+  type ProjectType,
   listFollowingProjectsRequest,
   type FollowingProject,
 } from "../../../utils/project-api";
+import {
+  PROJECT_TYPE_FILTER_OPTIONS,
+  filterProjectsBySearchFilters,
+} from "../../../utils/project-search-filters";
 import { projectTagsToFlatTags, type FlatTag } from "../../../utils/tag-utils";
 
 type FollowedProjectListItem = {
   id: number;
   entityId: number;
+  type: ProjectType;
   targetType: "quiz" | "flashcard" | "summary";
   title: string;
   creatorName: string;
@@ -51,6 +58,7 @@ function mapFollowingProject(project: FollowingProject): FollowedProjectListItem
     return {
       id: project.id,
       entityId: project.quiz.id,
+      type: "QUIZ",
       targetType: "quiz",
       title: project.title,
       creatorName,
@@ -62,6 +70,7 @@ function mapFollowingProject(project: FollowingProject): FollowedProjectListItem
     return {
       id: project.id,
       entityId: project.deck.id,
+      type: "DECK",
       targetType: "flashcard",
       title: project.title,
       creatorName,
@@ -73,6 +82,7 @@ function mapFollowingProject(project: FollowingProject): FollowedProjectListItem
     return {
       id: project.id,
       entityId: project.summary.id,
+      type: "SUMMARY",
       targetType: "summary",
       title: project.title,
       creatorName,
@@ -88,14 +98,26 @@ export default function FollowingProjectsPage() {
   const { goBack } = useSafeNavigation();
   const { token } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
+  const {
+    query,
+    setQuery,
+    availableTags,
+    isLoadingTags,
+    selectedTagIds,
+    selectedProjectTypes,
+    toggleTagFilter,
+    toggleProjectTypeFilter,
+  } = useProjectSearchFilters<ProjectType>({
+    token: token ?? undefined,
+  });
 
-  const [projects, setProjects] = useState<FollowedProjectListItem[]>([]);
+  const [allProjects, setAllProjects] = useState<FollowedProjectListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadProjects = useCallback(async () => {
     if (!token) {
-      setProjects([]);
+      setAllProjects([]);
       setErrorMessage("You must be signed in to view followed projects");
       setIsLoading(false);
       return;
@@ -107,14 +129,14 @@ export default function FollowingProjectsPage() {
     try {
       const payload = await listFollowingProjectsRequest(token);
 
-      setProjects(
+      setAllProjects(
         payload
           .map(mapFollowingProject)
           .filter((project): project is FollowedProjectListItem => project !== null),
       );
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error, "Unable to load followed projects"));
-      setProjects([]);
+      setAllProjects([]);
     } finally {
       setIsLoading(false);
     }
@@ -138,6 +160,15 @@ export default function FollowingProjectsPage() {
     [],
   );
 
+  const filteredProjects = useMemo(
+    () => filterProjectsBySearchFilters(allProjects, {
+      query,
+      selectedTagIds,
+      selectedProjectTypes,
+    }),
+    [allProjects, query, selectedProjectTypes, selectedTagIds],
+  );
+
   useEffect(() => {
     void loadProjects();
   }, [loadProjects]);
@@ -149,6 +180,7 @@ export default function FollowingProjectsPage() {
           gap: spacing.lg,
           padding: spacing.lg,
         }}
+        stickyHeaderIndices={[1]}
         refreshControl={
           <RefreshControl {...refreshControlProps} />
         }
@@ -193,6 +225,20 @@ export default function FollowingProjectsPage() {
             {pageSubtitle}
           </Text>
         </View>
+
+        <ProjectSearchFilters
+          query={query}
+          onQueryChange={setQuery}
+          queryPlaceholder="Type a project title"
+          availableTags={availableTags}
+          selectedTagIds={selectedTagIds}
+          onToggleTag={toggleTagFilter}
+          isLoadingTags={isLoadingTags}
+          showProjectTypeFilters
+          projectTypeOptions={PROJECT_TYPE_FILTER_OPTIONS}
+          selectedProjectTypes={selectedProjectTypes}
+          onToggleProjectType={toggleProjectTypeFilter}
+        />
 
         {isLoading ? (
           <View
@@ -253,7 +299,7 @@ export default function FollowingProjectsPage() {
           </View>
         ) : null}
 
-        {!isLoading && !errorMessage && projects.length === 0 ? (
+        {!isLoading && !errorMessage && filteredProjects.length === 0 ? (
           <View
             style={[
               styles.card,
@@ -272,14 +318,16 @@ export default function FollowingProjectsPage() {
                 fontSize: typography.secondary.md,
               }}
             >
-              No followed projects were found.
+              {allProjects.length === 0
+                ? "No followed projects were found."
+                : "No followed projects matched the current filters."}
             </Text>
           </View>
         ) : null}
 
-        {!isLoading && !errorMessage && projects.length > 0 ? (
+        {!isLoading && !errorMessage && filteredProjects.length > 0 ? (
           <View style={{ gap: spacing.sm }}>
-            {projects.map((project) => (
+            {filteredProjects.map((project) => (
               <View
                 key={`followed-project-${project.id}`}
                 style={[

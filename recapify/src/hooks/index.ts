@@ -6,5 +6,6 @@ export * from "./use-refresh-control-props";
 export * from "./use-project-tag-editor";
 export * from "./use-safe-navigation";
 export * from "./use-project-detail-navigation";
+export * from "./use-project-search-filters";
 export * from "./use-camera-capture";
 export * from "./use-collection-draft";
