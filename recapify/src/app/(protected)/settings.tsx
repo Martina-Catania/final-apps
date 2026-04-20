@@ -1,9 +1,5 @@
-import {
-  CameraView,
-  useCameraPermissions,
-  type CameraType,
-} from "expo-camera";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CameraView } from "expo-camera";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -23,7 +19,7 @@ import {
   type UploadedFile,
 } from "../../components";
 import { useAuth } from "../../context/auth-context";
-import { useSafeNavigation, useThemeTokens } from "../../hooks";
+import { useCameraCapture, useSafeNavigation, useThemeTokens } from "../../hooks";
 import {
   getUserApiErrorMessage,
   updateCurrentUserPasswordRequest,
@@ -60,8 +56,6 @@ export default function SettingsPage() {
   const { goBack } = useSafeNavigation();
   const { token, user, refreshUser } = useAuth();
   const { colors, spacing, typography, radius } = useThemeTokens();
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const cameraRef = useRef<CameraView | null>(null);
 
   const [username, setUsername] = useState(user?.username ?? "");
   const [selectedAvatar, setSelectedAvatar] = useState<UploadedFile | null>(null);
@@ -80,13 +74,10 @@ export default function SettingsPage() {
 
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [isCapturingAvatarFromCamera, setIsCapturingAvatarFromCamera] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isAvatarActionSheetOpen, setIsAvatarActionSheetOpen] = useState(false);
   const [isAvatarUploadModalOpen, setIsAvatarUploadModalOpen] = useState(false);
   const [isAvatarCameraModalOpen, setIsAvatarCameraModalOpen] = useState(false);
-  const [cameraFacing, setCameraFacing] = useState<CameraType>("back");
-  const [isCameraReady, setIsCameraReady] = useState(false);
 
   useEffect(() => {
     setUsername(user?.username ?? "");
@@ -117,79 +108,6 @@ export default function SettingsPage() {
 
     setIsAvatarUploadModalOpen(false);
   }, [isUploadingAvatar]);
-
-  const handleCloseAvatarCameraModal = useCallback(() => {
-    if (isUploadingAvatar || isCapturingAvatarFromCamera) {
-      return;
-    }
-
-    setIsAvatarCameraModalOpen(false);
-    setIsCameraReady(false);
-  }, [isCapturingAvatarFromCamera, isUploadingAvatar]);
-
-  const ensureCameraPermission = useCallback(async () => {
-    if (cameraPermission?.granted) {
-      return true;
-    }
-
-    const permissionResponse = await requestCameraPermission();
-
-    if (permissionResponse.granted) {
-      return true;
-    }
-
-    setErrorMessage(
-      permissionResponse.canAskAgain
-        ? "Camera permission is required to take a profile picture"
-        : "Camera permission is disabled. Enable it in settings to take a profile picture",
-    );
-    return false;
-  }, [cameraPermission?.granted, requestCameraPermission]);
-
-  const handleOpenAvatarCameraModal = useCallback(async () => {
-    setErrorMessage(null);
-    setAvatarMessage(null);
-
-    const hasPermission = await ensureCameraPermission();
-
-    if (!hasPermission) {
-      return;
-    }
-
-    setCameraFacing("front");
-    setIsCameraReady(false);
-    setIsAvatarCameraModalOpen(true);
-  }, [ensureCameraPermission]);
-
-  const avatarActionItems = useMemo<AvatarActionItem[]>(
-    () => [
-      {
-        label: "Upload from file",
-        value: "upload-file",
-        iconName: "cloud-upload-outline",
-        disabled: isUploadingAvatar || isCapturingAvatarFromCamera,
-      },
-      {
-        label: "Use camera",
-        value: "use-camera",
-        iconName: "camera-outline",
-        disabled: isUploadingAvatar || isCapturingAvatarFromCamera,
-      },
-    ],
-    [isCapturingAvatarFromCamera, isUploadingAvatar],
-  );
-
-  const handleSelectAvatarAction = useCallback(
-    (value: AvatarActionValue) => {
-      if (value === "upload-file") {
-        setIsAvatarUploadModalOpen(true);
-        return;
-      }
-
-      void handleOpenAvatarCameraModal();
-    },
-    [handleOpenAvatarCameraModal],
-  );
 
   const uploadAvatar = useCallback(
     async (avatarFile: UploadedFile) => {
@@ -229,36 +147,95 @@ export default function SettingsPage() {
     [refreshUser, token],
   );
 
-  const handleFlipCamera = useCallback(() => {
-    setCameraFacing((current) => (current === "back" ? "front" : "back"));
-  }, []);
-
-  const handleCaptureAvatarFromCamera = useCallback(async () => {
-    if (!cameraRef.current || !isCameraReady || isCapturingAvatarFromCamera || isUploadingAvatar) {
-      return;
-    }
-
-    setErrorMessage(null);
-    setAvatarMessage(null);
-    setIsCapturingAvatarFromCamera(true);
-
-    try {
-      const capturedPhoto = await cameraRef.current.takePictureAsync({ quality: 0.85 });
-      const isPng = capturedPhoto.format === "png";
+  const {
+    cameraRef,
+    cameraPermissionGranted,
+    cameraFacing,
+    isCameraReady,
+    isCapturing: isCapturingAvatarFromCamera,
+    prepareCameraCapture,
+    resetCameraCaptureState,
+    handleCameraReady,
+    handleCameraMountError,
+    flipCamera,
+    capturePhoto,
+  } = useCameraCapture({
+    isBusy: isUploadingAvatar,
+    onCapture: async (photo) => {
+      const isPng = photo.format === "png";
       const capturedAvatar: UploadedFile = {
         name: `avatar-${Date.now()}.${isPng ? "png" : "jpg"}`,
-        uri: capturedPhoto.uri,
+        uri: photo.uri,
         mimeType: isPng ? "image/png" : "image/jpeg",
       };
 
       setSelectedAvatar(capturedAvatar);
       await uploadAvatar(capturedAvatar);
-    } catch (error) {
-      setErrorMessage(getUserApiErrorMessage(error, "Unable to capture image"));
-    } finally {
-      setIsCapturingAvatarFromCamera(false);
+    },
+    onError: (message) => {
+      setErrorMessage(message);
+    },
+    formatErrorMessage: getUserApiErrorMessage,
+  });
+
+  const handleCloseAvatarCameraModal = useCallback(() => {
+    if (isUploadingAvatar || isCapturingAvatarFromCamera) {
+      return;
     }
-  }, [isCameraReady, isCapturingAvatarFromCamera, isUploadingAvatar, uploadAvatar]);
+
+    setIsAvatarCameraModalOpen(false);
+    resetCameraCaptureState();
+  }, [isCapturingAvatarFromCamera, isUploadingAvatar, resetCameraCaptureState]);
+
+  const handleOpenAvatarCameraModal = useCallback(async () => {
+    setErrorMessage(null);
+    setAvatarMessage(null);
+
+    const isCameraPrepared = await prepareCameraCapture();
+
+    if (!isCameraPrepared) {
+      return;
+    }
+
+    setIsAvatarCameraModalOpen(true);
+  }, [prepareCameraCapture]);
+
+  const avatarActionItems = useMemo<AvatarActionItem[]>(
+    () => [
+      {
+        label: "Upload from file",
+        value: "upload-file",
+        iconName: "cloud-upload-outline",
+        disabled: isUploadingAvatar || isCapturingAvatarFromCamera,
+      },
+      {
+        label: "Use camera",
+        value: "use-camera",
+        iconName: "camera-outline",
+        disabled: isUploadingAvatar || isCapturingAvatarFromCamera,
+      },
+    ],
+    [isCapturingAvatarFromCamera, isUploadingAvatar],
+  );
+
+  const handleSelectAvatarAction = useCallback(
+    (value: AvatarActionValue) => {
+      if (value === "upload-file") {
+        setIsAvatarUploadModalOpen(true);
+        return;
+      }
+
+      void handleOpenAvatarCameraModal();
+    },
+    [handleOpenAvatarCameraModal],
+  );
+
+  const handleCaptureAvatarFromCamera = useCallback(async () => {
+    setErrorMessage(null);
+    setAvatarMessage(null);
+
+    await capturePhoto();
+  }, [capturePhoto]);
 
   const handleSaveProfile = async () => {
     if (!token) {
@@ -550,12 +527,8 @@ export default function SettingsPage() {
               <CameraView
                 facing={cameraFacing}
                 mode="picture"
-                onCameraReady={() => {
-                  setIsCameraReady(true);
-                }}
-                onMountError={() => {
-                  setErrorMessage("Unable to start camera preview");
-                }}
+                onCameraReady={handleCameraReady}
+                onMountError={handleCameraMountError}
                 ref={cameraRef}
                 style={styles.cameraPreview}
               />
@@ -573,19 +546,19 @@ export default function SettingsPage() {
                 disabled={
                   isUploadingAvatar ||
                   isCapturingAvatarFromCamera ||
-                  !cameraPermission?.granted ||
+                  !cameraPermissionGranted ||
                   !isCameraReady
                 }
                 iconName="camera-reverse-outline"
                 label="Flip"
-                onPress={handleFlipCamera}
+                onPress={flipCamera}
                 variant="default"
               />
               <Button
                 disabled={
                   isUploadingAvatar ||
                   isCapturingAvatarFromCamera ||
-                  !cameraPermission?.granted ||
+                  !cameraPermissionGranted ||
                   !isCameraReady
                 }
                 iconName="camera-outline"
